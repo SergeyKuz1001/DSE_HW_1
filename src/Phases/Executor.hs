@@ -3,8 +3,8 @@ module Phases.Executor (
   ) where
 
 import Data.ImprovedPrimitive (Primitive)
+import Enviroment.MonadIO
 
-import Control.Monad.IO.Class (MonadIO)
 import System.Exit (ExitCode)
 
 executor :: MonadIO m => Primitive -> m (Maybe ExitCode)

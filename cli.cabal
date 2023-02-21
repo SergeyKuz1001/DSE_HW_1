@@ -27,8 +27,8 @@ library
       Data.ImprovedPrimitive
       Data.Primitive
       Enviroment
-      Enviroment.Error
-      Enviroment.Monads
+      Enviroment.MonadError
+      Enviroment.MonadIO
       Phases
       Phases.Analyzer
       Phases.Executor

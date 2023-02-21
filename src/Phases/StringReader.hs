@@ -1,10 +1,14 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 module Phases.StringReader (
     stringReader,
   ) where
 
-import Control.Monad.IO.Class (MonadIO, liftIO)
+import Enviroment.MonadIO
+
+import Prelude hiding (putStr, getLine)
 
 stringReader :: MonadIO m => m String
 stringReader = do
-  liftIO $ putStr "$ "
-  liftIO getLine
+  putStr "$ "
+  getLine
