@@ -24,18 +24,20 @@ analyzer (P.Command (command :| args)) =
     "cat" -> do
       length args == 1 ?: error "`cat` command must have only one argument"
       let filePath = head args
+      doesFileExist filePath ?>= error ("can't find file by path " ++ filePath)
       return . IP.Command . Common . Internal $ Cat filePath
     "echo" -> do
       return . IP.Command . Common . Internal $ Echo args
     "wc" -> do
       length args == 1 ?: error "`wc` command must have only one argument"
       let filePath = head args
+      doesFileExist filePath ?>= error ("can't find file by path " ++ filePath)
       return . IP.Command . Common . Internal $ Wc filePath
     "pwd" -> do
       null args ?: error "`pwd` command hasn't arguments"
       return . IP.Command . Common . Internal $ Pwd
     "exit" -> do
-      length args > 1 ?: error "too many arguments of `exit` command"
+      length args <= 1 ?: error "too many arguments of `exit` command"
       let mArg = listToMaybe args
       mInt <- mapM (\arg ->
         readMaybe arg @: error "argument of `exit` command must be integer")

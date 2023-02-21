@@ -6,5 +6,6 @@ module Data.Primitive (
 import Data.List.NonEmpty (NonEmpty(..))
 
 data Primitive = Command Command
+  deriving (Eq, Show)
 
 type Command = NonEmpty String

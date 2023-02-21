@@ -1,2 +1,8 @@
+import Phases.Analyzer.Tests (testsAnalyzer)
+
+import Test.HUnit
+
 main :: IO ()
-main = putStrLn "Test suite not yet implemented"
+main = runTestTTAndExit $ TestList [
+    TestLabel "Analyzer" testsAnalyzer
+  ]
