@@ -1,6 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Phase.Analyzer (
+module Phases.Analyzer (
     analyzer,
   ) where
 

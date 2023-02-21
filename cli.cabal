@@ -29,10 +29,11 @@ library
       Enviroment
       Enviroment.Error
       Enviroment.Monads
-      Phase.Analyzer
-      Phase.Executor
-      Phase.Parser
-      Phase.StringReader
+      Phases
+      Phases.Analyzer
+      Phases.Executor
+      Phases.Parser
+      Phases.StringReader
   other-modules:
       Paths_cli
   hs-source-dirs:

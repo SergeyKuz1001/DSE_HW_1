@@ -1,4 +1,4 @@
-module Phase.StringReader (
+module Phases.StringReader (
     stringReader,
   ) where
 

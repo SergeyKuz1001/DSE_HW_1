@@ -1,4 +1,4 @@
-module Phase.Parser (
+module Phases.Parser (
     parser,
   ) where
 
