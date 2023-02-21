@@ -9,6 +9,8 @@ module Data.ImprovedPrimitive (
     Local(..),
   ) where
 
+import Data.List.NonEmpty (NonEmpty(..))
+
 data Primitive = Command Command
 
 data Command = Special Special | Common Common
@@ -21,6 +23,6 @@ data Internal = Echo [String] | Cat FilePath -- | ...
 
 data External = Global Global | Local Local
 
-data Global = GArguments [String]
+type Global = NonEmpty String
 
-data Local = LArguments [String]
+type Local = NonEmpty String

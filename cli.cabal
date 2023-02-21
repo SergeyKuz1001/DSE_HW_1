@@ -28,7 +28,8 @@ library
       Data.Primitive
       Enviroment
       Enviroment.Error
-      Phase.Analizer
+      Enviroment.Monads
+      Phase.Analyzer
       Phase.Executor
       Phase.Parser
       Phase.StringReader

@@ -3,6 +3,8 @@ module Data.Primitive (
     Command(..),
   ) where
 
+import Data.List.NonEmpty (NonEmpty(..))
+
 data Primitive = Command Command
 
-data Command = Arguments [String]
+type Command = NonEmpty String
