@@ -18,7 +18,7 @@ import System.Directory (doesFileExist, findExecutable)
 import Text.Read (readMaybe)
 
 error :: String -> Error
-error = Error "AnalizingError"
+error = Error "AnalyzingError"
 
 analyzer :: (MonadError Error m, MonadIO m) => P.Primitive -> m IP.Primitive
 analyzer (P.Command (command :| args)) =
