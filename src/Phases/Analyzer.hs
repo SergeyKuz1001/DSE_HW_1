@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Phases.Analyzer (
     analyzer,
@@ -10,7 +11,6 @@ import qualified Data.ImprovedPrimitive as IP
 import Enviroment.Error
 import Enviroment.Monads
 
-import Control.Monad.Except (MonadError)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe (listToMaybe)
 import Prelude hiding (error)
