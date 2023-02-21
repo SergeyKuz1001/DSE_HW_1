@@ -1,3 +1,4 @@
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 module Phases.Parser (
@@ -8,9 +9,10 @@ import Enviroment.Error (Error(..))
 import Data.Primitive (Primitive)
 
 import Control.Monad.Except (MonadError)
+import Prelude hiding (error)
 
-parserError :: String -> Error
-parserError = Error "ParsingError"
+error :: String -> Error
+error = Error "ParsingError"
 
 parser :: MonadError Error m => String -> m Primitive
 parser = undefined

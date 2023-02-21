@@ -5,11 +5,7 @@ module Data.ImprovedPrimitive (
     Common(..),
     Internal(..),
     External(..),
-    Global(..),
-    Local(..),
   ) where
-
-import Data.List.NonEmpty (NonEmpty(..))
 
 data Primitive = Command Command
 
@@ -19,10 +15,6 @@ data Special = Exit (Maybe Int)
 
 data Common = Internal Internal | External External
 
-data Internal = Echo [String] | Cat FilePath -- | ...
+data Internal = Cat FilePath | Echo [String] | Wc FilePath | Pwd
 
-data External = Global Global | Local Local
-
-type Global = NonEmpty String
-
-type Local = NonEmpty String
+data External = Arguments FilePath [String]
