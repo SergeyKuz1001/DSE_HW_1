@@ -7,6 +7,8 @@ module Data.ImprovedPrimitive (
     External(..),
   ) where
 
+import Environment.MonadFS.Internal (AbsFilePath)
+
 data Primitive = Command Command
   deriving (Eq, Show)
 
@@ -19,8 +21,8 @@ data Special = Exit (Maybe Int)
 data Common = Internal Internal | External External
   deriving (Eq, Show)
 
-data Internal = Cat FilePath | Echo [String] | Wc FilePath | Pwd
+data Internal = Cat AbsFilePath | Echo [String] | Wc AbsFilePath | Pwd
   deriving (Eq, Show)
 
-data External = Arguments FilePath [String]
+data External = Arguments AbsFilePath [String]
   deriving (Eq, Show)

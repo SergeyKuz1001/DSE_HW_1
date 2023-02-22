@@ -12,7 +12,7 @@ import Prelude hiding (putStrLn)
 main :: IO ()
 main = runEnvironment main'
 
-main' :: (MonadError m, MonadIO m) => m ()
+main' :: (MonadError m, MonadIO m, MonadFS m, MonadExit m) => m ()
 main' = do
   mExitCode <- (do
       string     <- stringReader

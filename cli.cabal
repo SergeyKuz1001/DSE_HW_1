@@ -28,6 +28,9 @@ library
       Data.Primitive
       Environment
       Environment.MonadError
+      Environment.MonadExit
+      Environment.MonadFS
+      Environment.MonadFS.Internal
       Environment.MonadIO
       Phases
       Phases.Analyzer
@@ -65,8 +68,8 @@ test-suite cli-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Phases.Analyzer.TestEnvironment
       Phases.Analyzer.Tests
-      TestEnvironment
       Paths_cli
   hs-source-dirs:
       test
