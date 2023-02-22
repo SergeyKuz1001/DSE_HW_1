@@ -26,6 +26,7 @@ jobs:
     - run: stack build
     - run: stack test
   doc:
+    needs: build_and_test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
