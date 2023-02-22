@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-    - dev-2-arch
+    - dev-2
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -11,7 +11,8 @@ jobs:
     - uses: haskell/actions/hlint-run@v2
       with:
         path: .
-  build:
+        fail-on: warning
+  build_and_test:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
@@ -23,16 +24,4 @@ jobs:
         enable-stack: true
         stack-no-global: true
     - run: stack build
-  test:
-    needs: build
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-    - uses: actions/checkout@v3
-    - uses: haskell/actions/setup@v2
-      with:
-        enable-stack: true
-        stack-no-global: true
     - run: stack test
