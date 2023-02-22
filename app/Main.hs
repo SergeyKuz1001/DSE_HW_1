@@ -4,13 +4,13 @@ module Main (
     main,
   ) where
 
-import Enviroment
+import Environment
 import Phases
 
 import Prelude hiding (putStrLn)
 
 main :: IO ()
-main = runEnviroment main'
+main = runEnvironment main'
 
 main' :: (MonadError m, MonadIO m) => m ()
 main' = do

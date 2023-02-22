@@ -3,7 +3,7 @@ module Phases.Executor (
   ) where
 
 import Data.ImprovedPrimitive (Primitive)
-import Enviroment.MonadIO
+import Environment.MonadIO
 
 type ExitCode = Int
 

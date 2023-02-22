@@ -1,6 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Enviroment.MonadIO (
+module Environment.MonadIO (
     MonadIO,
     putStr,
     putStrLn,

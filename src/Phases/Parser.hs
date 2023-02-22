@@ -5,7 +5,7 @@ module Phases.Parser (
   ) where
 
 import Data.Primitive (Primitive)
-import Enviroment.MonadError
+import Environment.MonadError
 
 import Prelude hiding (error)
 

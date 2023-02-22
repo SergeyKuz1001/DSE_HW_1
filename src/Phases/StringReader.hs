@@ -4,7 +4,7 @@ module Phases.StringReader (
     stringReader,
   ) where
 
-import Enviroment.MonadIO
+import Environment.MonadIO
 
 import Prelude hiding (putStr, getLine)
 

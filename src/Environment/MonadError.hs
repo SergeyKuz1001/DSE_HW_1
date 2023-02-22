@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Enviroment.MonadError (
+module Environment.MonadError (
     module Control.Monad.Except,
     Error(..),
     MonadError,

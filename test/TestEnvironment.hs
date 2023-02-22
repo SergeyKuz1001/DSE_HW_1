@@ -1,16 +1,16 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module TestEnviroment (
-    module Enviroment.MonadError,
-    module Enviroment.MonadIO,
+module TestEnvironment (
+    module Environment.MonadError,
+    module Environment.MonadIO,
     File(..),
-    TestEnviroment,
-    runTestEnviroment,
+    TestEnvironment,
+    runTestEnvironment,
   ) where
 
-import Enviroment.MonadError
-import Enviroment.MonadIO
+import Environment.MonadError
+import Environment.MonadIO
 
 import qualified Control.Monad.Except as ME
 import Control.Monad.State (StateT, state, gets, runStateT)
@@ -29,11 +29,11 @@ data GlobalState = GlobalState
   , outputText :: String
   }
 
-newtype TestEnviroment a = TestEnviroment (StateT GlobalState (Either Error) a)
+newtype TestEnvironment a = TestEnvironment (StateT GlobalState (Either Error) a)
   deriving (Functor, Applicative, Monad, ME.MonadError Error, MonadError)
 
-findFile :: FilePath -> TestEnviroment (Maybe File)
-findFile filePath = TestEnviroment . gets $
+findFile :: FilePath -> TestEnvironment (Maybe File)
+findFile filePath = TestEnvironment . gets $
   \gs ->
     let allFiles = files gs
         absFilePath =
@@ -44,12 +44,12 @@ findFile filePath = TestEnviroment . gets $
               else pwd gs ++ filePath
     in  listToMaybe $ filter ((absFilePath ==) . path) allFiles
 
-getLine' :: TestEnviroment String
-getLine' = TestEnviroment . state $
+getLine' :: TestEnvironment String
+getLine' = TestEnvironment . state $
   \gs -> (head $ inputLines gs, gs {inputLines = tail $ inputLines gs})
 
-instance MonadIO TestEnviroment where
-  putStr msg = TestEnviroment . state $
+instance MonadIO TestEnvironment where
+  putStr msg = TestEnvironment . state $
     \gs -> ((), gs { outputText = outputText gs ++ msg })
   getLine = do
     line <- getLine'
@@ -59,5 +59,5 @@ instance MonadIO TestEnviroment where
   findExecutable filePath = (>>= (\file -> if isExecutable file then Just (path file) else Nothing)) <$> findFile filePath
   exit _ = return () -- not used yet
 
-runTestEnviroment :: FilePath -> [File] -> [String] -> TestEnviroment a -> Either Error (a, String)
-runTestEnviroment pwd files inputLines (TestEnviroment m) = fmap outputText <$> runStateT m (GlobalState pwd files inputLines "")
+runTestEnvironment :: FilePath -> [File] -> [String] -> TestEnvironment a -> Either Error (a, String)
+runTestEnvironment pwd files inputLines (TestEnvironment m) = fmap outputText <$> runStateT m (GlobalState pwd files inputLines "")

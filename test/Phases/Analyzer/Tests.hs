@@ -6,13 +6,13 @@ import qualified Data.Primitive as P
 import Data.ImprovedPrimitive hiding (Primitive(..))
 import qualified Data.ImprovedPrimitive as IP
 import Phases.Analyzer (analyzer)
-import TestEnviroment
+import TestEnvironment
 
 import Data.List.NonEmpty (NonEmpty(..))
 import Test.HUnit hiding (test)
 
-env1 :: TestEnviroment a -> Either Error a
-env1 = (fmap . fmap) fst $ runTestEnviroment "/home/user/" [
+env1 :: TestEnvironment a -> Either Error a
+env1 = (fmap . fmap) fst $ runTestEnvironment "/home/user/" [
     File "/bin/vim" True,
     File "/home/user/Documents/lessons_schedule.txt" False,
     File "/home/user/my_game.py" True,
@@ -20,7 +20,7 @@ env1 = (fmap . fmap) fst $ runTestEnviroment "/home/user/" [
     File "/GitHub_PASSWORD.txt" False
   ] []
 
-test :: (Eq b, Show b) => (TestEnviroment IP.Primitive -> Either Error b) -> [String] -> Maybe b -> Test
+test :: (Eq b, Show b) => (TestEnvironment IP.Primitive -> Either Error b) -> [String] -> Maybe b -> Test
 test _ [] _ = TestCase $ fail "Incorrect test"
 test f (command : args) expected = TestCase $
   (eitherToMaybe . f) (analyzer . P.Command $ command :| args) @?= expected

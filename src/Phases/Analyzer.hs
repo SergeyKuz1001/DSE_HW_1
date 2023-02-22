@@ -7,8 +7,8 @@ module Phases.Analyzer (
 import qualified Data.Primitive as P
 import Data.ImprovedPrimitive hiding (Primitive(..))
 import qualified Data.ImprovedPrimitive as IP
-import Enviroment.MonadError
-import Enviroment.MonadIO
+import Environment.MonadError
+import Environment.MonadIO
 
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe (listToMaybe)
