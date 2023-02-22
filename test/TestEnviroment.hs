@@ -57,6 +57,7 @@ instance MonadIO TestEnviroment where
     return line
   doesFileExist filePath = isJust <$> findFile filePath
   findExecutable filePath = (>>= (\file -> if isExecutable file then Just (path file) else Nothing)) <$> findFile filePath
+  exit _ = return () -- not used yet
 
 runTestEnviroment :: FilePath -> [File] -> [String] -> TestEnviroment a -> Either Error (a, String)
 runTestEnviroment pwd files inputLines (TestEnviroment m) = fmap outputText <$> runStateT m (GlobalState pwd files inputLines "")

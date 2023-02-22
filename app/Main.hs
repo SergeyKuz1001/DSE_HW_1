@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 module Main (
     main,
   ) where
@@ -5,12 +7,22 @@ module Main (
 import Enviroment
 import Phases
 
-import System.Exit (exitWith)
+import Prelude hiding (putStrLn)
 
 main :: IO ()
-main = do
-  mExitCode <- runEnviroment Nothing $
-    stringReader >>= parser >>= analyzer >>= executor
+main = runEnviroment main'
+
+main' :: (MonadError m, MonadIO m) => m ()
+main' = do
+  mExitCode <- (do
+      string     <- stringReader
+      primitive  <- parser string
+      iPrimitive <- analyzer primitive
+      executor iPrimitive
+    ) `catchError` (\err -> do
+      putStrLn $ show err
+      return Nothing
+    )
   case mExitCode of
-    Nothing -> main
-    Just ec -> exitWith ec
+    Nothing -> main'
+    Just ec -> exit ec

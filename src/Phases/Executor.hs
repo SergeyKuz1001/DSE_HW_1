@@ -5,7 +5,7 @@ module Phases.Executor (
 import Data.ImprovedPrimitive (Primitive)
 import Enviroment.MonadIO
 
-import System.Exit (ExitCode)
+type ExitCode = Int
 
 executor :: MonadIO m => Primitive -> m (Maybe ExitCode)
 executor = undefined

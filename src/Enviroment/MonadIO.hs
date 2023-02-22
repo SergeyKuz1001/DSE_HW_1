@@ -7,6 +7,7 @@ module Enviroment.MonadIO (
     getLine,
     doesFileExist,
     findExecutable,
+    exit,
   ) where
 
 import Prelude hiding (putStr, putStrLn, getLine)
@@ -18,3 +19,4 @@ class Monad m => MonadIO m where
   getLine :: m String
   doesFileExist :: FilePath -> m Bool
   findExecutable :: FilePath -> m (Maybe FilePath)
+  exit :: Int -> m ()
