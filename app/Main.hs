@@ -7,7 +7,7 @@ module Main (
 import Environment
 import Phases
 
-import Prelude hiding (putStrLn)
+import Prelude hiding (print)
 
 main :: IO ()
 main = runEnvironment main'
@@ -20,7 +20,7 @@ main' = do
       iPrimitive <- analyzer primitive
       executor iPrimitive
     ) `catchError` (\err -> do
-      putStrLn $ show err
+      print err
       return Nothing
     )
   case mExitCode of

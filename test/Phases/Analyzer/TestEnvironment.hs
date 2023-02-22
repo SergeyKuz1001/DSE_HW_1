@@ -14,7 +14,8 @@ import Environment.MonadFS.Internal
 
 import qualified Control.Monad.Except as ME
 import Control.Monad.State (StateT, state, gets, runStateT)
-import Data.Maybe (listToMaybe, isJust)
+import Data.List (find)
+import Data.Maybe (isJust)
 import Prelude hiding (putStr, putStrLn, getLine)
 
 data GlobalState = GlobalState
@@ -35,7 +36,7 @@ instance MonadFS TestEnvironment where
               else if head filePath == '/'
                 then filePath
                 else asFilePath (pwd gs) ++ filePath
-      in  listToMaybe $ filter ((filePath' ==) . asFilePath . absFilePath) allFiles
+      in  find ((filePath' ==) . asFilePath . absFilePath) allFiles
 
 runTestEnvironment :: AbsFilePath -> [File] -> TestEnvironment a -> Either Error a
 runTestEnvironment pwd files (TestEnvironment m) = fst <$> runStateT m (GlobalState pwd files)
