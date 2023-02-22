@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.ImprovedPrimitive</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-2"></span><span>    </span><span class="annot"><a href="Data.ImprovedPrimitive.html#Primitive"><span class="hs-identifier">Primitive</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-3"></span><span>    </span><span class="annot"><a href="Data.ImprovedPrimitive.html#Command"><span class="hs-identifier">Command</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-4"></span><span>    </span><span class="annot"><a href="Data.ImprovedPrimitive.html#Special"><span class="hs-identifier">Special</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-5"></span><span>    </span><span class="annot"><a href="Data.ImprovedPrimitive.html#Common"><span class="hs-identifier">Common</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-6"></span><span>    </span><span class="annot"><a href="Data.ImprovedPrimitive.html#Internal"><span class="hs-identifier">Internal</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-7"></span><span>    </span><span class="annot"><a href="Data.ImprovedPrimitive.html#External"><span class="hs-identifier">External</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Environment.MonadFS.Internal.html"><span class="hs-identifier">Environment.MonadFS.Internal</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Environment.MonadFS.Internal.html#AbsFilePath"><span class="hs-identifier">AbsFilePath</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">data</span><span> </span><span id="Primitive"><span class="annot"><a href="Data.ImprovedPrimitive.html#Primitive"><span class="hs-identifier hs-var">Primitive</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Command"><span class="annot"><a href="Data.ImprovedPrimitive.html#Command"><span class="hs-identifier hs-var">Command</span></a></span></span><span> </span><span class="annot"><a href="Data.ImprovedPrimitive.html#Command"><span class="hs-identifier hs-type">Command</span></a></span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679040777"><span id="local-6989586621679040780"><span class="annot"><span class="annottext">Primitive -&gt; Primitive -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Primitive -&gt; Primitive -&gt; Bool
+$c/= :: Primitive -&gt; Primitive -&gt; Bool
+== :: Primitive -&gt; Primitive -&gt; Bool
+$c== :: Primitive -&gt; Primitive -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679040767"><span id="local-6989586621679040769"><span id="local-6989586621679040774"><span class="annot"><span class="annottext">Int -&gt; Primitive -&gt; ShowS
+[Primitive] -&gt; ShowS
+Primitive -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Primitive] -&gt; ShowS
+$cshowList :: [Primitive] -&gt; ShowS
+show :: Primitive -&gt; String
+$cshow :: Primitive -&gt; String
+showsPrec :: Int -&gt; Primitive -&gt; ShowS
+$cshowsPrec :: Int -&gt; Primitive -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">data</span><span> </span><span id="Command"><span class="annot"><a href="Data.ImprovedPrimitive.html#Command"><span class="hs-identifier hs-var">Command</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Special"><span class="annot"><a href="Data.ImprovedPrimitive.html#Special"><span class="hs-identifier hs-var">Special</span></a></span></span><span> </span><span class="annot"><a href="Data.ImprovedPrimitive.html#Special"><span class="hs-identifier hs-type">Special</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Common"><span class="annot"><a href="Data.ImprovedPrimitive.html#Common"><span class="hs-identifier hs-var">Common</span></a></span></span><span> </span><span class="annot"><a href="Data.ImprovedPrimitive.html#Common"><span class="hs-identifier hs-type">Common</span></a></span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679040758"><span id="local-6989586621679040762"><span class="annot"><span class="annottext">Command -&gt; Command -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Command -&gt; Command -&gt; Bool
+$c/= :: Command -&gt; Command -&gt; Bool
+== :: Command -&gt; Command -&gt; Bool
+$c== :: Command -&gt; Command -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679040748"><span id="local-6989586621679040750"><span id="local-6989586621679040756"><span class="annot"><span class="annottext">Int -&gt; Command -&gt; ShowS
+[Command] -&gt; ShowS
+Command -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Command] -&gt; ShowS
+$cshowList :: [Command] -&gt; ShowS
+show :: Command -&gt; String
+$cshow :: Command -&gt; String
+showsPrec :: Int -&gt; Command -&gt; ShowS
+$cshowsPrec :: Int -&gt; Command -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">data</span><span> </span><span id="Special"><span class="annot"><a href="Data.ImprovedPrimitive.html#Special"><span class="hs-identifier hs-var">Special</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Exit"><span class="annot"><a href="Data.ImprovedPrimitive.html#Exit"><span class="hs-identifier hs-var">Exit</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679040740"><span id="local-6989586621679040745"><span class="annot"><span class="annottext">Special -&gt; Special -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Special -&gt; Special -&gt; Bool
+$c/= :: Special -&gt; Special -&gt; Bool
+== :: Special -&gt; Special -&gt; Bool
+$c== :: Special -&gt; Special -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679040729"><span id="local-6989586621679040731"><span id="local-6989586621679040737"><span class="annot"><span class="annottext">Int -&gt; Special -&gt; ShowS
+[Special] -&gt; ShowS
+Special -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Special] -&gt; ShowS
+$cshowList :: [Special] -&gt; ShowS
+show :: Special -&gt; String
+$cshow :: Special -&gt; String
+showsPrec :: Int -&gt; Special -&gt; ShowS
+$cshowsPrec :: Int -&gt; Special -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">data</span><span> </span><span id="Common"><span class="annot"><a href="Data.ImprovedPrimitive.html#Common"><span class="hs-identifier hs-var">Common</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Internal"><span class="annot"><a href="Data.ImprovedPrimitive.html#Internal"><span class="hs-identifier hs-var">Internal</span></a></span></span><span> </span><span class="annot"><a href="Data.ImprovedPrimitive.html#Internal"><span class="hs-identifier hs-type">Internal</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="External"><span class="annot"><a href="Data.ImprovedPrimitive.html#External"><span class="hs-identifier hs-var">External</span></a></span></span><span> </span><span class="annot"><a href="Data.ImprovedPrimitive.html#External"><span class="hs-identifier hs-type">External</span></a></span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679040720"><span id="local-6989586621679040724"><span class="annot"><span class="annottext">Common -&gt; Common -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Common -&gt; Common -&gt; Bool
+$c/= :: Common -&gt; Common -&gt; Bool
+== :: Common -&gt; Common -&gt; Bool
+$c== :: Common -&gt; Common -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679040710"><span id="local-6989586621679040712"><span id="local-6989586621679040718"><span class="annot"><span class="annottext">Int -&gt; Common -&gt; ShowS
+[Common] -&gt; ShowS
+Common -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Common] -&gt; ShowS
+$cshowList :: [Common] -&gt; ShowS
+show :: Common -&gt; String
+$cshow :: Common -&gt; String
+showsPrec :: Int -&gt; Common -&gt; ShowS
+$cshowsPrec :: Int -&gt; Common -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">data</span><span> </span><span id="Internal"><span class="annot"><a href="Data.ImprovedPrimitive.html#Internal"><span class="hs-identifier hs-var">Internal</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Cat"><span class="annot"><a href="Data.ImprovedPrimitive.html#Cat"><span class="hs-identifier hs-var">Cat</span></a></span></span><span> </span><span class="annot"><a href="Environment.MonadFS.Internal.html#AbsFilePath"><span class="hs-identifier hs-type">AbsFilePath</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Echo"><span class="annot"><a href="Data.ImprovedPrimitive.html#Echo"><span class="hs-identifier hs-var">Echo</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Wc"><span class="annot"><a href="Data.ImprovedPrimitive.html#Wc"><span class="hs-identifier hs-var">Wc</span></a></span></span><span> </span><span class="annot"><a href="Environment.MonadFS.Internal.html#AbsFilePath"><span class="hs-identifier hs-type">AbsFilePath</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Pwd"><span class="annot"><a href="Data.ImprovedPrimitive.html#Pwd"><span class="hs-identifier hs-var">Pwd</span></a></span></span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679040696"><span id="local-6989586621679040704"><span class="annot"><span class="annottext">Internal -&gt; Internal -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Internal -&gt; Internal -&gt; Bool
+$c/= :: Internal -&gt; Internal -&gt; Bool
+== :: Internal -&gt; Internal -&gt; Bool
+$c== :: Internal -&gt; Internal -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679040679"><span id="local-6989586621679040681"><span id="local-6989586621679040692"><span class="annot"><span class="annottext">Int -&gt; Internal -&gt; ShowS
+[Internal] -&gt; ShowS
+Internal -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Internal] -&gt; ShowS
+$cshowList :: [Internal] -&gt; ShowS
+show :: Internal -&gt; String
+$cshow :: Internal -&gt; String
+showsPrec :: Int -&gt; Internal -&gt; ShowS
+$cshowsPrec :: Int -&gt; Internal -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">data</span><span> </span><span id="External"><span class="annot"><a href="Data.ImprovedPrimitive.html#External"><span class="hs-identifier hs-var">External</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Arguments"><span class="annot"><a href="Data.ImprovedPrimitive.html#Arguments"><span class="hs-identifier hs-var">Arguments</span></a></span></span><span> </span><span class="annot"><a href="Environment.MonadFS.Internal.html#AbsFilePath"><span class="hs-identifier hs-type">AbsFilePath</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">]</span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679040669"><span id="local-6989586621679040674"><span class="annot"><span class="annottext">External -&gt; External -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: External -&gt; External -&gt; Bool
+$c/= :: External -&gt; External -&gt; Bool
+== :: External -&gt; External -&gt; Bool
+$c== :: External -&gt; External -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679040658"><span id="local-6989586621679040660"><span id="local-6989586621679040666"><span class="annot"><span class="annottext">Int -&gt; External -&gt; ShowS
+[External] -&gt; ShowS
+External -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [External] -&gt; ShowS
+$cshowList :: [External] -&gt; ShowS
+show :: External -&gt; String
+$cshow :: External -&gt; String
+showsPrec :: Int -&gt; External -&gt; ShowS
+$cshowsPrec :: Int -&gt; External -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span></pre></body></html>

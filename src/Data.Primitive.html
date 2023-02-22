@@ -1,0 +1,29 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.Primitive</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-2"></span><span>    </span><span class="annot"><a href="Data.Primitive.html#Primitive"><span class="hs-identifier">Primitive</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-3"></span><span>    </span><span class="annot"><a href="Data.Primitive.html#Command"><span class="hs-identifier">Command</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-4"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List.NonEmpty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">NonEmpty</span></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">data</span><span> </span><span id="Primitive"><span class="annot"><a href="Data.Primitive.html#Primitive"><span class="hs-identifier hs-var">Primitive</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Command"><span class="annot"><a href="Data.Primitive.html#Command"><span class="hs-identifier hs-var">Command</span></a></span></span><span> </span><span class="annot"><a href="Data.Primitive.html#Command"><span class="hs-identifier hs-type">Command</span></a></span><span>
+</span><span id="line-9"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679040381"><span id="local-6989586621679040386"><span class="annot"><span class="annottext">Primitive -&gt; Primitive -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Primitive -&gt; Primitive -&gt; Bool
+$c/= :: Primitive -&gt; Primitive -&gt; Bool
+== :: Primitive -&gt; Primitive -&gt; Bool
+$c== :: Primitive -&gt; Primitive -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679040366"><span id="local-6989586621679040368"><span id="local-6989586621679040375"><span class="annot"><span class="annottext">Int -&gt; Primitive -&gt; ShowS
+[Primitive] -&gt; ShowS
+Primitive -&gt; [Char]
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; [Char]) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Primitive] -&gt; ShowS
+$cshowList :: [Primitive] -&gt; ShowS
+show :: Primitive -&gt; [Char]
+$cshow :: Primitive -&gt; [Char]
+showsPrec :: Int -&gt; Primitive -&gt; ShowS
+$cshowsPrec :: Int -&gt; Primitive -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">type</span><span> </span><span id="Command"><span class="annot"><a href="Data.Primitive.html#Command"><span class="hs-identifier hs-var">Command</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-12"></span></pre></body></html>
