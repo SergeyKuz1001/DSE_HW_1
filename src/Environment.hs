@@ -13,14 +13,17 @@ module Environment (
 import Environment.MonadError
 import Environment.MonadExit
 import Environment.MonadFS
+import Environment.MonadFS.Internal
 import Environment.MonadIO
 
 import qualified Control.Monad.Except as ME
 import qualified Control.Monad.IO.Class as MIO
+import Data.Monoid (First(..), getFirst)
 import Prelude hiding (putStr, putStrLn, getLine)
 import qualified Prelude as P
 import qualified System.Directory as D
 import System.Exit (exitWith, ExitCode(..))
+import qualified System.FilePath as FP
 
 newtype Environment a = Environment (ME.ExceptT Error IO a)
   deriving (Functor, Applicative, Monad, ME.MonadError Error, MonadError, MIO.MonadIO)
@@ -33,7 +36,25 @@ instance MonadIO Environment where
   getLine = toEnv $ P.getLine
 
 instance MonadFS Environment where
-  findFile = undefined
+  findFile path
+    | FP.isAbsolute path = toEnv $ do
+        exists <- D.doesFileExist path
+        if not exists
+          then return Nothing
+          else do
+            perms <- D.getPermissions path
+            let perms' = (Permissions <$> D.readable <*> D.writable <*> D.executable) perms
+            return . Just $ File (AbsFilePath path) perms'
+    | otherwise = do
+        absPath <- toEnv $ D.makeAbsolute path
+        findFile absPath
+  findFileAsExecutable paths path
+    | FP.isAbsolute path = findFile path
+    | FP.pathSeparator `elem` path = findFile path
+    | otherwise = do
+        let paths' = ((FP.</> path) . asFilePath) <$> paths
+        mFiles <- traverse findFile paths'
+        return . getFirst . mconcat $ First <$> mFiles
 
 instance MonadExit Environment where
   exit code = toEnv . exitWith $
