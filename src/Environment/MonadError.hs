@@ -1,13 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Environment.MonadError (
-    module Control.Monad.Except,
     Error(..),
     MonadError,
     (?:),
     (@:),
     (?>=),
     (@>=),
+    ME.catchError,
   ) where
 
 import Control.Monad.Except hiding (MonadError, MonadIO)

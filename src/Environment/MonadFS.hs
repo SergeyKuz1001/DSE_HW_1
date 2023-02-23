@@ -12,8 +12,6 @@ module Environment.MonadFS (
 
 import Environment.MonadFS.Internal
 
-import Data.Maybe (isJust)
-
 class Monad m => MonadFS m where
   findFile :: FilePath -> m (Maybe File)
 

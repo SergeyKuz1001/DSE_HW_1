@@ -22,11 +22,11 @@ import qualified Prelude as P
 import qualified System.Directory as D
 import System.Exit (exitWith, ExitCode(..))
 
-newtype Environment a = Environment (ExceptT Error IO a)
+newtype Environment a = Environment (ME.ExceptT Error IO a)
   deriving (Functor, Applicative, Monad, ME.MonadError Error, MonadError, MIO.MonadIO)
 
 toEnv :: IO a -> Environment a
-toEnv = Environment . liftIO
+toEnv = Environment . MIO.liftIO
 
 instance MonadIO Environment where
   putStr  = toEnv . P.putStr
@@ -41,7 +41,7 @@ instance MonadExit Environment where
 
 runEnvironment :: Environment a -> IO a
 runEnvironment (Environment m) = do
-  eRes <- runExceptT m
+  eRes <- ME.runExceptT m
   case eRes of
     Right res -> return res
     Left err  -> fail $ "UnexpectedError: " ++ show err
