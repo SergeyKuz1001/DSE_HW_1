@@ -5,7 +5,6 @@ module Environment.MonadFS (
     MonadFS,
     findFile,
     findFileAsExecutable,
-    parsePATHvariable,
     doesFileExist,
     doesExecutableExist,
     isReadable,
@@ -15,27 +14,18 @@ module Environment.MonadFS (
 
 import Environment.MonadFS.Internal
 
-import Data.List (unfoldr)
-
 class Monad m => MonadFS m where
   findFile :: FilePath -> m (Maybe File)
-  findFile = findFileAsExecutable []
-  findFileAsExecutable :: [AbsFilePath] -> FilePath -> m (Maybe File)
-  findFileAsExecutable _ = findFile
-
-splitBy :: Eq a => a -> [a] -> [[a]]
-splitBy sep = unfoldr $ (\(p, ps) -> if null p then Nothing else Just (p, drop 1 ps)) . span (/= sep)
-
-parsePATHvariable :: String -> [AbsFilePath]
-parsePATHvariable "" = []
-parsePATHvariable paths = AbsFilePath <$> splitBy (if head paths == '/' then ':' else ';') paths
+  findFile = findFileAsExecutable
+  findFileAsExecutable :: FilePath -> m (Maybe File)
+  findFileAsExecutable = findFile
 
 doesFileExist :: MonadFS m => FilePath -> m (Maybe AbsFilePath)
 doesFileExist path = fmap absFilePath <$> findFile path
 
-doesExecutableExist :: MonadFS m => [AbsFilePath] -> FilePath -> m (Maybe AbsFilePath)
-doesExecutableExist paths path = do
-  mFile <- findFileAsExecutable paths path
+doesExecutableExist :: MonadFS m => FilePath -> m (Maybe AbsFilePath)
+doesExecutableExist path = do
+  mFile <- findFileAsExecutable path
   if fmap (execPerm . permissions) mFile == Just True
     then return $ absFilePath <$> mFile
     else return Nothing

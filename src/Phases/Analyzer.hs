@@ -44,6 +44,5 @@ analyzer (P.Command (command :| args)) =
         readMaybe arg @: error "argument of `exit` command must be integer")
       return . IP.Command . Special $ Exit mInt
     _ -> do
-      absFilePath <- doesFileExist command @>= error ("can't find file by path " ++ command)
-      isExecutable absFilePath ?>= error ("can't find executable file by path " ++ command)
+      absFilePath <- doesExecutableExist command @>= error ("can't find executable file by path " ++ command)
       return . IP.Command . Common . External $ Arguments absFilePath args

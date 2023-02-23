@@ -16,7 +16,6 @@ import Environment.MonadFS
 import Environment.MonadFS.Internal
 import Environment.MonadIO
 
-import Control.Applicative (asum)
 import qualified Control.Monad.Except as ME
 import qualified Control.Monad.IO.Class as MIO
 import Prelude hiding (putStr, putStrLn, getLine)
@@ -48,13 +47,6 @@ instance MonadFS Environment where
     | otherwise = do
         absPath <- toEnv $ D.makeAbsolute path
         findFile absPath
-  findFileAsExecutable paths path
-    | FP.isAbsolute path = findFile path
-    | FP.pathSeparator `elem` path = findFile path
-    | otherwise = do
-        let paths' = ((FP.</> path) . asFilePath) <$> paths
-        mFiles <- traverse findFile paths'
-        return $ asum mFiles
 
 instance MonadExit Environment where
   exit code = toEnv . exitWith $
