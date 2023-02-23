@@ -16,9 +16,9 @@ import Environment.MonadFS
 import Environment.MonadFS.Internal
 import Environment.MonadIO
 
+import Control.Applicative (asum)
 import qualified Control.Monad.Except as ME
 import qualified Control.Monad.IO.Class as MIO
-import Data.Monoid (First(..), getFirst)
 import Prelude hiding (putStr, putStrLn, getLine)
 import qualified Prelude as P
 import qualified System.Directory as D
@@ -54,7 +54,7 @@ instance MonadFS Environment where
     | otherwise = do
         let paths' = ((FP.</> path) . asFilePath) <$> paths
         mFiles <- traverse findFile paths'
-        return . getFirst . mconcat $ First <$> mFiles
+        return $ asum mFiles
 
 instance MonadExit Environment where
   exit code = toEnv . exitWith $
