@@ -1,11 +1,12 @@
-module Data.Primitive (
-    Primitive(..),
-    Command(..),
-  ) where
+module Data.Primitive
+  ( Primitive (..),
+  )
+where
 
-import Data.List.NonEmpty (NonEmpty(..))
+import Data.List.NonEmpty (NonEmpty (..))
 
-data Primitive = Command Command
+data Primitive
+  = Command (NonEmpty String)
+  | Assignment String String
+  | EmptyCommand
   deriving (Eq, Show)
-
-type Command = NonEmpty String
