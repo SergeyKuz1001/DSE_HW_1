@@ -6,6 +6,8 @@ module Environment (
     module Environment.MonadExit,
     module Environment.MonadFS,
     module Environment.MonadIO,
+    module Environment.MonadVarsReader,
+    module Environment.MonadVarsWriter,
     Environment,
     runEnvironment,
   ) where
@@ -15,6 +17,8 @@ import Environment.MonadExit
 import Environment.MonadFS
 import Environment.MonadFS.Internal
 import Environment.MonadIO
+import Environment.MonadVarsReader
+import Environment.MonadVarsWriter
 
 import qualified Control.Monad.Except as ME
 import qualified Control.Monad.IO.Class as MIO

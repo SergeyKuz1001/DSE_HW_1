@@ -1,4 +1,6 @@
 module Environment.MonadVarsReader.MonadVarPwdReader (
+    MonadVarPwdReader,
+    getVarPwd,
   ) where
 
 import Environment.MonadFS (AbsFilePath)

@@ -1,10 +1,14 @@
 module Environment.MonadVarsReader.MonadVarPathReader (
     MonadVarPathReader,
     getVarPath,
+    varPathSeparator,
     parseVarPath,
   ) where
 
 import Environment.MonadFS.Internal (AbsFilePath(..))
+
+import Data.List (unfoldr)
+import System.FilePath (pathSeparator)
 
 class Monad m => MonadVarPathReader m where
   getVarPath :: m [AbsFilePath]
@@ -12,6 +16,8 @@ class Monad m => MonadVarPathReader m where
 splitBy :: Eq a => a -> [a] -> [[a]]
 splitBy sep = unfoldr $ (\(p, ps) -> if null p then Nothing else Just (p, drop 1 ps)) . span (/= sep)
 
+varPathSeparator :: Char
+varPathSeparator = if pathSeparator == '/' then ':' else ';'
+
 parseVarPath :: String -> [AbsFilePath]
-parseVarPath "" = []
-parseVarPath paths = AbsFilePath <$> splitBy (if head paths == '/' then ':' else ';') paths
+parseVarPath paths = AbsFilePath <$> splitBy varPathSeparator paths
