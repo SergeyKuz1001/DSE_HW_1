@@ -1,14 +1,14 @@
 module Environment.MonadVarsWriter (
-    module Environment.MonadVarsWriter.MonadVarPathWriter,
-    module Environment.MonadVarsWriter.MonadVarPwdWriter,
+    module Environment.MonadVarPathWriter,
+    module Environment.MonadVarPwdWriter,
     MonadVarsWriter,
     setVar,
     setVarPathDefault,
     setVarPwdDefault,
   ) where
 
-import Environment.MonadVarsWriter.MonadVarPathWriter
-import Environment.MonadVarsWriter.MonadVarPwdWriter
+import Environment.MonadVarPathWriter
+import Environment.MonadVarPwdWriter
 
 import Environment.MonadFS.Internal (AbsFilePath(..))
 

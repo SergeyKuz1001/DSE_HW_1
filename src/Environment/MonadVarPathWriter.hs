@@ -1,11 +1,11 @@
-module Environment.MonadVarsWriter.MonadVarPathWriter (
+module Environment.MonadVarPathWriter (
     MonadVarPathWriter,
     setVarPath,
     formatVarPath,
   ) where
 
 import Environment.MonadFS.Internal (AbsFilePath(..))
-import Environment.MonadVarsReader.MonadVarPathReader (varPathSeparator)
+import Environment.MonadVarPathReader (varPathSeparator)
 
 class Monad m => MonadVarPathWriter m where
   setVarPath :: [AbsFilePath] -> m ()

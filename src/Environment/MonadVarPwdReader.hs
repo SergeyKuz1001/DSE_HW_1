@@ -1,4 +1,4 @@
-module Environment.MonadVarsReader.MonadVarPwdReader (
+module Environment.MonadVarPwdReader (
     MonadVarPwdReader,
     getVarPwd,
   ) where

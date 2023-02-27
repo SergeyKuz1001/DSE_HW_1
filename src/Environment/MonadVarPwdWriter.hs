@@ -1,4 +1,4 @@
-module Environment.MonadVarsWriter.MonadVarPwdWriter (
+module Environment.MonadVarPwdWriter (
     MonadVarPwdWriter,
     setVarPwd,
   ) where

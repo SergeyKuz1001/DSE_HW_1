@@ -1,14 +1,15 @@
 module Environment.MonadVarsReader (
-    module Environment.MonadVarsReader.MonadVarPathReader,
-    module Environment.MonadVarsReader.MonadVarPwdReader,
+    module Environment.MonadVarPathReader,
+    module Environment.MonadVarPwdReader,
     MonadVarsReader,
     getVar,
+    getVars,
     getVarPathDefault,
     getVarPwdDefault,
   ) where
 
-import Environment.MonadVarsReader.MonadVarPathReader
-import Environment.MonadVarsReader.MonadVarPwdReader
+import Environment.MonadVarPathReader
+import Environment.MonadVarPwdReader
 
 import Environment.MonadFS.Internal (AbsFilePath(..))
 

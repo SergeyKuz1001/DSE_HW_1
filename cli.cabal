@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 
@@ -32,6 +32,12 @@ library
       Environment.MonadFS
       Environment.MonadFS.Internal
       Environment.MonadIO
+      Environment.MonadVarPathReader
+      Environment.MonadVarPathWriter
+      Environment.MonadVarPwdReader
+      Environment.MonadVarPwdWriter
+      Environment.MonadVarsReader
+      Environment.MonadVarsWriter
       Phases
       Phases.Analyzer
       Phases.Executor

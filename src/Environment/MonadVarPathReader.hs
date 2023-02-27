@@ -1,4 +1,4 @@
-module Environment.MonadVarsReader.MonadVarPathReader (
+module Environment.MonadVarPathReader (
     MonadVarPathReader,
     getVarPath,
     varPathSeparator,

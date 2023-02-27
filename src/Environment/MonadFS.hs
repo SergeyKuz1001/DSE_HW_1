@@ -14,7 +14,9 @@ module Environment.MonadFS (
 
 import Environment.MonadFS.Internal
 
-class Monad m => MonadFS m where
+import Environment.MonadVarPathReader (MonadVarPathReader)
+
+class MonadVarPathReader m => MonadFS m where
   findFile :: FilePath -> m (Maybe File)
   findFile = findFileAsExecutable
   findFileAsExecutable :: FilePath -> m (Maybe File)

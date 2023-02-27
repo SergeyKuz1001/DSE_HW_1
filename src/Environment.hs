@@ -6,8 +6,8 @@ module Environment (
     module Environment.MonadExit,
     module Environment.MonadFS,
     module Environment.MonadIO,
-    module Environment.MonadVarsReader,
-    module Environment.MonadVarsWriter,
+    module Environment.MonadVarPathReader,
+    module Environment.MonadVarPwdReader,
     Environment,
     runEnvironment,
   ) where
@@ -17,8 +17,8 @@ import Environment.MonadExit
 import Environment.MonadFS
 import Environment.MonadFS.Internal
 import Environment.MonadIO
-import Environment.MonadVarsReader
-import Environment.MonadVarsWriter
+import Environment.MonadVarPathReader
+import Environment.MonadVarPwdReader
 
 import qualified Control.Monad.Except as ME
 import qualified Control.Monad.IO.Class as MIO
@@ -37,6 +37,12 @@ toEnv = Environment . MIO.liftIO
 instance MonadIO Environment where
   putStr  = toEnv . P.putStr
   getLine = toEnv $ P.getLine
+
+instance MonadVarPathReader Environment where
+  getVarPath = undefined -- TODO
+
+instance MonadVarPwdReader Environment where
+  getVarPwd = undefined --TODO
 
 instance MonadFS Environment where
   findFile path
