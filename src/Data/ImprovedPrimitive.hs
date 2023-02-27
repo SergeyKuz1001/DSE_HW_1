@@ -9,7 +9,7 @@ module Data.ImprovedPrimitive (
 
 import Environment.MonadFS.Internal (AbsFilePath)
 
-data Primitive = Command Command
+data Primitive = Command Command | EmptyCommand
   deriving (Eq, Show)
 
 data Command = Special Special | Common Common

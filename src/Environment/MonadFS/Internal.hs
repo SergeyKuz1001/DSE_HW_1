@@ -5,7 +5,10 @@ module Environment.MonadFS.Internal (
   ) where
 
 newtype AbsFilePath = AbsFilePath { asFilePath :: FilePath }
-  deriving (Eq, Show)
+  deriving Eq
+
+instance Show AbsFilePath where
+  show (AbsFilePath filePath) = filePath
 
 data Permissions = Permissions
   { readPerm  :: Bool
