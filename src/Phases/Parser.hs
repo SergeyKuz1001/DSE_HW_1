@@ -21,17 +21,17 @@ skipSpaces ('\t' : cs) = skipSpaces cs
 skipSpaces s           = pure s
 
 firstWord :: MonadError m => String -> m Primitive
-firstWord   "" = pure $ Command []
-firstWord   ('\\' : '\\' : cs) = prependChar '\\' <$> firstWord cs
-firstWord   ('\\' : '\"' : cs) = prependChar '\"' <$> firstWord cs
-firstWord   ('\\' : ' '  : cs) = Command . filter (not . null) . headMap (' ' :) <$> splitBySpaces cs
-firstWord   ('\\' : '='  : cs) = Command . filter (not . null) . headMap ('=' :) <$> splitBySpaces cs
-firstWord   (       ' '  : cs) = Command . ("" :) . filter (not . null)          <$> splitBySpaces cs
-firstWord   (       '\t' : cs) = firstWord (' ' : cs)
-firstWord s@('\'' : _)         = Command . filter (not . null) <$> splitBySpaces s
-firstWord s@('\"' : _)         = Command . filter (not . null) <$> splitBySpaces s
-firstWord   (       '='  : cs) = Assignment "" <$> parseValue cs
-firstWord   (       c    : cs) = prependChar c <$> firstWord cs
+firstWord     ""                 = pure $ Command []
+firstWord   ( '\\' : '\\' : cs ) = prependChar '\\' <$> firstWord cs
+firstWord   ( '\\' : '\"' : cs ) = prependChar '\"' <$> firstWord cs
+firstWord   ( '\\' : ' '  : cs ) = Command . filter (not . null) . headMap (' ' :) <$> splitBySpaces cs
+firstWord   ( '\\' : '='  : cs ) = Command . filter (not . null) . headMap ('=' :) <$> splitBySpaces cs
+firstWord   (        ' '  : cs ) = Command . ("" :) . filter (not . null)          <$> splitBySpaces cs
+firstWord   (        '\t' : cs ) = firstWord (' ' : cs)
+firstWord s@(        '\'' : _  ) = Command . filter (not . null) <$> splitBySpaces s
+firstWord s@(        '\"' : _  ) = Command . filter (not . null) <$> splitBySpaces s
+firstWord   (        '='  : cs ) = Assignment "" <$> parseValue cs
+firstWord   (        c    : cs ) = prependChar c <$> firstWord cs
 
 parseValue :: MonadError m => String -> m String
 parseValue s = splitBySpaces s >>= \case
