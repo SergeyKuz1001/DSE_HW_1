@@ -1,12 +1,14 @@
-module Data.Primitive
-  ( Primitive (..),
-  )
-where
+module Data.Primitive (
+    VarName,
+    Primitive (..),
+  ) where
+
+import Data.Primitive.Internal
 
 import Data.List.NonEmpty (NonEmpty (..))
 
 data Primitive
   = Command (NonEmpty String)
-  | Assignment String String
+  | Assignment VarName String
   | EmptyCommand
   deriving (Eq, Show)

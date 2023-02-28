@@ -7,6 +7,7 @@ module Environment.MonadError (
     (@:),
     (?>=),
     (@>=),
+    ME.throwError,
     ME.catchError,
   ) where
 

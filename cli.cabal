@@ -26,6 +26,7 @@ library
   exposed-modules:
       Data.ImprovedPrimitive
       Data.Primitive
+      Data.Primitive.Internal
       Environment
       Environment.MonadError
       Environment.MonadExit

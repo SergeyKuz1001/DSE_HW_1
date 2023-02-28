@@ -2,11 +2,12 @@
 
 module Phases.Parser ( parser ) where
 
-import           Control.Monad.Except   (throwError)
+import           Data.Primitive         (Primitive (..))
+import           Data.Primitive.Internal (VarName (..))
+import           Environment.MonadError (Error (..), MonadError, throwError)
+
 import           Data.Bifunctor         (first)
 import           Data.List.NonEmpty     (NonEmpty (..))
-import           Data.Primitive         (Primitive (..))
-import           Environment.MonadError (Error (..), MonadError)
 import           Prelude
 
 error' :: String -> Error
@@ -25,7 +26,7 @@ parser str =
           [] ->
             if '/' `elem` name
               then pure . Command $ w :| ws
-              else pure $ Assignment name value
+              else pure $ Assignment (VarName name) value
           _ -> throwError $ error "Command calls with variable overriding are not supported"
         (_, _) -> error "Unreachable code detected"
 

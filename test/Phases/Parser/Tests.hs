@@ -2,11 +2,13 @@
 
 module Phases.Parser.Tests (testsParser) where
 
-import           Control.Monad.Except
-import           Data.List.NonEmpty
 import           Data.Primitive
+import           Data.Primitive.Internal
 import qualified Environment.MonadError as E
 import           Phases.Parser
+
+import           Control.Monad.Except
+import           Data.List.NonEmpty
 import           Test.HUnit
 
 newtype TestEnvironment a = TestEnvironment (Either E.Error a)
@@ -21,6 +23,9 @@ mkTest name arg expected = TestCase . assertEqual name expected . eitherToMaybe 
     eitherToMaybe (Right x) = Just x
     eitherToMaybe (Left _)  = Nothing
 
+assignment :: String -> String -> Primitive
+assignment = Assignment . VarName
+
 testsParser :: Test
 testsParser = TestList [
   mkTest "Empty spaces" "  \t  \t " $ Just EmptyCommand,
@@ -28,14 +33,14 @@ testsParser = TestList [
   mkTest "Single command with spaces" "   cmd   " $ Just $ Command $ "cmd" :| [],
   mkTest "Other single command" "qwer" $ Just $ Command $ "qwer" :| [],
   mkTest "Other single command with spaces" "   qwer   " $ Just $ Command $ "qwer" :| [],
-  mkTest "Empty assignment" "x=" $ Just $ Assignment "x" "",
-  mkTest "Empty assignment with spaces" "   x=   " $ Just $ Assignment "x" "",
-  mkTest "Assignment" "x=1234" $ Just $ Assignment "x" "1234",
-  mkTest "Assignment with spaces" "   x=1234   " $ Just $ Assignment "x" "1234",
+  mkTest "Empty assignment" "x=" $ Just $ assignment "x" "",
+  mkTest "Empty assignment with spaces" "   x=   " $ Just $ assignment "x" "",
+  mkTest "Assignment" "x=1234" $ Just $ assignment "x" "1234",
+  mkTest "Assignment with spaces" "   x=1234   " $ Just $ assignment "x" "1234",
   mkTest "Assignment failure" "x=1234 cmd" Nothing,
   mkTest "Command with arguments" "cmd arg1 arg2 arg3" $ Just $ Command $ "cmd" :| ["arg1", "arg2", "arg3"],
-  mkTest "Single quotes" "'x='" $ Just $ Assignment "x" "",
-  mkTest "Double quotes" "\"x=\"" $ Just $ Assignment "x" "",
+  mkTest "Single quotes" "'x='" $ Just $ assignment "x" "",
+  mkTest "Double quotes" "\"x=\"" $ Just $ assignment "x" "",
   mkTest "Quoted command" "c'm 'd a\"rg1' ar\"g2' arg3'" $ Just $ Command $ "cm d" :| ["arg1' arg2 arg3"],
   mkTest "Quotes and spaces" " cmd 'arg 1' \"arg 2\" " $ Just $ Command $ "cmd" :| ["arg 1", "arg 2"],
   mkTest "Terminated single quote" "cmd 'arg1" Nothing,
