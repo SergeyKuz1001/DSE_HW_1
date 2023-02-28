@@ -24,7 +24,7 @@ env1 = runTestEnvironment (AbsFilePath "/home/user/") [
 test :: (Eq b, Show b) => (TestEnvironment IP.Primitive -> Either Error b) -> [String] -> Maybe b -> Test
 test _ [] _ = TestCase $ fail "Incorrect test"
 test f (command : args) expected = TestCase $
-  (eitherToMaybe . f) (analyzer . P.Command $ command :| args) @?= expected
+  (eitherToMaybe . f) (analyzer . P.Command $ command : args) @?= expected
     where
       eitherToMaybe (Right x) = Just x
       eitherToMaybe (Left _) = Nothing

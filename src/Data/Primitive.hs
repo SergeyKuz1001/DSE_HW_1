@@ -3,10 +3,9 @@ module Data.Primitive
   )
 where
 
-import Data.List.NonEmpty (NonEmpty (..))
+import           Data.List.NonEmpty (NonEmpty (..))
 
 data Primitive
-  = Command (NonEmpty String)
+  = Command [String]
   | Assignment String String
-  | EmptyCommand
   deriving (Eq, Show)
