@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Phases.Parser ( parser, splitBySpaces ) where
+module Phases.Parser ( parser ) where
 
 import           Control.Monad.Except   (throwError)
 import           Data.Bifunctor         (first)
