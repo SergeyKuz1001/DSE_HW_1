@@ -1,4 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
+
+{- |
+Модуль для выполнения команд.
+-}
 module Phases.Executor (
     executor,
   ) where
@@ -16,6 +20,11 @@ import Environment.MonadVarsReader (MonadVarsReader (getVars))
 
 type WcOutputArguments = (Int, Int, Int, Bool)
 
+{- | Функция принимает, разбирает и исполняет распарсшенный примитив.
+-- Возвращает Maybe ExitCode, где:
+-- Nothing - является состоянием валидного состояния выполнения команды;
+-- JustExit x - является сообщением, что нужно завершить всю оболочку с `x` кодом ошибки.
+-}
 executor :: (MonadIO m, MonadVarsReader m) => Primitive -> m (Maybe ExitCode)
 executor = \case
   Command typeCmd -> case typeCmd of
@@ -25,10 +34,16 @@ executor = \case
       External external -> executeExternal external
   EmptyCommand -> return Nothing
 
+{- |
+Функция для исполнения специальных команд.
+-}
 executeSpecial :: (MonadIO m) => Special -> m (Maybe ExitCode)
 executeSpecial = \case
   Exit mb -> return (mb <|> Just 0)
 
+{- |
+Функция для исполнения внутренних команд.
+-}
 executeInternal :: (MonadIO m, MonadVarPwdReader m) => Internal -> m (Maybe ExitCode)
 executeInternal = \case
   Cat filePath -> do
@@ -57,6 +72,9 @@ executeInternal = \case
         checkOnLine = bool 0 1 $ c == '\n'
         checkOnWord = bool 0 1 $ not isPrevSpace && isSpace c
 
+{- |
+Функция для исполнения внешних команд.
+-}
 executeExternal :: (MonadIO m, MonadVarsReader m) => External -> m (Maybe ExitCode)
 executeExternal = \case
   Arguments pathToCmd args -> do
