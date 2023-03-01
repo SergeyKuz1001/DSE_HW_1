@@ -1,9 +1,14 @@
+{- |
+В данном модуле объявлена монада @'MonadVarPwdReader'@ для получения значения
+переменной PWD.
+-}
 module Environment.MonadVarPwdReader (
-    MonadVarPwdReader,
-    getVarPwd,
+    MonadVarPwdReader (..),
   ) where
 
 import Environment.MonadFS (AbsFilePath)
 
+-- | Монада для получения значения переменной PWD (то есть абсолютного пути до
+-- текущей директории).
 class Monad m => MonadVarPwdReader m where
   getVarPwd :: m AbsFilePath

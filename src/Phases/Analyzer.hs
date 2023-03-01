@@ -1,5 +1,9 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
+{- |
+Модуль предназначен для анализа корректности пользовательского запроса и
+преобразования его в более выразительный формат.
+-}
 module Phases.Analyzer (
     analyzer,
   ) where
@@ -16,9 +20,11 @@ import Data.Maybe (listToMaybe)
 import Prelude hiding (error)
 import Text.Read (readMaybe)
 
+-- | Функция получения объекта-ошибки по информации об ошибке.
 error :: String -> Error
 error = Error "AnalyzingError"
 
+-- | Анализ корректности и преобразование пользовательского запроса.
 analyzer :: (MonadError m, MonadFS m) => P.Primitive -> m IP.Primitive
 analyzer (P.Command (command :| args)) =
   case command of
