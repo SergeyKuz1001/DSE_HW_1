@@ -9,11 +9,8 @@ module Data.Primitive (
 
 import Data.Primitive.Internal
 
-import Data.List.NonEmpty (NonEmpty (..))
-
 -- | Примитив, полученный после парсинга пользовательского запроса.
 data Primitive
-  = Command (NonEmpty String)
+  = Command [String]
   | Assignment VarName String
-  | EmptyCommand
   deriving (Eq, Show)

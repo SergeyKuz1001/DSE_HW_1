@@ -26,7 +26,7 @@ error = Error "AnalyzingError"
 
 -- | Анализ корректности и преобразование пользовательского запроса.
 analyzer :: (MonadError m, MonadFS m) => P.Primitive -> m IP.Primitive
-analyzer (P.Command (command :| args)) =
+analyzer (P.Command (command : args)) =
   case command of
     "cat" -> do
       length args == 1 ?: error "`cat` command must have only one argument"
@@ -54,5 +54,5 @@ analyzer (P.Command (command :| args)) =
     _ -> do
       absFilePath <- doesExecutableExist command @>= error ("can't find executable file by path " ++ command)
       return . IP.Command . Common . External $ Arguments absFilePath args
+analyzer (P.Command []) = return IP.EmptyCommand
 analyzer (P.Assignment _ _) = undefined -- TODO in phase 2
-analyzer P.EmptyCommand = return IP.EmptyCommand

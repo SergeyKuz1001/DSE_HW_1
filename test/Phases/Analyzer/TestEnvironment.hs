@@ -11,7 +11,6 @@ module Phases.Analyzer.TestEnvironment (
 
 import Environment.MonadError
 import Environment.MonadFS
-import Environment.MonadFS.Internal
 import Environment.MonadVarPathReader
 
 import qualified Control.Monad.Except as ME
