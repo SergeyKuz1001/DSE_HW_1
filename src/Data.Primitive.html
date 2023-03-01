@@ -1,29 +1,34 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.Primitive</span><span> </span><span class="hs-special">(</span><span>
-</span><span id="line-2"></span><span>    </span><span class="annot"><a href="Data.Primitive.html#Primitive"><span class="hs-identifier">Primitive</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
-</span><span id="line-3"></span><span>    </span><span class="annot"><a href="Data.Primitive.html#Command"><span class="hs-identifier">Command</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
-</span><span id="line-4"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-5"></span><span>
-</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List.NonEmpty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">NonEmpty</span></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-7"></span><span>
-</span><span id="line-8"></span><span class="hs-keyword">data</span><span> </span><span id="Primitive"><span class="annot"><a href="Data.Primitive.html#Primitive"><span class="hs-identifier hs-var">Primitive</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Command"><span class="annot"><a href="Data.Primitive.html#Command"><span class="hs-identifier hs-var">Command</span></a></span></span><span> </span><span class="annot"><a href="Data.Primitive.html#Command"><span class="hs-identifier hs-type">Command</span></a></span><span>
-</span><span id="line-9"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679040381"><span id="local-6989586621679040386"><span class="annot"><span class="annottext">Primitive -&gt; Primitive -&gt; Bool
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">{- |
+&#1042; &#1076;&#1072;&#1085;&#1085;&#1086;&#1084; &#1084;&#1086;&#1076;&#1091;&#1083;&#1077; &#1086;&#1073;&#1098;&#1103;&#1074;&#1083;&#1077;&#1085;&#1099; &#1086;&#1089;&#1085;&#1086;&#1074;&#1085;&#1099;&#1077; &#1087;&#1088;&#1080;&#1084;&#1080;&#1090;&#1080;&#1074;&#1099;, &#1074; &#1082;&#1086;&#1090;&#1086;&#1088;&#1099;&#1077; &#1090;&#1088;&#1072;&#1085;&#1089;&#1083;&#1080;&#1088;&#1091;&#1077;&#1090;&#1089;&#1103;
+&#1087;&#1086;&#1083;&#1100;&#1079;&#1086;&#1074;&#1072;&#1090;&#1077;&#1083;&#1100;&#1089;&#1082;&#1080;&#1081; &#1079;&#1072;&#1087;&#1088;&#1086;&#1089; &#1087;&#1086;&#1089;&#1083;&#1077; &#1077;&#1075;&#1086; &#1087;&#1072;&#1088;&#1089;&#1080;&#1085;&#1075;&#1072;.
+-}</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.Primitive</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-6"></span><span>    </span><span class="annot"><a href="Data.Primitive.Internal.html#VarName"><span class="hs-identifier">VarName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Primitive.Internal.html#getVarName"><span class="hs-identifier">getVarName</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-7"></span><span>    </span><span class="annot"><a href="Data.Primitive.html#Primitive"><span class="hs-identifier">Primitive</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Primitive.Internal.html"><span class="hs-identifier">Data.Primitive.Internal</span></a></span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- | &#1055;&#1088;&#1080;&#1084;&#1080;&#1090;&#1080;&#1074;, &#1087;&#1086;&#1083;&#1091;&#1095;&#1077;&#1085;&#1085;&#1099;&#1081; &#1087;&#1086;&#1089;&#1083;&#1077; &#1087;&#1072;&#1088;&#1089;&#1080;&#1085;&#1075;&#1072; &#1087;&#1086;&#1083;&#1100;&#1079;&#1086;&#1074;&#1072;&#1090;&#1077;&#1083;&#1100;&#1089;&#1082;&#1086;&#1075;&#1086; &#1079;&#1072;&#1087;&#1088;&#1086;&#1089;&#1072;.</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">data</span><span> </span><span id="Primitive"><span class="annot"><a href="Data.Primitive.html#Primitive"><span class="hs-identifier hs-var">Primitive</span></a></span></span><span>
+</span><span id="line-14"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Command"><span class="annot"><a href="Data.Primitive.html#Command"><span class="hs-identifier hs-var">Command</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">]</span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Assignment"><span class="annot"><a href="Data.Primitive.html#Assignment"><span class="hs-identifier hs-var">Assignment</span></a></span></span><span> </span><span class="annot"><a href="Data.Primitive.Internal.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679042763"><span id="local-6989586621679042771"><span class="annot"><span class="annottext">Primitive -&gt; Primitive -&gt; Bool
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Primitive -&gt; Primitive -&gt; Bool
 $c/= :: Primitive -&gt; Primitive -&gt; Bool
 == :: Primitive -&gt; Primitive -&gt; Bool
 $c== :: Primitive -&gt; Primitive -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679040366"><span id="local-6989586621679040368"><span id="local-6989586621679040375"><span class="annot"><span class="annottext">Int -&gt; Primitive -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679042745"><span id="local-6989586621679042747"><span id="local-6989586621679042758"><span class="annot"><span class="annottext">Int -&gt; Primitive -&gt; ShowS
 [Primitive] -&gt; ShowS
-Primitive -&gt; [Char]
+Primitive -&gt; String
 forall a.
-(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; [Char]) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
 showList :: [Primitive] -&gt; ShowS
 $cshowList :: [Primitive] -&gt; ShowS
-show :: Primitive -&gt; [Char]
-$cshow :: Primitive -&gt; [Char]
+show :: Primitive -&gt; String
+$cshow :: Primitive -&gt; String
 showsPrec :: Int -&gt; Primitive -&gt; ShowS
 $cshowsPrec :: Int -&gt; Primitive -&gt; ShowS
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-10"></span><span>
-</span><span id="line-11"></span><span class="hs-keyword">type</span><span> </span><span id="Command"><span class="annot"><a href="Data.Primitive.html#Command"><span class="hs-identifier hs-var">Command</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-12"></span></pre></body></html>
+</span><span id="line-17"></span></pre></body></html>
