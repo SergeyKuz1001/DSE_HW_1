@@ -24,6 +24,8 @@ dependencies:
 - filepath
 - directory
 - HUnit
+- bytestring
+- containers
 
 ghc-options:
 - -Wall
