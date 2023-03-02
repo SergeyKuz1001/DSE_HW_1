@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 {- |
@@ -12,6 +13,7 @@ module Environment (
     module Environment.MonadIO,
     module Environment.MonadVarPathReader,
     module Environment.MonadVarPwdReader,
+    module Environment.MonadVarsReader,
     Environment,
     runEnvironment,
   ) where
@@ -23,14 +25,18 @@ import Environment.MonadFS.Internal
 import Environment.MonadIO
 import Environment.MonadVarPathReader
 import Environment.MonadVarPwdReader
+import Environment.MonadVarsReader
 
 import qualified Control.Monad.Except as ME
 import qualified Control.Monad.IO.Class as MIO
-import Prelude hiding (putStr, putStrLn, getLine)
+import qualified Data.ByteString as BS
+import Prelude hiding (putStr, putStrLn, getLine, readFile)
 import qualified Prelude as P
 import qualified System.Directory as D
+import System.Environment (getEnv, getEnvironment)
 import System.Exit (exitWith, ExitCode(..))
 import qualified System.FilePath as FP
+import qualified System.Process as PRC
 
 -- | Главный контекст для вычислений в программе.
 newtype Environment a = Environment (ME.ExceptT Error IO a)
@@ -43,12 +49,19 @@ toEnv = Environment . MIO.liftIO
 instance MonadIO Environment where
   putStr  = toEnv . P.putStr
   getLine = toEnv $ P.getLine
+  readFile (AbsFilePath filePath) = toEnv $ P.readFile filePath
+  readFileFromBytes (AbsFilePath filePath) = toEnv $ BS.readFile filePath
+  createProcess (AbsFilePath filePath) args vars = toEnv $ (\case {ExitSuccess -> 0; ExitFailure x -> x}) <$> (PRC.runProcess filePath args Nothing (Just vars) Nothing Nothing Nothing >>= PRC.waitForProcess)
 
 instance MonadVarPathReader Environment where
-  getVarPath = undefined -- TODO
+  getVarPath = getVarPathDefault
 
 instance MonadVarPwdReader Environment where
-  getVarPwd = undefined --TODO
+  getVarPwd = getVarPwdDefault
+
+instance MonadVarsReader Environment where
+  getVar = toEnv . getEnv
+  getVars = toEnv $ getEnvironment
 
 instance MonadFS Environment where
   findFile path

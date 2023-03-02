@@ -26,6 +26,7 @@ dependencies:
 - HUnit
 - bytestring
 - containers
+- process
 
 ghc-options:
 - -Wall

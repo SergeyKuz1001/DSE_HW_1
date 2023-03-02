@@ -12,7 +12,7 @@ import Prelude hiding (print)
 main :: IO ()
 main = runEnvironment main'
 
-main' :: (MonadError m, MonadIO m, MonadFS m, MonadVarPwdReader m, MonadExit m) => m ()
+main' :: (MonadError m, MonadIO m, MonadFS m, MonadVarsReader m, MonadExit m) => m ()
 main' = do
   mExitCode <- (
       stringReader >>= parser >>= analyzer >>= executor
