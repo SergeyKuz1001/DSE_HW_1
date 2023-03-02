@@ -7,6 +7,7 @@ module Main (
 import Environment
 import Phases
 
+import Control.Monad (forever)
 import Prelude hiding (print)
 import System.IO (BufferMode(..), hSetBuffering, stdin, stdout, stderr)
 
@@ -18,11 +19,6 @@ main = do
   runEnvironment main'
 
 main' :: (MonadError m, MonadIO m, MonadFS m, MonadVarsReader m, MonadExit m) => m ()
-main' = do
-  mExitCode <- (
+main' = forever $ (
       stringReader >>= parser >>= analyzer >>= executor
-    ) `catchError` (\err -> do
-      print err
-      return Nothing
-    )
-  maybe main' exit mExitCode
+    ) `catchError` print
