@@ -8,9 +8,14 @@ import Environment
 import Phases
 
 import Prelude hiding (print)
+import System.IO (BufferMode(..), hSetBuffering, stdin, stdout, stderr)
 
 main :: IO ()
-main = runEnvironment main'
+main = do
+  hSetBuffering stdin  LineBuffering
+  hSetBuffering stdout NoBuffering
+  hSetBuffering stderr NoBuffering
+  runEnvironment main'
 
 main' :: (MonadError m, MonadIO m, MonadFS m, MonadVarsReader m, MonadExit m) => m ()
 main' = do
