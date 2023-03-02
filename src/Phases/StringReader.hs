@@ -9,10 +9,16 @@ module Phases.StringReader (
 
 import Environment.MonadIO
 
-import Prelude hiding (putStr, getLine)
+import Prelude hiding (putStr, putStrLn, getLine)
 
 -- | Чтение пользовательского запроса.
 stringReader :: MonadIO m => m String
 stringReader = do
   putStr "$ "
-  getLine
+  mStr <- getLine
+  case mStr of
+    Nothing -> do
+      putStrLn "exit"
+      return "exit"
+    Just str ->
+      return str

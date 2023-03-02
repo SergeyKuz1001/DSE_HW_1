@@ -36,6 +36,7 @@ import qualified System.Directory as D
 import System.Environment (getEnv, getEnvironment)
 import System.Exit (exitWith, ExitCode(..))
 import qualified System.FilePath as FP
+import System.IO (isEOF)
 import qualified System.Process as PRC
 
 -- | Главный контекст для вычислений в программе.
@@ -48,10 +49,19 @@ toEnv = Environment . MIO.liftIO
 
 instance MonadIO Environment where
   putStr  = toEnv . P.putStr
-  getLine = toEnv $ P.getLine
+  getLine = toEnv $ do
+    eof <- isEOF
+    if eof
+      then return Nothing
+      else Just <$> P.getLine
   readFile (AbsFilePath filePath) = toEnv $ P.readFile filePath
   readFileFromBytes (AbsFilePath filePath) = toEnv $ BS.readFile filePath
-  createProcess (AbsFilePath filePath) args vars = toEnv $ (\case {ExitSuccess -> 0; ExitFailure x -> x}) <$> (PRC.runProcess filePath args Nothing (Just vars) Nothing Nothing Nothing >>= PRC.waitForProcess)
+  createProcess (AbsFilePath filePath) args vars = toEnv $ do
+    procHndl <- PRC.runProcess filePath args Nothing (Just vars) Nothing Nothing Nothing
+    exitCode <- PRC.waitForProcess procHndl
+    return $ case exitCode of
+      ExitSuccess   -> 0
+      ExitFailure x -> x
 
 instance MonadVarPathReader Environment where
   getVarPath = getVarPathDefault

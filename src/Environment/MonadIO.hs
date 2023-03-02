@@ -18,8 +18,9 @@ import Environment.MonadExit (ExitCode)
 class Monad m => MonadIO m where
   -- | Запись строки в поток вывода.
   putStr :: String -> m ()
-  -- | Чтение строки из потока ввода.
-  getLine :: m String
+  -- | Чтение строки из потока ввода. Возвращает Nothing если достигнут конец
+  -- ввода (EOF).
+  getLine :: m (Maybe String)
   -- | Чтение файла
   readFile :: AbsFilePath -> m String
   -- | Чтение файла бинарно.
