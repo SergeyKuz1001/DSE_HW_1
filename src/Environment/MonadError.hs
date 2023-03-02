@@ -17,13 +17,17 @@ module Environment.MonadError (
 
 import Control.Monad.Except hiding (MonadError, MonadIO)
 import qualified Control.Monad.Except as ME
+import System.Console.ANSI (setSGRCode, SGR(..), ConsoleLayer(..), ConsoleIntensity(..), ColorIntensity(..), Color(..))
 
 -- | Тип стандартной (для нашей системы) ошибки. Хранит стадию, на которой эта
 -- ошибка произошла, а также дополнительную информацию.
 data Error = Error String String
 
 instance Show Error where
-  show (Error type_ msg) = type_ ++ ": " ++ msg
+  show (Error type_ msg) =
+    setSGRCode [SetColor Foreground Vivid Red, SetConsoleIntensity BoldIntensity] ++
+    type_ ++
+    setSGRCode [Reset] ++ ": " ++ msg
 
 -- | Синоним @'ME.MonadError' 'Error'@.
 class ME.MonadError Error m => MonadError m
