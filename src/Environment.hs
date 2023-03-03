@@ -33,7 +33,7 @@ import qualified Data.ByteString as BS
 import Prelude hiding (putStr, putStrLn, getLine, readFile)
 import qualified Prelude as P
 import qualified System.Directory as D
-import System.Environment (getEnv, getEnvironment)
+import System.Environment (lookupEnv, getEnvironment)
 import System.Exit (exitWith, ExitCode(..))
 import qualified System.FilePath as FP
 import System.IO (isEOF)
@@ -70,7 +70,7 @@ instance MonadVarPwdReader Environment where
   getVarPwd = getVarPwdDefault
 
 instance MonadVarsReader Environment where
-  getVar = toEnv . getEnv
+  getVar varName = toEnv $ maybe "" id <$> lookupEnv varName
   getVars = toEnv $ getEnvironment
 
 instance MonadFS Environment where
