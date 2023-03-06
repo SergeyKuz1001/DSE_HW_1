@@ -1,5 +1,9 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
+{- |
+Модуль предназначен для анализа корректности пользовательского запроса и
+преобразования его в более выразительный формат.
+-}
 module Phases.Analyzer (
     analyzer,
   ) where
@@ -16,16 +20,19 @@ import Data.Maybe (listToMaybe)
 import Prelude hiding (error)
 import Text.Read (readMaybe)
 
+-- | Функция получения объекта-ошибки по информации об ошибке.
 error :: String -> Error
 error = Error "AnalyzingError"
 
+-- | Анализ корректности и преобразование пользовательского запроса.
 analyzer :: (MonadError m, MonadFS m) => P.Primitive -> m IP.Primitive
 analyzer (P.Command (command : args)) =
   case command of
     "cat" -> do
       length args == 1 ?: error "`cat` command must have only one argument"
       let filePath = head args
-      absFilePath <- doesFileExist filePath @>= error ("can't find file by path " ++ filePath)
+      absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
+      isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
       return . IP.Command . Common . Internal $ Cat absFilePath
     "echo" -> do
       return . IP.Command . Common . Internal $ Echo args
@@ -33,6 +40,7 @@ analyzer (P.Command (command : args)) =
       length args == 1 ?: error "`wc` command must have only one argument"
       let filePath = head args
       absFilePath <- doesFileExist filePath @>= error ("can't find file by path " ++ filePath)
+      isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
       return . IP.Command . Common . Internal $ Wc absFilePath
     "pwd" -> do
       null args ?: error "`pwd` command hasn't arguments"
@@ -46,3 +54,5 @@ analyzer (P.Command (command : args)) =
     _ -> do
       absFilePath <- doesExecutableExist command @>= error ("can't find executable file by path " ++ command)
       return . IP.Command . Common . External $ Arguments absFilePath args
+analyzer (P.Command []) = return IP.EmptyCommand
+analyzer (P.Assignment _ _) = undefined -- TODO in phase 2

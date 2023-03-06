@@ -1,12 +1,16 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
+{- |
+Модуль для парсинга пользовательского запроса.
+-}
 module Phases.Parser ( parser ) where
 
-import           Control.Monad.Except   (throwError)
-import           Data.Bifunctor         (first)
-import           Data.Primitive         (Primitive (..))
-import           Environment.MonadError (Error (..), MonadError)
+import           Data.Primitive          (Primitive (..))
+import           Data.Primitive.Internal (VarName (..))
+import           Environment.MonadError  (Error (..), MonadError, throwError)
+
+import           Data.Bifunctor          (first)
 import           Prelude
 
 error' :: String -> Error
@@ -39,16 +43,16 @@ firstWord   (        ' '  : cs ) = Command . ("" :) . filter (not . null)       
 firstWord   (        '\t' : cs ) = firstWord (' ' : cs)
 firstWord s@(        '\'' : _  ) = Command . filter (not . null) <$> splitBySpaces s
 firstWord s@(        '\"' : _  ) = Command . filter (not . null) <$> splitBySpaces s
-firstWord   (        '='  : cs ) = Assignment "" <$> parseValue cs
+firstWord   (        '='  : cs ) = Assignment (VarName "") <$> parseValue cs
 firstWord   (        c    : cs ) = prependChar c <$> firstWord cs
 
 -- | Вспомогательная функция для сохранения первого слова в команде.
 -- Конечный автомат сохраняет состояния в виде цепочки
 -- >>> prependChar 'c' <$> prependChar 'm' <$> Command [["d"]]
 prependChar :: Char -> Primitive -> Primitive
-prependChar c (Assignment name value) = Assignment (c : name) value
-prependChar c (Command [])            = Command [[c]]
-prependChar c (Command (w : ws))      = Command $ (c : w) : ws
+prependChar c (Assignment (VarName name) value) = Assignment (VarName $ c : name) value
+prependChar c (Command [])                      = Command [[c]]
+prependChar c (Command (w : ws))                = Command $ (c : w) : ws
 
 -- | Чтение значения переменной в присваивании.
 parseValue :: MonadError m => String -> m String

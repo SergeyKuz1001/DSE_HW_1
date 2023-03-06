@@ -1,8 +1,11 @@
+{- |
+В данном модуле объявлены все фазы работы данной программы.
+-}
 module Phases (
-    module Phases.Analyzer,
-    module Phases.Executor,
-    module Phases.Parser,
-    module Phases.StringReader,
+    analyzer,
+    executor,
+    parser,
+    stringReader,
   ) where
 
 import Phases.Analyzer

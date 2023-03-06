@@ -9,7 +9,6 @@ import Environment.MonadFS.Internal
 import Phases.Analyzer (analyzer)
 import Phases.Analyzer.TestEnvironment
 
-import Data.List.NonEmpty (NonEmpty(..))
 import Test.HUnit hiding (test)
 
 env1 :: TestEnvironment a -> Either Error a
