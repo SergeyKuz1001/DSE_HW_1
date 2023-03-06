@@ -20,11 +20,14 @@ error' = Error "ParsingError"
 parser :: MonadError m => String -> m Primitive
 parser s = skipSpaces s >>= firstWord
 
+-- | Шаг парсера, пропускающий пробелы и табуляции до первого значащего символа.
 skipSpaces :: Applicative f => String -> f String
 skipSpaces (' '  : cs) = skipSpaces cs
 skipSpaces ('\t' : cs) = skipSpaces cs
 skipSpaces s           = pure s
 
+-- | Определение первого слова.
+-- Здесь происходит выбор типа строки: пустая строка, команда, присваивание.
 firstWord :: MonadError m => String -> m Primitive
 firstWord     ""                 = pure $ Command []
 firstWord   ( '\\' : '\\' : cs ) = prependChar '\\' <$> firstWord cs
@@ -39,6 +42,15 @@ firstWord s@(        '\"' : _  ) = Command . filter (not . null) <$> splitBySpac
 firstWord   (        '='  : cs ) = Assignment "" <$> parseValue cs
 firstWord   (        c    : cs ) = prependChar c <$> firstWord cs
 
+-- | Вспомогательная функция для сохранения первого слова в команде.
+-- Конечный автомат сохраняет состояния в виде цепочки
+-- >>> prependChar 'c' <$> prependChar 'm' <$> Command [["d"]]
+prependChar :: Char -> Primitive -> Primitive
+prependChar c (Assignment name value) = Assignment (c : name) value
+prependChar c (Command [])            = Command [[c]]
+prependChar c (Command (w : ws))      = Command $ (c : w) : ws
+
+-- | Чтение значения переменной в присваивании.
 parseValue :: MonadError m => String -> m String
 parseValue s = splitBySpaces s >>= \case
   [] -> pure ""
@@ -46,11 +58,9 @@ parseValue s = splitBySpaces s >>= \case
   (_ : _) -> throwError $ error' "Command calls with variable overriding are not supported"
   . filter (not . null)
 
-prependChar :: Char -> Primitive -> Primitive
-prependChar c (Assignment name value) = Assignment (c : name) value
-prependChar c (Command [])            = Command [[c]]
-prependChar c (Command (w : ws))      = Command $ (c : w) : ws
-
+-- | Разбиение произвольной строки по пробелам
+-- с учётом кавычек (возможны пустые строки,
+-- используется в связке с @filter (not . null)@.
 splitBySpaces :: MonadError m => String -> m [String]
 splitBySpaces  ""                = pure [""]
 splitBySpaces  "\\"              = throwError $ error' "Unexpected end of line after \\"
@@ -64,15 +74,19 @@ splitBySpaces (       ' '  : cs) = ("" :) <$> splitBySpaces cs
 splitBySpaces (       '\t' : cs) = ("" :) <$> splitBySpaces cs
 splitBySpaces (        c   : cs) = headMap (c :) <$> splitBySpaces cs
 
+-- | Применение функции только к голове списка,
+-- если она есть.
 headMap :: (a -> a) -> [a] -> [a]
 headMap _ []       = []
 headMap f (x : xs) = f x : xs
 
+-- | Чтение фрагмента строки, заключённого в одинарные кавычки.
 singleQuotes :: MonadError m => String -> m (String, String)
 singleQuotes "" = throwError $ error' "Unexpected end of line in single quotes"
 singleQuotes ('\'' : cs) = pure ("", cs)
 singleQuotes ( c   : cs) = first (c :) <$> singleQuotes cs
 
+-- | Чтение фрагмента строки, заключённого в двойные кавычки.
 doubleQuotes :: MonadError m => String -> m (String, String)
 doubleQuotes "" = throwError $ error' "Unexpected end of line in double quotes"
 doubleQuotes ('\\' : '\\' : cs) = first ('\\' :) <$> doubleQuotes cs
