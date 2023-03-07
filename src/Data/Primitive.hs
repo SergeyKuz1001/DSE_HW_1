@@ -6,10 +6,8 @@ module Data.Primitive (
     Primitive (..),
   ) where
 
-import Data.VarName
-
 -- | Примитив, полученный после парсинга пользовательского запроса.
 data Primitive
   = Commands [[String]]
-  | Assignment VarName String
+  | Assignment String String
   deriving (Eq, Show)

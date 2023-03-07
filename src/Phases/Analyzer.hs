@@ -11,6 +11,7 @@ module Phases.Analyzer (
 import qualified Data.Primitive as P
 import Data.ImprovedPrimitive hiding (Primitive(..))
 import qualified Data.ImprovedPrimitive as IP
+import Data.VarName (varName)
 import Environment.MonadError
 import Environment.MonadFS
 import Environment.MonadVarPathReader
@@ -79,5 +80,6 @@ analyzer (P.Commands (command : commands)) =
       asCommon :: MonadError m => Command -> m Common
       asCommon (Common c) = return c
       asCommon _ = throwError $ error "can't using non-common command with pipes"
-analyzer (P.Assignment name value) =
-  return $ IP.Assignment name value
+analyzer (P.Assignment name value) = do
+  name' <- varName name
+  return $ IP.Assignment name' value
