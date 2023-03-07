@@ -1,5 +1,4 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 {- |
@@ -30,6 +29,7 @@ import Environment.MonadVarsReader
 import qualified Control.Monad.Except as ME
 import qualified Control.Monad.IO.Class as MIO
 import qualified Data.ByteString as BS
+import Data.Maybe (fromMaybe)
 import Prelude hiding (putStr, putStrLn, getLine, readFile)
 import qualified Prelude as P
 import qualified System.Directory as D
@@ -70,8 +70,8 @@ instance MonadVarPwdReader Environment where
   getVarPwd = getVarPwdDefault
 
 instance MonadVarsReader Environment where
-  getVar varName = toEnv $ maybe "" id <$> lookupEnv varName
-  getVars = toEnv $ getEnvironment
+  getVar varName = toEnv $ fromMaybe "" <$> lookupEnv varName
+  getVars = toEnv getEnvironment
 
 instance MonadFS Environment where
   findFile path

@@ -16,6 +16,7 @@ import Environment.MonadVarsReader (MonadVarsReader (getVars))
 import Data.Bool (bool)
 import qualified Data.ByteString.Char8 as ByteStr
 import Data.Char (isSpace)
+import Data.Maybe (fromMaybe)
 
 type WcOutputArguments = (Int, Int, Int, Bool)
 
@@ -32,7 +33,7 @@ executor = \case
 -- | Функция для исполнения специальных команд.
 executeSpecial :: (MonadExit m) => Special -> m ()
 executeSpecial = \case
-  Exit mb -> exit (maybe 0 id mb)
+  Exit mb -> exit (fromMaybe 0 mb)
 
 -- | Функция для исполнения внутренних команд.
 executeInternal :: (MonadIO m, MonadVarPwdReader m) => Internal -> m ()
