@@ -4,23 +4,24 @@
 -}
 module Data.ImprovedPrimitive (
     Primitive(..),
-    Command(..),
     Special(..),
     Common(..),
     Internal(..),
     External(..),
   ) where
 
+import Data.VarName (VarName)
 import Environment.FSPrimitive (AbsFilePath)
 
--- | Примитив является командой (пустой или нет).
-data Primitive = Command Command | EmptyCommand
-  deriving (Eq, Show)
+import Data.List.NonEmpty (NonEmpty)
 
--- | Команда — это объект, который может быть выполнен.
--- Команда может быть либо специальной (влиять на работу оболочки), либо
--- обычной.
-data Command = Special Special | Common Common
+-- | Примитив является либо специальной командой, либо набором обычных,
+-- разделённых pipeами, либо присваиванием, либо пустой командой.
+data Primitive
+  = Special Special
+  | Commons (NonEmpty Common)
+  | Assignment VarName String
+  | Empty
   deriving (Eq, Show)
 
 -- | Специальная команда влияет на работу оболочки. Таковой командой является

@@ -10,6 +10,6 @@ import Data.VarName
 
 -- | Примитив, полученный после парсинга пользовательского запроса.
 data Primitive
-  = Command [String]
+  = Commands [[String]]
   | Assignment VarName String
   deriving (Eq, Show)

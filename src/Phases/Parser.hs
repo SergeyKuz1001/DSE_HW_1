@@ -22,7 +22,8 @@ error' = Error "ParsingError"
 -- либо присваивание переменной.
 -- Кидает исключение, если строка имеет некорректный синтаксис.
 parser :: MonadError m => String -> m Primitive
-parser s = skipSpaces s >>= firstWord
+parser = undefined
+{-parser s = skipSpaces s >>= firstWord
 
 -- | Шаг парсера, пропускающий пробелы и табуляции до первого значащего символа.
 skipSpaces :: Applicative f => String -> f String
@@ -99,4 +100,4 @@ doubleQuotes ('\\' : '\'' : cs) = first ('\'' :) <$> doubleQuotes cs
 doubleQuotes ('\\' : 'n'  : cs) = first ('\n' :) <$> doubleQuotes cs
 doubleQuotes ('\\' : 't'  : cs) = first ('\t' :) <$> doubleQuotes cs
 doubleQuotes (       '\"' : cs) = pure ("", cs)
-doubleQuotes (        c   : cs) = first (c :) <$> doubleQuotes cs
+doubleQuotes (        c   : cs) = first (c :) <$> doubleQuotes cs-}

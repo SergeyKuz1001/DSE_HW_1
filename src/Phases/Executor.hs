@@ -22,7 +22,8 @@ type WcOutputArguments = (Int, Int, Int, Bool)
 
 -- | Функция принимает, разбирает и исполняет распарсшенный примитив.
 executor :: (MonadIO m, MonadExit m, MonadVarsReader m) => Primitive -> m ()
-executor = \case
+executor = undefined
+{-executor = \case
   Command typeCmd -> case typeCmd of
     Special special -> executeSpecial special
     Common common -> case common of
@@ -66,4 +67,4 @@ executeExternal = \case
   Arguments pathToCmd args -> do
     vars <- getVars
     _ <- createProcess pathToCmd args vars
-    return ()
+    return ()-}
