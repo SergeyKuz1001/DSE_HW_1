@@ -56,4 +56,4 @@ analyzer (P.Command (command : args)) =
       absFilePath <- doesExecutableExist command @>= error ("can't find executable file by path " ++ command)
       return . IP.Command . Common . External $ Arguments absFilePath args
 analyzer (P.Command []) = return IP.EmptyCommand
-analyzer (P.Assignment _ _) = undefined -- TODO in phase 2
+analyzer (P.Assignment _ _) = throwError $ error "can't analyze assignment" -- TODO in phase 2
