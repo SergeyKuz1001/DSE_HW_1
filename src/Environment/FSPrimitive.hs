@@ -37,7 +37,7 @@ absFilePath path = do
 
 -- | Функция проверки того, является ли путь простым именем файла или нет.
 isBaseName :: FilePath -> Bool
-isBaseName = not . elem FP.pathSeparator
+isBaseName = notElem FP.pathSeparator
 
 -- | Операция конкатенации пути. В отличие от @'FP.</>'@ конкатенируются
 -- абсолютный и относительный пути, получая в итоге абсолютный.
