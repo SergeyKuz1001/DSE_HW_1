@@ -6,7 +6,7 @@ module Environment.MonadVarPwdWriter (
     MonadVarPwdWriter (..),
   ) where
 
-import Environment.MonadFS (AbsFilePath)
+import Environment.FSPrimitive (AbsFilePath)
 
 -- | Монада для записи абсолютного пути до директории в переменную PWD.
 class Monad m => MonadVarPwdWriter m where

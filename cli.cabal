@@ -26,12 +26,12 @@ library
   exposed-modules:
       Data.ImprovedPrimitive
       Data.Primitive
-      Data.Primitive.Internal
+      Data.VarName
       Environment
+      Environment.FSPrimitive
       Environment.MonadError
       Environment.MonadExit
       Environment.MonadFS
-      Environment.MonadFS.Internal
       Environment.MonadIO
       Environment.MonadVarPathReader
       Environment.MonadVarPathWriter

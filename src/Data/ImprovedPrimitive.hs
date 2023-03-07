@@ -11,7 +11,7 @@ module Data.ImprovedPrimitive (
     External(..),
   ) where
 
-import Environment.MonadFS.Internal (AbsFilePath)
+import Environment.FSPrimitive (AbsFilePath)
 
 -- | Примитив является командой (пустой или нет).
 data Primitive = Command Command | EmptyCommand

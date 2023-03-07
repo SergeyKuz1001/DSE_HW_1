@@ -3,11 +3,10 @@
 пользовательский запрос после его парсинга.
 -}
 module Data.Primitive (
-    VarName (getVarName),
     Primitive (..),
   ) where
 
-import Data.Primitive.Internal
+import Data.VarName
 
 -- | Примитив, полученный после парсинга пользовательского запроса.
 data Primitive

@@ -6,8 +6,8 @@
 -}
 module Phases.Parser ( parser ) where
 
+import           Data.VarName            (varName, addChar)
 import           Data.Primitive          (Primitive (..))
-import           Data.Primitive.Internal (VarName (..))
 import           Environment.MonadError  (Error (..), MonadError, throwError)
 
 import           Data.Bifunctor          (first)
@@ -34,25 +34,25 @@ skipSpaces s           = pure s
 -- Здесь происходит выбор типа строки: пустая строка, команда, присваивание.
 firstWord :: MonadError m => String -> m Primitive
 firstWord     ""                 = pure $ Command []
-firstWord   ( '\\' : '\\' : cs ) = prependChar '\\' <$> firstWord cs
-firstWord   ( '\\' : '\"' : cs ) = prependChar '\"' <$> firstWord cs
-firstWord   ( '\\' : '\'' : cs ) = prependChar '\'' <$> firstWord cs
+firstWord   ( '\\' : '\\' : cs ) = firstWord cs >>= prependChar '\\'
+firstWord   ( '\\' : '\"' : cs ) = firstWord cs >>= prependChar '\"'
+firstWord   ( '\\' : '\'' : cs ) = firstWord cs >>= prependChar '\''
 firstWord   ( '\\' : ' '  : cs ) = Command . filter (not . null) . headMap (' ' :) <$> splitBySpaces cs
 firstWord   ( '\\' : '='  : cs ) = Command . filter (not . null) . headMap ('=' :) <$> splitBySpaces cs
 firstWord   (        ' '  : cs ) = Command . ("" :) . filter (not . null)          <$> splitBySpaces cs
 firstWord   (        '\t' : cs ) = firstWord (' ' : cs)
 firstWord s@(        '\'' : _  ) = Command . filter (not . null) <$> splitBySpaces s
 firstWord s@(        '\"' : _  ) = Command . filter (not . null) <$> splitBySpaces s
-firstWord   (        '='  : cs ) = Assignment (VarName "") <$> parseValue cs
-firstWord   (        c    : cs ) = prependChar c <$> firstWord cs
+firstWord   (        '='  : cs ) = Assignment <$> varName "" <*> parseValue cs
+firstWord   (        c    : cs ) = firstWord cs >>= prependChar c
 
 -- | Вспомогательная функция для сохранения первого слова в команде.
 -- Конечный автомат сохраняет состояния в виде цепочки
--- >>> prependChar 'c' <$> prependChar 'm' <$> Command [["d"]]
-prependChar :: Char -> Primitive -> Primitive
-prependChar c (Assignment (VarName name) value) = Assignment (VarName $ c : name) value
-prependChar c (Command [])                      = Command [[c]]
-prependChar c (Command (w : ws))                = Command $ (c : w) : ws
+-- >>> prependChar 'c' =<< prependChar 'm' =<< pure (Command [['d']])
+prependChar :: MonadError m => Char -> Primitive -> m Primitive
+prependChar c (Assignment name value) = flip Assignment value <$> addChar c name
+prependChar c (Command [])            = return $ Command [[c]]
+prependChar c (Command (w : ws))      = return . Command $ (c : w) : ws
 
 -- | Чтение значения переменной в присваивании.
 parseValue :: MonadError m => String -> m String

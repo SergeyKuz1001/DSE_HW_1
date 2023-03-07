@@ -2,16 +2,20 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Phases.Analyzer.TestEnvironment (
+    module Environment.FSPrimitive,
     module Environment.MonadError,
     module Environment.MonadFS,
     module Environment.MonadVarPathReader,
+    module Environment.MonadVarPwdReader,
     TestEnvironment,
     runTestEnvironment,
   ) where
 
+import Environment.FSPrimitive
 import Environment.MonadError
 import Environment.MonadFS
 import Environment.MonadVarPathReader
+import Environment.MonadVarPwdReader
 
 import qualified Control.Monad.Except as ME
 import Control.Monad.State (StateT, gets, runStateT)
@@ -29,17 +33,14 @@ newtype TestEnvironment a = TestEnvironment (StateT GlobalState (Either Error) a
 instance MonadVarPathReader TestEnvironment where
   getVarPath = return []
 
+instance MonadVarPwdReader TestEnvironment where
+  getVarPwd = TestEnvironment $ gets pwd
+
 instance MonadFS TestEnvironment where
-  findFile filePath = TestEnvironment . gets $
+  findFileByAbsPath absPath = TestEnvironment . gets $
     \gs ->
       let allFiles = files gs
-          filePath' =
-            if filePath == ""
-              then ""
-              else if head filePath == '/'
-                then filePath
-                else asFilePath (pwd gs) ++ filePath
-      in  find ((filePath' ==) . asFilePath . absFilePath) allFiles
+      in  find ((absPath ==) . filePath) allFiles
 
 runTestEnvironment :: AbsFilePath -> [File] -> TestEnvironment a -> Either Error a
 runTestEnvironment pwd_ files_ (TestEnvironment m) = fst <$> runStateT m (GlobalState pwd_ files_)

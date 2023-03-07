@@ -9,10 +9,12 @@ module Environment.MonadIO (
     print,
   ) where
 
-import Prelude hiding (putStr, getLine, readFile, putStrLn, print)
-import Environment.MonadFS.Internal ( AbsFilePath )
-import qualified Data.ByteString.Char8 as ByteStr
+import Data.VarName (VarName)
+import Environment.FSPrimitive (AbsFilePath)
 import Environment.MonadExit (ExitCode)
+
+import qualified Data.ByteString.Char8 as ByteStr
+import Prelude hiding (putStr, getLine, readFile, putStrLn, print)
 
 -- | Монада для работы с потоками ввода/вывода.
 class Monad m => MonadIO m where
@@ -27,7 +29,7 @@ class Monad m => MonadIO m where
   readFileFromBytes :: AbsFilePath -> m ByteStr.ByteString
   -- | Создание и исполнение исполняемого файла с данными аргументами и
   -- переменными. Возвращает код возврата процесса.
-  createProcess :: AbsFilePath -> [String] -> [(String, String)] -> m ExitCode
+  createProcess :: AbsFilePath -> [String] -> [(VarName, String)] -> m ExitCode
 
 -- | Запись строки в поток вывода и перевод строки.
 putStrLn :: MonadIO m => String -> m ()

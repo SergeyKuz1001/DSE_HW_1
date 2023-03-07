@@ -2,8 +2,8 @@
 
 module Phases.Parser.Tests (testsParser) where
 
+import           Data.VarName
 import           Data.Primitive
-import           Data.Primitive.Internal
 import qualified Environment.MonadError as E
 import           Phases.Parser
 
@@ -23,7 +23,7 @@ mkTest name arg expected = TestCase . assertEqual name expected . eitherToMaybe 
     eitherToMaybe (Left _)  = Nothing
 
 assignment :: String -> String -> Primitive
-assignment = Assignment . VarName
+assignment = Assignment . either undefined id . varName
 
 testsParser :: Test
 testsParser = TestList [

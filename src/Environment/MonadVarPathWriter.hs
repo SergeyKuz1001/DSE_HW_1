@@ -7,7 +7,7 @@ module Environment.MonadVarPathWriter (
     formatVarPath,
   ) where
 
-import Environment.MonadFS.Internal (AbsFilePath(..))
+import Environment.FSPrimitive (AbsFilePath(asFilePath))
 import Environment.MonadVarPathReader (varPathSeparator)
 
 -- | Монада для записи списка абсолютных путей в переменную PATH.

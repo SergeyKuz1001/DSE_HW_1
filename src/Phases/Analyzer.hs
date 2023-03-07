@@ -13,9 +13,10 @@ import Data.ImprovedPrimitive hiding (Primitive(..))
 import qualified Data.ImprovedPrimitive as IP
 import Environment.MonadError
 import Environment.MonadFS
+import Environment.MonadVarPathReader
+import Environment.MonadVarPwdReader
 
 import Control.Monad (forM)
-import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe (listToMaybe)
 import Prelude hiding (error)
 import Text.Read (readMaybe)
@@ -25,7 +26,7 @@ error :: String -> Error
 error = Error "AnalyzingError"
 
 -- | Анализ корректности и преобразование пользовательского запроса.
-analyzer :: (MonadError m, MonadFS m) => P.Primitive -> m IP.Primitive
+analyzer :: (MonadError m, MonadFS m, MonadVarPwdReader m, MonadVarPathReader m) => P.Primitive -> m IP.Primitive
 analyzer (P.Command (command : args)) =
   case command of
     "cat" -> do

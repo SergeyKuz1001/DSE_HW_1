@@ -8,7 +8,8 @@ module Environment.MonadVarPathReader (
     parseVarPath,
   ) where
 
-import Environment.MonadFS.Internal (AbsFilePath(..))
+import Environment.FSPrimitive (AbsFilePath, absFilePath)
+import Environment.MonadError (MonadError)
 
 import Data.List (unfoldr)
 import System.FilePath (pathSeparator)
@@ -32,5 +33,5 @@ varPathSeparator :: Char
 varPathSeparator = if pathSeparator == '/' then ':' else ';'
 
 -- | Парсер исходного значения переменной PATH в список абсолютных путей.
-parseVarPath :: String -> [AbsFilePath]
-parseVarPath paths = AbsFilePath <$> splitBy varPathSeparator paths
+parseVarPath :: MonadError m => String -> m [AbsFilePath]
+parseVarPath = traverse absFilePath . splitBy varPathSeparator

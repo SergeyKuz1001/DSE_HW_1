@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 {- |
 В данном модуле объявлена монада @'MonadError'@ с основными функциями для
@@ -31,6 +32,8 @@ instance Show Error where
 
 -- | Синоним @'ME.MonadError' 'Error'@.
 class ME.MonadError Error m => MonadError m
+
+instance MonadError (Either Error)
 
 infix 0 ?:, @:, ?>=, @>=
 

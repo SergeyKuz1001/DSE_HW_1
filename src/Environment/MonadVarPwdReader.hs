@@ -6,7 +6,7 @@ module Environment.MonadVarPwdReader (
     MonadVarPwdReader (..),
   ) where
 
-import Environment.MonadFS (AbsFilePath)
+import Environment.FSPrimitive (AbsFilePath)
 
 -- | Монада для получения значения переменной PWD (то есть абсолютного пути до
 -- текущей директории).
