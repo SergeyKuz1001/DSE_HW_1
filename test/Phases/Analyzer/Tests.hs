@@ -11,7 +11,7 @@ import Phases.Analyzer.TestEnvironment
 import Test.HUnit hiding (test, path)
 
 replace :: Eq a => a -> a -> [a] -> [a]
-replace x y = foldr (\z -> if x == z then (y:) else (x:)) []
+replace x y = foldr (\z -> if x == z then (y:) else (z:)) []
 
 absFilePath' :: String -> AbsFilePath
 absFilePath' path = case absFilePath path of
@@ -43,11 +43,11 @@ testsAnalyzer = TestList [
       Just (IP.Command . Common . Internal $ Echo ["1", "2"]),
     test env1 ["cat", ".vimrc"] $
       Just (IP.Command . Common . Internal . Cat $ absFilePath' "/home/user/.vimrc"),
-    test env1 ["cat", "/GitHub_PASSWORD.txt"] $
+    test env1 ["cat", asFilePath $ absFilePath' "/GitHub_PASSWORD.txt"] $
       Just (IP.Command . Common . Internal . Cat $ absFilePath' "/GitHub_PASSWORD.txt"),
     test env1 ["pwd"] $
       Just (IP.Command . Common . Internal $ Pwd),
-    test env1 ["/bin/vim", "-O", ".vimrc", "my_game.py"] $
+    test env1 [asFilePath $ absFilePath' "/bin/vim", "-O", ".vimrc", "my_game.py"] $
       Just (IP.Command . Common . External $ Arguments (absFilePath' "/bin/vim") ["-O", ".vimrc", "my_game.py"]),
     test env1 ["my_game.py"] $
       Just (IP.Command . Common . External $ Arguments (absFilePath' "/home/user/my_game.py") []),

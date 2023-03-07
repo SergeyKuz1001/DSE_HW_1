@@ -53,7 +53,7 @@ instance MonadExit TestEnvironment where
   exit code = TestEnvironment $ modify (\st -> st { exitCode = Just code })
 
 replace :: Eq a => a -> a -> [a] -> [a]
-replace x y = foldr (\z -> if x == z then (y:) else (x:)) []
+replace x y = foldr (\z -> if x == z then (y:) else (z:)) []
 
 absFilePath' :: String -> AbsFilePath
 absFilePath' path = case absFilePath path of
