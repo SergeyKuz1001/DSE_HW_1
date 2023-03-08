@@ -46,6 +46,7 @@ library
       Phases.Executor
       Phases.Parser
       Phases.StringReader
+      Phases.VarSubstitutor
   other-modules:
       Paths_cli
   hs-source-dirs:

@@ -33,5 +33,5 @@ main = do
 -- классе @'MonadExit'@.
 main' :: (MonadError m, MonadIO m, MonadFS m, MonadPM m, MonadVarReader m, MonadVarWriter m, MonadExit m) => m ()
 main' = forever $ (
-      stringReader >>= parser >>= analyzer >>= executor
+      stringReader >>= varSubstitutor >>= parser >>= analyzer >>= executor
     ) `catchError` print
