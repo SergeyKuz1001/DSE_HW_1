@@ -26,19 +26,21 @@ library
   exposed-modules:
       Data.ImprovedPrimitive
       Data.Primitive
-      Data.VarName
+      Data.Variable
       Environment
       Environment.FSPrimitive
+      Environment.HandlePrimitive
       Environment.MonadError
       Environment.MonadExit
       Environment.MonadFS
       Environment.MonadIO
-      Environment.MonadVarPathReader
-      Environment.MonadVarPathWriter
-      Environment.MonadVarPwdReader
-      Environment.MonadVarPwdWriter
-      Environment.MonadVarsReader
-      Environment.MonadVarsWriter
+      Environment.MonadPathReader
+      Environment.MonadPathWriter
+      Environment.MonadPM
+      Environment.MonadPwdReader
+      Environment.MonadPwdWriter
+      Environment.MonadVarReader
+      Environment.MonadVarWriter
       Phases
       Phases.Analyzer
       Phases.Executor
@@ -59,6 +61,7 @@ library
     , filepath
     , mtl
     , process
+    , time
   default-language: Haskell2010
 
 executable cli-exe
@@ -79,6 +82,7 @@ executable cli-exe
     , filepath
     , mtl
     , process
+    , time
   default-language: Haskell2010
 
 test-suite cli-test
@@ -104,4 +108,5 @@ test-suite cli-test
     , filepath
     , mtl
     , process
+    , time
   default-language: Haskell2010

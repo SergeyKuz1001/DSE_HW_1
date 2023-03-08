@@ -28,6 +28,7 @@ dependencies:
 - containers
 - process
 - ansi-terminal
+- time
 
 ghc-options:
 - -Wall

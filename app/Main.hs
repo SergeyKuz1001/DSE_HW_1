@@ -31,7 +31,7 @@ main = do
 -- из этапов происходит печать ошибки и начало новой итерации. Цикл бесконечен,
 -- для выхода из него (и из программы в целом) существует функция @'exit'@ в
 -- классе @'MonadExit'@.
-main' :: (MonadError m, MonadIO m, MonadFS m, MonadVarsReader m, MonadExit m) => m ()
+main' :: (MonadError m, MonadIO m, MonadFS m, MonadPM m, MonadVarReader m, MonadVarWriter m, MonadExit m) => m ()
 main' = forever $ (
       stringReader >>= parser >>= analyzer >>= executor
     ) `catchError` print

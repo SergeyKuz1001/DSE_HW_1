@@ -10,17 +10,18 @@ module Data.ImprovedPrimitive (
     External(..),
   ) where
 
-import Data.VarName (VarName)
+import Data.Variable (Stable)
 import Environment.FSPrimitive (AbsFilePath)
 
 import Data.List.NonEmpty (NonEmpty)
 
 -- | Примитив является либо специальной командой, либо набором обычных,
--- разделённых pipeами, либо присваиванием, либо пустой командой.
+-- разделённых pipeами, либо присваиванием стабильной переменной, либо пустой
+-- командой.
 data Primitive
   = Special Special
   | Commons (NonEmpty Common)
-  | Assignment VarName String
+  | Assignment Stable String
   | Empty
   deriving (Eq, Show)
 

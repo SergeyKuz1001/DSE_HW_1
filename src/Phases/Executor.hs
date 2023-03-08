@@ -9,9 +9,10 @@ module Phases.Executor (
 
 import Data.ImprovedPrimitive
 import Environment.MonadExit (MonadExit (exit))
-import Environment.MonadIO as EnvIO
-import Environment.MonadVarPwdReader (MonadVarPwdReader (getVarPwd))
-import Environment.MonadVarsReader (MonadVarsReader (getVars))
+import Environment.MonadIO (MonadIO)
+import Environment.MonadPM (MonadPM)
+import Environment.MonadVarReader (MonadVarReader)
+import Environment.MonadVarWriter (MonadVarWriter)
 
 import Data.Bool (bool)
 import qualified Data.ByteString.Char8 as ByteStr
@@ -21,7 +22,7 @@ import Data.Maybe (fromMaybe)
 type WcOutputArguments = (Int, Int, Int, Bool)
 
 -- | Функция принимает, разбирает и исполняет распарсшенный примитив.
-executor :: (MonadIO m, MonadExit m, MonadVarsReader m) => Primitive -> m ()
+executor :: (MonadIO m, MonadPM m, MonadExit m, MonadVarReader m, MonadVarWriter m) => Primitive -> m ()
 executor = undefined
 {-executor = \case
   Command typeCmd -> case typeCmd of

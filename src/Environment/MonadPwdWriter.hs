@@ -1,13 +1,13 @@
 {- |
-В данном модуле объявлена монада @'MonadVarPwdReader'@ для записи значения
+В данном модуле объявлена монада @'MonadPwdReader'@ для записи значения
 переменной PWD.
 -}
-module Environment.MonadVarPwdWriter (
-    MonadVarPwdWriter (..),
+module Environment.MonadPwdWriter (
+    MonadPwdWriter (..),
   ) where
 
 import Environment.FSPrimitive (AbsFilePath)
 
 -- | Монада для записи абсолютного пути до директории в переменную PWD.
-class Monad m => MonadVarPwdWriter m where
+class Monad m => MonadPwdWriter m where
   setVarPwd :: AbsFilePath -> m ()

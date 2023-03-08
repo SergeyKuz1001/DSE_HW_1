@@ -6,7 +6,6 @@
 -}
 module Phases.Parser ( parser ) where
 
-import           Data.VarName            (varName, addChar)
 import           Data.Primitive          (Primitive (..))
 import           Environment.MonadError  (Error (..), MonadError, throwError)
 

@@ -1,9 +1,9 @@
 {- |
-В данном модуле объявлена монада @'MonadVarPathReader'@ для получения значения
+В данном модуле объявлена монада @'MonadPathReader'@ для получения значения
 переменной PATH.
 -}
-module Environment.MonadVarPathReader (
-    MonadVarPathReader (..),
+module Environment.MonadPathReader (
+    MonadPathReader (..),
     varPathSeparator,
     parseVarPath,
   ) where
@@ -16,7 +16,7 @@ import System.FilePath (pathSeparator)
 
 -- | Монада для получения списка путей к директориям с исполняемыми файлами,
 -- хранящегося в переменной PATH.
-class Monad m => MonadVarPathReader m where
+class Monad m => MonadPathReader m where
   getVarPath :: m [AbsFilePath]
 
 -- | Функция для разбиения списка элементом по данному разделителю.

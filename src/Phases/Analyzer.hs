@@ -11,11 +11,11 @@ module Phases.Analyzer (
 import qualified Data.Primitive as P
 import Data.ImprovedPrimitive hiding (Primitive(..))
 import qualified Data.ImprovedPrimitive as IP
-import Data.VarName (varName)
+import Data.Variable (variable, asStable)
 import Environment.MonadError
 import Environment.MonadFS
-import Environment.MonadVarPathReader
-import Environment.MonadVarPwdReader
+import Environment.MonadPathReader
+import Environment.MonadPwdReader
 
 import Control.Monad (forM, (>=>))
 import Data.List.NonEmpty (NonEmpty(..))
@@ -34,7 +34,7 @@ data Command
   | Empty
 
 -- | Анализ корректности и преобразование одной команды с аргументами.
-commandAnalyzer :: (MonadError m, MonadFS m, MonadVarPwdReader m, MonadVarPathReader m) => [String] -> m Command
+commandAnalyzer :: (MonadError m, MonadFS m, MonadPwdReader m, MonadPathReader m) => [String] -> m Command
 commandAnalyzer ("cat" : args) = do
   length args == 1 ?: error "`cat` command must have only one argument"
   let filePath = head args
@@ -65,7 +65,7 @@ commandAnalyzer [] = do
   return Empty
 
 -- | Анализ корректности и преобразование пользовательского запроса.
-analyzer :: (MonadError m, MonadFS m, MonadVarPwdReader m, MonadVarPathReader m) => P.Primitive -> m IP.Primitive
+analyzer :: (MonadError m, MonadFS m, MonadPwdReader m, MonadPathReader m) => P.Primitive -> m IP.Primitive
 analyzer (P.Commands []) =
   return IP.Empty
 analyzer (P.Commands [command]) = do
@@ -81,5 +81,6 @@ analyzer (P.Commands (command : commands)) =
       asCommon (Common c) = return c
       asCommon _ = throwError $ error "can't using non-common command with pipes"
 analyzer (P.Assignment name value) = do
-  name' <- varName name
-  return $ IP.Assignment name' value
+  var <- variable name
+  stVar <- asStable var @: error "can't assign volatile variable"
+  return $ IP.Assignment stVar value

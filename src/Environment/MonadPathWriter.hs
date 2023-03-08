@@ -1,17 +1,17 @@
 {- |
-В данном модуле объявлена монада @'MonadVarPathWriter'@ для записи значения
+В данном модуле объявлена монада @'MonadPathWriter'@ для записи значения
 переменной PATH.
 -}
-module Environment.MonadVarPathWriter (
-    MonadVarPathWriter (..),
+module Environment.MonadPathWriter (
+    MonadPathWriter (..),
     formatVarPath,
   ) where
 
-import Environment.FSPrimitive (AbsFilePath(asFilePath))
-import Environment.MonadVarPathReader (varPathSeparator)
+import Environment.FSPrimitive (AbsFilePath (asFilePath))
+import Environment.MonadPathReader (varPathSeparator)
 
 -- | Монада для записи списка абсолютных путей в переменную PATH.
-class Monad m => MonadVarPathWriter m where
+class Monad m => MonadPathWriter m where
   setVarPath :: [AbsFilePath] -> m ()
 
 -- | Функция преобразования списка путей в строку, которая будет являться
