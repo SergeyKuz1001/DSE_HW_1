@@ -44,13 +44,14 @@ import qualified Control.Monad.State as ST
 import qualified Data.ByteString as BS
 import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Format (formatTime, defaultTimeLocale)
 import Data.Time.LocalTime (LocalTime, getCurrentTimeZone, utcToLocalTime)
 import Prelude hiding (putStr, putStrLn, print, readFile, getLine)
 import qualified Prelude as P
 import qualified System.Directory as D
+import System.Environment (getEnvironment)
 import System.Exit (exitWith)
 import System.IO (isEOF, IOMode(..))
 import qualified System.Process as PRC
@@ -151,7 +152,15 @@ instance MonadExit Environment where
 -- | Функция для запуска вычислений.
 runEnvironment :: Environment a -> IO a
 runEnvironment (Environment m) = do
-  eRes <- ME.runExceptT $ ST.evalStateT m M.empty
+  varsFromIO <- getEnvironment
+  let vars = M.fromList . mapMaybe (\(n, v) -> toMaybe (variable n) >>= asStable >>= return . (,v)) $ varsFromIO
+  curDir <- D.getCurrentDirectory
+  eRes <- ME.runExceptT $ ST.evalStateT m (
+    M.insert varPs1 "\ESC[01;31m\\t\ESC[00m|\ESC[01;32m\\u\ESC[00m:\ESC[01;34m\\w\ESC[00m$ " $
+    M.insert varPwd curDir vars)
   case eRes of
     Right res -> return res
     Left err  -> fail $ "UnexpectedError: " ++ show err
+    where
+      toMaybe :: Either e a -> Maybe a
+      toMaybe = either (const Nothing) Just

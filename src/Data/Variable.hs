@@ -8,13 +8,15 @@ module Data.Variable (
     Volatile (..),
     Specific (..),
     variable,
+    readVariable,
     asStable,
     getVarName,
     varPath,
     varPwd,
+    varPs1,
   ) where
 
-import Environment.MonadError (Error(..), MonadError, (?:))
+import Environment.MonadError (Error(..), MonadError, throwError)
 
 data Variable = Stable Stable | Volatile Volatile
   deriving (Eq, Ord, Show)
@@ -32,15 +34,26 @@ data Specific = LastExitCode
 -- проверяется соблюдение инварианта для обычной переменной и в случае его
 -- нарушения вызывается ошибка.
 variable :: MonadError m => String -> m Variable
-variable "?" = return . Stable $ Specific LastExitCode
-variable "DATE" = return $ Volatile Date
-variable "TIME" = return $ Volatile Time
-variable str = do
-  all isLCOU str ?: Error "ViolationOfInvariantError" (
-    "\"" ++ str ++ "\" is not valid name of usual variable")
-  return . Stable $ Usual str
+variable str = case readVariable str of
+  Just (var, "") -> return var
+  _ -> throwError $ Error "ViolationOfInvariantError" (
+    "\"" ++ str ++ "\" is not valid name of variable")
+
+-- | Функция безошибочного чтения имени переменной из строки. Возвращает, помимо
+-- прочитанной переменной, остаток от строки. Возвращает @'Nothing'@ в случае
+-- невозможности прочтения переменной (например из-за пустой строки на входе).
+readVariable :: String -> Maybe (Variable, String)
+readVariable "" = fail "empty input"
+readVariable ('?':cs) = return (Stable $ Specific LastExitCode, cs)
+readVariable (c:cs)
+  | isLC c = let (gcs, bcs) = span isLCOU cs in return (toVar $ c : gcs, bcs)
+  | otherwise = fail "can't get non-empty name"
     where
       isLCOU c = c `elem` (['A'..'Z'] ++ ['a'..'z'] ++ ['0'..'9'] ++ ['_'])
+      isLC c = c `elem` (['A'..'Z'] ++ ['a'..'z'])
+      toVar "DATE" = Volatile Date
+      toVar "TIME" = Volatile Time
+      toVar name   = Stable $ Usual name
 
 -- | Функция преобразования произвольной переменной в стабильную. Если данная
 -- переменная стабильна, она возвращается в @'Just'@, иначе возвращается
@@ -62,3 +75,7 @@ varPath = Usual "PATH"
 -- | Стабильная переменная PWD
 varPwd :: Stable
 varPwd = Usual "PWD"
+
+-- | Стабильная переменная PS1
+varPs1 :: Stable
+varPs1 = Usual "PS1"
