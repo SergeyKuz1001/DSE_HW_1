@@ -1,12 +1,17 @@
-import           Phases.Analyzer.Tests (testsAnalyzer)
-import           Phases.Parser.Tests   (testsParser)
-import           Phases.Executor.Tests   (testsExecutor)
-
+import           Phases.Analyzer.Tests       (testsAnalyzer)
+import           Phases.Executor.Tests       (testsExecutor)
+import           Phases.Parser.Tests         (testsParser)
+import           Phases.VarSubstitutor.Tests (testsSubstitutor)
+import           System.Environment
 import           Test.HUnit
 
 main :: IO ()
-main = runTestTTAndExit $ TestList [
-    TestLabel "Analyzer" testsAnalyzer,
-    TestLabel "Parser" testsParser,
-    TestLabel "Executor" testsExecutor
+main = getArgs >>= runTestTTAndExit . tests
+
+tests :: [String] -> Test
+tests names = TestList $ map (uncurry TestLabel) $ filter (\(x, _) -> null names || x `elem` names) [
+    ( "Analyzer"       , testsAnalyzer    ),
+    ( "VarSubstitutor" , testsSubstitutor ),
+    ( "Parser"         , testsParser      ),
+    ( "Executor"       , testsExecutor    )
   ]

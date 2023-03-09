@@ -23,6 +23,7 @@ import System.Console.ANSI (setSGRCode, SGR(..), ConsoleLayer(..), ConsoleIntens
 -- | Тип стандартной (для нашей системы) ошибки. Хранит стадию, на которой эта
 -- ошибка произошла, а также дополнительную информацию.
 data Error = Error String String
+  deriving (Eq)
 
 instance Show Error where
   show (Error type_ msg) =

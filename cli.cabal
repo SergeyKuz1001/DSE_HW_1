@@ -95,6 +95,7 @@ test-suite cli-test
       Phases.Analyzer.Tests
       Phases.Executor.Tests
       Phases.Parser.Tests
+      Phases.VarSubstitutor.Tests
       Paths_cli
   hs-source-dirs:
       test
