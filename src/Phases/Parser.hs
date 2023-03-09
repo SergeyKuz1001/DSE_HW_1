@@ -1,5 +1,4 @@
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE LambdaCase #-}
 
 {- |
 Модуль для парсинга пользовательского запроса.
@@ -7,18 +6,30 @@
 Весь этот модуль выглядел бы куда красивее на парсер-комбинаторах,
 но их использовать явно запрещено в задании.
 -}
-module Phases.Parser ( parser ) where
+module Phases.Parser (
+  parser,
+  isIdent,
+  singleQuotes,
+  doubleQuotes,
+  parseEscape
+) where
 
 import           Control.Monad
 import           Data.Bifunctor         (first)
 import           Data.Char
 import qualified Data.Primitive         as P
 import           Environment.MonadError (Error (..), MonadError, throwError)
-import           Prelude
+import           Utils
 
-error' :: String -> Error
-error' = Error "ParsingError"
+{- | Сконструировать специфичную для модуля ошибку -}
+modError :: String -> Error
+modError = Error "ParsingError"
 
+{- | Выбросить специфичную для модуля ошибку -}
+throwModError :: MonadError m => String -> m a
+throwModError = throwError . modError
+
+{- | Наполовину готовый примитив, допустимы пустые строки в командах -}
 data Primitive
   = Commands [[String]]
   | Assignment String String
@@ -43,7 +54,7 @@ removeNulls :: MonadError m => Primitive -> m P.Primitive
 removeNulls (Assignment x v) = pure $ P.Assignment x v
 removeNulls (Commands [])    = pure $ P.Commands []
 removeNulls (Commands lst)   = fmap P.Commands $ forM lst $ \args -> case filter (not . null) args of
-  []       -> throwError $ error' "Empty command between pipes"
+  []       -> throwModError "Empty command between pipes"
   (x : xs) -> pure $ x : xs
 
 {- |
@@ -78,8 +89,8 @@ parseValue :: MonadError m => String -> m String
 parseValue s = splitBySpaces s >>= \case
   ([], []) -> pure ""
   ([x], []) -> pure x
-  (_ : _, _) -> throwError $ error' "Command calls with variable overriding are not supported"
-  (_, _ : _) -> throwError $ error' "Unexpected pipe"
+  (_ : _, _) -> throwModError "Command calls with variable overriding are not supported"
+  (_, _ : _) -> throwModError "Unexpected pipe"
   . first (filter (not . null))
 
 {- |
@@ -104,31 +115,29 @@ parseCommands s = do
 splitBySpaces :: MonadError m => String -> m ([String], String)
 splitBySpaces (        '|'  : cs ) = pure ([""], cs)
 splitBySpaces   ""                 = pure ([""], "")
-splitBySpaces   "\\"               = throwError $ error' "Unexpected end of line after \\"
+splitBySpaces   "\\"               = throwModError "Unexpected end of line after \\"
 splitBySpaces ( '\\' :  c   : cs ) = first (headMap (c :)) <$> splitBySpaces cs
 splitBySpaces (        '\'' : cs ) = singleQuotes cs >>= \(s, r) -> first (headMap (s ++)) <$> splitBySpaces r
 splitBySpaces (        '\"' : cs ) = doubleQuotes cs >>= \(s, r) -> first (headMap (s ++)) <$> splitBySpaces r
 splitBySpaces (         c   : cs ) | isSpace c = first ("" :) <$> splitBySpaces cs
 splitBySpaces (         c   : cs ) = first (headMap (c :)) <$> splitBySpaces cs
 
-{- | Применение функции только к голове списка, если она есть. -}
-headMap :: (a -> a) -> [a] -> [a]
-headMap _ []       = []
-headMap f (x : xs) = f x : xs
-
 {- | Чтение фрагмента строки, заключённого в одинарные кавычки. -}
 singleQuotes :: MonadError m => String -> m (String, String)
-singleQuotes "" = throwError $ error' "Unexpected end of line in single quotes"
+singleQuotes "" = throwModError "Unexpected end of line in single quotes"
 singleQuotes ('\'' : cs) = pure ("", cs)
 singleQuotes ( c   : cs) = first (c :) <$> singleQuotes cs
 
 {- | Чтение фрагмента строки, заключённого в двойные кавычки. -}
 doubleQuotes :: MonadError m => String -> m (String, String)
-doubleQuotes "" = throwError $ error' "Unexpected end of line in double quotes"
-doubleQuotes (       '\"' : cs) = pure ("", cs)
-doubleQuotes ('\\' : '\\' : cs) = first ('\\' :) <$> doubleQuotes cs
-doubleQuotes ('\\' : '\"' : cs) = first ('\"' :) <$> doubleQuotes cs
-doubleQuotes ('\\' : '\'' : cs) = first ('\'' :) <$> doubleQuotes cs
-doubleQuotes ('\\' : 'n'  : cs) = first ('\n' :) <$> doubleQuotes cs
-doubleQuotes ('\\' : 't'  : cs) = first ('\t' :) <$> doubleQuotes cs
-doubleQuotes (        c   : cs) = first (c :) <$> doubleQuotes cs
+doubleQuotes "" = throwModError "Unexpected end of line in double quotes"
+doubleQuotes "\\" = throwModError "Unexpected end of line after \\"
+doubleQuotes ('\"' : cs) = pure ("", cs)
+doubleQuotes ('\\' : c : cs) = first (parseEscape c :) <$> doubleQuotes cs
+doubleQuotes (       c : cs) = first (c :) <$> doubleQuotes cs
+
+{- | Распознать экранированный символ -}
+parseEscape :: Char -> Char
+parseEscape 'n' = '\n'
+parseEscape 't' = '\t'
+parseEscape c   = c
