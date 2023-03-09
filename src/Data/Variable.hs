@@ -13,6 +13,7 @@ module Data.Variable (
     getVarName,
     varPath,
     varPwd,
+    varPs1,
   ) where
 
 import Environment.MonadError (Error(..), MonadError, throwError)
@@ -74,3 +75,7 @@ varPath = Usual "PATH"
 -- | Стабильная переменная PWD
 varPwd :: Stable
 varPwd = Usual "PWD"
+
+-- | Стабильная переменная PS1
+varPs1 :: Stable
+varPs1 = Usual "PS1"
