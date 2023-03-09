@@ -3,6 +3,7 @@ import           Phases.Executor.Tests       (testsExecutor)
 import           Phases.Parser.Tests         (testsParser)
 import           Phases.VarSubstitutor.Tests (testsSubstitutor)
 import           System.Environment
+
 import           Test.HUnit
 
 main :: IO ()

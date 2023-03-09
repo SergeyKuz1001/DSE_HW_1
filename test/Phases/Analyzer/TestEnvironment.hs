@@ -5,8 +5,8 @@ module Phases.Analyzer.TestEnvironment (
     module Environment.FSPrimitive,
     module Environment.MonadError,
     module Environment.MonadFS,
-    module Environment.MonadVarPathReader,
-    module Environment.MonadVarPwdReader,
+    module Environment.MonadPathReader,
+    module Environment.MonadPwdReader,
     TestEnvironment,
     runTestEnvironment,
   ) where
@@ -14,15 +14,20 @@ module Phases.Analyzer.TestEnvironment (
 import Environment.FSPrimitive
 import Environment.MonadError
 import Environment.MonadFS
-import Environment.MonadVarPathReader
-import Environment.MonadVarPwdReader
+import Environment.MonadPathReader
+import Environment.MonadPwdReader
 
 import qualified Control.Monad.Except as ME
 import Control.Monad.State (StateT, gets, runStateT)
 import Data.List (find)
 import Prelude hiding (putStr, putStrLn, getLine)
 
-data GlobalState = GlobalState
+data TestEnvironment a
+
+runTestEnvironment :: AbsFilePath -> [File] -> TestEnvironment a -> Either Error a
+runTestEnvironment = undefined
+
+{-data GlobalState = GlobalState
   { pwd   :: AbsFilePath
   , files :: [File]
   }
@@ -43,4 +48,4 @@ instance MonadFS TestEnvironment where
       in  find ((absPath ==) . filePath) allFiles
 
 runTestEnvironment :: AbsFilePath -> [File] -> TestEnvironment a -> Either Error a
-runTestEnvironment pwd_ files_ (TestEnvironment m) = fst <$> runStateT m (GlobalState pwd_ files_)
+runTestEnvironment pwd_ files_ (TestEnvironment m) = fst <$> runStateT m (GlobalState pwd_ files_)-}

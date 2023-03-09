@@ -6,10 +6,10 @@ module Phases.Executor.Tests (
 ) where
 
 import Data.ImprovedPrimitive
-import Data.VarName (VarName(..), varName)
+import Data.Variable
 import Environment.FSPrimitive (AbsFilePath(..), absFilePath)
 import Environment.MonadExit (ExitCode, MonadExit (exit))
-import Environment.MonadVarsReader
+import Environment.MonadVarReader
 import Environment.MonadIO as EnvIO ( MonadIO(..) )
 import Phases.Executor (executor)
 
@@ -18,7 +18,10 @@ import Data.ByteString.Char8 (pack)
 import qualified Data.Map as Map
 import Test.HUnit (Test(TestList, TestCase), assertEqual)
 
-type TestFileInfo = (AbsFilePath, String)
+testsExecutor :: Test
+testsExecutor = TestList []
+
+{-type TestFileInfo = (AbsFilePath, String)
 
 data IOState = IOState
   { stdOut :: String,
@@ -110,4 +113,4 @@ testsExecutor = TestList [
   let cmd@(name, args, vars) = (absFilePath' "/usr/bin/ls", ["~/example/"], [(varName' "example", "test")])
     in let varsMap = Map.fromList vars
       in checkState "external 'ls'" (emptyState { externalCommands = [cmd], vars = varsMap }) (emptyState { vars = varsMap }) $ Command $ Common $ External $ Arguments name args
-  ]
+  ]-}

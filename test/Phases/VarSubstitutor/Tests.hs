@@ -62,5 +62,6 @@ testsSubstitutor = TestList [
   mkTest "Unclosed {"             "${asdf"                                    $ Nothing,
   mkTest "Character before }"     "${asdf }"                                  $ Nothing,
   mkTest "Quoted }"               "${' '}'"                                   $ Nothing,
-  mkTest "Nothing special"    "as\"df as\"df \\ \\ \\\"zxcv\\\" zxcv" $ Just "as\"df as\"df \\ \\ \\\"zxcv\\\" zxcv"
+  mkTest "Single in double quote" "\"'$mockX'\""                              $ Just "\"'value X'\"",
+  mkTest "Nothing special"        "as\"df as\"df \\ \\ \\\"zxcv\\\" zxcv"     $ Just "as\"df as\"df \\ \\ \\\"zxcv\\\" zxcv"
   ]
