@@ -4,31 +4,29 @@
 --
 -- Весь этот модуль выглядел бы куда красивее на парсер-комбинаторах,
 -- но их использовать явно запрещено в задании.
-module Phases.Parser
-  ( parser,
-    isIdent,
-    singleQuotes,
-    doubleQuotes,
-    parseEscape,
-  )
-where
+module Phases.Parser (parser) where
+
+import qualified Data.Primitive         as P
+import           Environment.MonadError (Error (..), MonadError, throwError)
 
 import           Control.Monad
 import           Data.Bifunctor         (first)
 import           Data.Char
-import qualified Data.Primitive         as P
-import           Environment.MonadError (Error (..), MonadError, throwError)
-import           Utils
 
--- | Сконструировать специфичную для модуля ошибку
+-- | Сконструировать специфичную для модуля ошибку.
 modError :: String -> Error
 modError = Error "ParsingError"
 
--- | Выбросить специфичную для модуля ошибку
+-- | Выбросить специфичную для модуля ошибку.
 throwModError :: MonadError m => String -> m a
 throwModError = throwError . modError
 
--- | Наполовину готовый примитив, допустимы пустые строки в командах
+-- | Применение функции только к голове списка, если она есть.
+headMap :: (a -> a) -> [a] -> [a]
+headMap _ []       = []
+headMap f (x : xs) = f x : xs
+
+-- | Наполовину готовый примитив, допустимы пустые строки в командах.
 data Primitive
   = Commands [[String]]
   | Assignment String String
@@ -126,7 +124,7 @@ doubleQuotes ('\"' : cs) = pure ("", cs)
 doubleQuotes ('\\' : c : cs) = first (parseEscape c :) <$> doubleQuotes cs
 doubleQuotes (c : cs) = first (c :) <$> doubleQuotes cs
 
--- | Распознать экранированный символ
+-- | Распознавание экранированного символа.
 parseEscape :: Char -> Char
 parseEscape 'n' = '\n'
 parseEscape 't' = '\t'
