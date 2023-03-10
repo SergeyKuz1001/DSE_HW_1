@@ -21,10 +21,11 @@ modError = Error "ParsingError"
 throwModError :: MonadError m => String -> m a
 throwModError = throwError . modError
 
--- | Применение функции только к голове списка, если она есть.
-headMap :: (a -> a) -> [a] -> [a]
-headMap _ []       = []
-headMap f (x : xs) = f x : xs
+-- | Приписать префикс только к голове списка,
+-- если её нет, то создать.
+headMappend :: Monoid a => a -> [a] -> [a]
+headMappend x []       = [x]
+headMappend x (y : ys) = x <> y : ys
 
 -- | Наполовину готовый примитив, допустимы пустые строки в командах.
 data Primitive
@@ -46,7 +47,7 @@ parser s = firstWord (dropWhile isSpace s) >>= removeNulls
 removeNulls :: MonadError m => Primitive -> m P.Primitive
 removeNulls (Assignment x v) = pure $ P.Assignment x v
 removeNulls (Commands []) = pure $ P.Commands []
-removeNulls (Commands lst) = fmap P.Commands $ forM lst $ \args -> case filter (not . null) args of
+removeNulls (Commands lst) = fmap P.Commands $ forM lst $ \case
   []       -> throwModError "Empty command between pipes"
   (x : xs) -> pure $ x : xs
 
@@ -57,7 +58,7 @@ firstWord :: MonadError m => String -> m Primitive
 firstWord "" = pure $ Commands []
 firstWord ('=' : cs) = Assignment "" <$> parseValue cs
 firstWord (c : cs) | isIdent c = prependChar c <$> firstWord cs
-firstWord (c : cs) | isSpace c = Commands . headMap ("" :) <$> parseCommands cs
+firstWord (c : cs) | isSpace c = Commands . headMappend [""] <$> parseCommands cs
 firstWord s = Commands <$> parseCommands s
 
 -- | Определяет корректные символы для идентификаторов
@@ -92,7 +93,7 @@ parseValue s =
 parseCommands :: MonadError m => String -> m [[String]]
 parseCommands "" = pure []
 parseCommands s = do
-  (args, rest) <- splitBySpaces s
+  (args, rest) <- splitBySpaces $ dropWhile isSpace s
   cmds <- parseCommands rest
   pure $ args : cmds
 
@@ -101,14 +102,14 @@ parseCommands s = do
 -- используется в связке с @filter (not . null)@.
 -- Останавливается на символе конвейера @|@.
 splitBySpaces :: MonadError m => String -> m ([String], String)
-splitBySpaces ('|' : cs) = pure ([""], cs)
-splitBySpaces "" = pure ([""], "")
+splitBySpaces "" = pure ([], "")
+splitBySpaces ('|' : cs) = pure ([], cs)
 splitBySpaces "\\" = throwModError "Unexpected end of line after \\"
-splitBySpaces ('\\' : c : cs) = first (headMap (c :)) <$> splitBySpaces cs
-splitBySpaces ('\'' : cs) = singleQuotes cs >>= \(s, r) -> first (headMap (s ++)) <$> splitBySpaces r
-splitBySpaces ('\"' : cs) = doubleQuotes cs >>= \(s, r) -> first (headMap (s ++)) <$> splitBySpaces r
-splitBySpaces (c : cs) | isSpace c = first ("" :) <$> splitBySpaces cs
-splitBySpaces (c : cs) = first (headMap (c :)) <$> splitBySpaces cs
+splitBySpaces ('\\' : c : cs) = first (headMappend [c]) <$> splitBySpaces cs
+splitBySpaces ('\'' : cs) = singleQuotes cs >>= \(s, r) -> first (headMappend s) <$> splitBySpaces r
+splitBySpaces ('\"' : cs) = doubleQuotes cs >>= \(s, r) -> first (headMappend s) <$> splitBySpaces r
+splitBySpaces (c : cs) | isSpace c = first ("" :) <$> splitBySpaces (dropWhile isSpace cs)
+splitBySpaces (c : cs) = first (headMappend [c]) <$> splitBySpaces cs
 
 -- | Чтение фрагмента строки, заключённого в одинарные кавычки.
 singleQuotes :: MonadError m => String -> m (String, String)
