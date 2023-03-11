@@ -19,33 +19,38 @@ import Environment.MonadPwdReader
 
 import qualified Control.Monad.Except as ME
 import Control.Monad.State (StateT, gets, runStateT)
-import Data.List (find)
 import Prelude hiding (putStr, putStrLn, getLine)
+import System.FilePath (splitPath, joinPath)
 
-data TestEnvironment a
-
-runTestEnvironment :: AbsFilePath -> [File] -> TestEnvironment a -> Either Error a
-runTestEnvironment = undefined
-
-{-data GlobalState = GlobalState
+data GlobalState = GlobalState
   { pwd   :: AbsFilePath
+  , path  :: [AbsFilePath]
   , files :: [File]
   }
 
 newtype TestEnvironment a = TestEnvironment (StateT GlobalState (Either Error) a)
   deriving (Functor, Applicative, Monad, ME.MonadError Error, MonadError)
 
-instance MonadVarPathReader TestEnvironment where
-  getVarPath = return []
+instance MonadPathReader TestEnvironment where
+  getVarPath = TestEnvironment $ gets path
 
-instance MonadVarPwdReader TestEnvironment where
+instance MonadPwdReader TestEnvironment where
   getVarPwd = TestEnvironment $ gets pwd
 
 instance MonadFS TestEnvironment where
   findFileByAbsPath absPath = TestEnvironment . gets $
     \gs ->
       let allFiles = files gs
-      in  find ((absPath ==) . filePath) allFiles
+          allFilesWithPaths = (\file -> (asFilePath $ filePath file, file)) <$> allFiles
+          absPath' = simplifyPath $ asFilePath absPath
+      in  lookup absPath' allFilesWithPaths
+    where
+      simplifyPath = joinPath . reverse . foldl addToPath [] . splitPath
+      addToPath [] part = [part]
+      addToPath parts "./" = parts
+      addToPath [part] "../" = [part]
+      addToPath (_:parts) "../" = parts
+      addToPath parts part = part : parts
 
-runTestEnvironment :: AbsFilePath -> [File] -> TestEnvironment a -> Either Error a
-runTestEnvironment pwd_ files_ (TestEnvironment m) = fst <$> runStateT m (GlobalState pwd_ files_)-}
+runTestEnvironment :: AbsFilePath -> [AbsFilePath] -> [File] -> TestEnvironment a -> Either Error a
+runTestEnvironment pwd_ path_ files_ (TestEnvironment m) = fst <$> runStateT m (GlobalState pwd_ path_ files_)

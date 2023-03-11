@@ -3,61 +3,238 @@ module Phases.Analyzer.Tests (
   ) where
 
 import qualified Data.Primitive as P
-import Data.ImprovedPrimitive hiding (Primitive(..))
-import qualified Data.ImprovedPrimitive as IP
+import Data.ImprovedPrimitive
+import Data.Variable
 import Phases.Analyzer (analyzer)
 import Phases.Analyzer.TestEnvironment
 
-import Test.HUnit hiding (test, path)
+import Data.List.NonEmpty (fromList)
+import Data.Maybe (fromMaybe)
+import System.FilePath (pathSeparator)
+import Test.HUnit hiding (path)
 
-testsAnalyzer :: Test
-testsAnalyzer = TestList []
-
-{-replace :: Eq a => a -> a -> [a] -> [a]
+replace :: Eq a => a -> a -> [a] -> [a]
 replace x y = foldr (\z -> if x == z then (y:) else (z:)) []
 
-absFilePath' :: String -> AbsFilePath
-absFilePath' path = case absFilePath path of
-  Left _ -> either undefined id . absFilePath $ "C:" ++ replace '/' '\\' path
-  Right absPath -> absPath
+updPath :: FilePath -> FilePath
+updPath path =
+  if pathSeparator == '/'
+    then path
+    else replace '/' '\\' path
+
+updAbsPath :: FilePath -> AbsFilePath
+updAbsPath path = either (error "it isn't AbsFilePath") id . absFilePath $
+  if pathSeparator == '/'
+    then path
+    else "C:" ++ replace '/' '\\' path
+
+updAbsPath' :: FilePath -> FilePath
+updAbsPath' = asFilePath . updAbsPath
+
+stable' :: String -> Stable
+stable' = fromMaybe (error "it isn't Stable") . either (error "it isn't Variable") asStable . variable
+
+file :: FilePath -> (Bool, Bool, Bool) -> File
+file path (rp, wp, ep) = File (updAbsPath path) (Permissions rp wp ep)
 
 env1 :: TestEnvironment a -> Either Error a
-env1 = runTestEnvironment (absFilePath' "/home/user/") [
-    File (absFilePath' "/bin/vim") $ Permissions True True True,
-    File (absFilePath' "/home/user/Documents/lessons_schedule.txt") $ Permissions True True False,
-    File (absFilePath' "/home/user/my_game.py") $ Permissions True True True,
-    File (absFilePath' "/home/user/.vimrc") $ Permissions True True False,
-    File (absFilePath' "/GitHub_PASSWORD.txt") $ Permissions True True False
+env1 = runTestEnvironment (updAbsPath "/home/user/") [updAbsPath "/bin", updAbsPath "/usr/bin", updAbsPath "/home/user/.local/bin"] [
+    file "/GitHub_PASSWORD.txt" (False, True, False),
+    file "/bin/vim" (True, True, True),
+    file "/bin/qsh" (True, True, False),
+    file "/bin/sh" (False, False, True),
+    file "/home/user/Documents/algo04.pdf" (True, True, False),
+    file "/home/user/Documents/lessons_schedule.txt" (True, True, False),
+    file "/home/user/my_game.py" (True, True, True),
+    file "/home/user/some_doc.djvu" (True, False, False),
+    file "/home/user/something_unreadable.txt" (False, True, False),
+    file "/home/user/.local/zsh" (True, False, True),
+    file "/home/user/.local/.stack_settings" (True, False, False),
+    file "/home/user/.vimrc" (True, True, False),
+    file "/some_VERY_VERY_IMPORTANT_file.txt" (True, True, False),
+    file "/usr/bin/emacs-28.1/do_something" (True, True, True),
+    file "/usr/bin/emacs-28.1" (True, True, True)
   ]
 
-test :: (Eq b, Show b) => (TestEnvironment IP.Primitive -> Either Error b) -> [String] -> Maybe b -> Test
-test _ [] _ = TestCase $ fail "Incorrect test"
-test f (command : args) expected = TestCase $
-  (eitherToMaybe . f) (analyzer . P.Command $ command : args) @?= expected
-    where
-      eitherToMaybe (Right x) = Just x
-      eitherToMaybe (Left _) = Nothing
+mkTest :: P.Primitive -> Maybe Primitive -> Test
+mkTest prim expected = TestCase $ (eitherToMaybe . env1) (analyzer prim) @?= expected
+  where
+    eitherToMaybe (Right x) = Just x
+    eitherToMaybe (Left _) = Nothing
+
+mkTestOneCommand :: [String] -> Maybe Primitive -> Test
+mkTestOneCommand = mkTest . P.Commands . pure
+
+mkTestManyCommands :: [[String]] -> Maybe Primitive -> Test
+mkTestManyCommands = mkTest . P.Commands
+
+mkTestAssignment :: String -> String -> Maybe Primitive -> Test
+mkTestAssignment var value = mkTest $ P.Assignment var value
 
 testsAnalyzer :: Test
 testsAnalyzer = TestList [
-    test env1 ["exit", "6"] $
-      Just (IP.Command . Special . Exit $ Just 6),
-    test env1 ["echo", "1", "2"] $
-      Just (IP.Command . Common . Internal $ Echo ["1", "2"]),
-    test env1 ["cat", ".vimrc"] $
-      Just (IP.Command . Common . Internal . Cat $ absFilePath' "/home/user/.vimrc"),
-    test env1 ["cat", asFilePath $ absFilePath' "/GitHub_PASSWORD.txt"] $
-      Just (IP.Command . Common . Internal . Cat $ absFilePath' "/GitHub_PASSWORD.txt"),
-    test env1 ["pwd"] $
-      Just (IP.Command . Common . Internal $ Pwd),
-    test env1 [asFilePath $ absFilePath' "/bin/vim", "-O", ".vimrc", "my_game.py"] $
-      Just (IP.Command . Common . External $ Arguments (absFilePath' "/bin/vim") ["-O", ".vimrc", "my_game.py"]),
-    test env1 ["my_game.py"] $
-      Just (IP.Command . Common . External $ Arguments (absFilePath' "/home/user/my_game.py") []),
-    test env1 ["exit", "hahaha"] Nothing,
-    test env1 ["cat"] Nothing,
-    test env1 ["cat", "123"] Nothing,
-    test env1 ["wc", ".vimrc", "my_game.py"] Nothing,
-    test env1 ["emacs"] Nothing,
-    test env1 ["pwd", "."] Nothing
-  ]-}
+  -- one command
+  --   special
+  --     exit
+    mkTestOneCommand ["exit"] $
+      Just (Special . Exit $ Nothing),
+    mkTestOneCommand ["exit", "6"] $
+      Just (Special . Exit $ Just 6),
+    mkTestOneCommand ["exit", "hahaha"]
+      Nothing,
+  --   internal
+  --     cat
+    mkTestOneCommand ["cat"]
+      Nothing,
+    mkTestOneCommand ["cat", "123"]
+      Nothing,
+    mkTestOneCommand ["cat", ".vimrc"] $
+      Just (Commons $ fromList [Internal . Cat $ updAbsPath "/home/user/.vimrc"]),
+    mkTestOneCommand ["cat", "./.vimrc"] $
+      Just (Commons $ fromList [Internal . Cat $ updAbsPath "/home/user/.vimrc"]),
+    mkTestOneCommand ["cat", "vim"]
+      Nothing,
+    mkTestOneCommand ["cat", "something_unreadable.txt"]
+      Nothing,
+    mkTestOneCommand ["cat", updAbsPath' "/GitHub_PASSWORD.txt"] $
+      Nothing,
+    mkTestOneCommand ["cat", updAbsPath' "/some_VERY_VERY_IMPORTANT_file.txt"] $
+      Just (Commons $ fromList [Internal . Cat $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
+    mkTestOneCommand ["cat", updPath "../../some_VERY_VERY_IMPORTANT_file.txt"] $
+      Just (Commons $ fromList [Internal . Cat $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
+    mkTestOneCommand ["cat", updPath "Documents/algo04.pdf"] $
+      Just (Commons $ fromList [Internal . Cat $ updAbsPath "/home/user/Documents/algo04.pdf"]),
+    mkTestOneCommand ["cat", updAbsPath' "/usr/bin/emacs-28.1/do_something"] $
+      Just (Commons $ fromList [Internal . Cat $ updAbsPath "/usr/bin/emacs-28.1/do_something"]),
+    mkTestOneCommand ["cat", ".vimrc", ".vimrc"]
+      Nothing,
+    mkTestOneCommand ["cat", ".vimrc", "my_game.py"]
+      Nothing,
+    mkTestOneCommand ["cat", "some_doc.djvu", ".vimrc"]
+      Nothing,
+  --     echo
+    mkTestOneCommand ["echo"] $
+      Just (Commons $ fromList [Internal $ Echo []]),
+    mkTestOneCommand ["echo", "bf q43h wui"] $
+      Just (Commons $ fromList [Internal $ Echo ["bf q43h wui"]]),
+    mkTestOneCommand ["echo", "1", "2"] $
+      Just (Commons $ fromList [Internal $ Echo ["1", "2"]]),
+  --     wc
+    mkTestOneCommand ["wc"]
+      Nothing,
+    mkTestOneCommand ["wc", "123"]
+      Nothing,
+    mkTestOneCommand ["wc", ".vimrc"] $
+      Just (Commons $ fromList [Internal . Wc $ updAbsPath "/home/user/.vimrc"]),
+    mkTestOneCommand ["wc", "./.vimrc"] $
+      Just (Commons $ fromList [Internal . Wc $ updAbsPath "/home/user/.vimrc"]),
+    mkTestOneCommand ["wc", "vim"]
+      Nothing,
+    mkTestOneCommand ["wc", "something_unreadable.txt"]
+      Nothing,
+    mkTestOneCommand ["wc", updAbsPath' "/GitHub_PASSWORD.txt"] $
+      Nothing,
+    mkTestOneCommand ["wc", updAbsPath' "/some_VERY_VERY_IMPORTANT_file.txt"] $
+      Just (Commons $ fromList [Internal . Wc $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
+    mkTestOneCommand ["wc", updPath "../../some_VERY_VERY_IMPORTANT_file.txt"] $
+      Just (Commons $ fromList [Internal . Wc $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
+    mkTestOneCommand ["wc", updPath "Documents/algo04.pdf"] $
+      Just (Commons $ fromList [Internal . Wc $ updAbsPath "/home/user/Documents/algo04.pdf"]),
+    mkTestOneCommand ["wc", updAbsPath' "/usr/bin/emacs-28.1/do_something"] $
+      Just (Commons $ fromList [Internal . Wc $ updAbsPath "/usr/bin/emacs-28.1/do_something"]),
+    mkTestOneCommand ["wc", ".vimrc", ".vimrc"]
+      Nothing,
+    mkTestOneCommand ["wc", ".vimrc", "my_game.py"]
+      Nothing,
+    mkTestOneCommand ["wc", "some_doc.djvu", ".vimrc"]
+      Nothing,
+  --     pwd
+    mkTestOneCommand ["pwd"] $
+      Just (Commons $ fromList [Internal Pwd]),
+    mkTestOneCommand ["pwd", "."]
+      Nothing,
+    mkTestOneCommand ["pwd", "F", "1"]
+      Nothing,
+  --   external
+    mkTestOneCommand [updAbsPath' "/bin/vim", "-O", ".vimrc", "my_game.py"] $
+      Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/vim") ["-O", ".vimrc", "my_game.py"]]),
+    mkTestOneCommand ["vim", ".vimrc", "my_game.py"] $
+      Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/vim") [".vimrc", "my_game.py"]]),
+    mkTestOneCommand ["././.././user/../../bin/./vim", ".vimrc"] $
+      Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/vim") [".vimrc"]]),
+    mkTestOneCommand ["my_game.py"]
+      Nothing,
+    mkTestOneCommand ["./my_game.py"] $
+      Just (Commons $ fromList [External $ Arguments (updAbsPath "/home/user/my_game.py") []]),
+    mkTestOneCommand ["some_doc.djvu"]
+      Nothing,
+    mkTestOneCommand ["emacs"]
+      Nothing,
+    mkTestOneCommand ["emacs-28.1"] $
+      Just (Commons $ fromList [External $ Arguments (updAbsPath "/usr/bin/emacs-28.1") []]),
+    mkTestOneCommand [updPath "emacs-28.1/do_something"]
+      Nothing,
+    mkTestOneCommand [updAbsPath' "/GitHub_PASSWORD.txt"]
+      Nothing,
+    mkTestOneCommand [updAbsPath' "/bin/qsh"]
+      Nothing,
+    mkTestOneCommand [updAbsPath' "/bin/sh"] $
+      Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/sh") []]),
+    mkTestOneCommand ["sh"] $
+      Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/sh") []]),
+    mkTestOneCommand ["sh", "12321", "", "ava"] $
+      Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/sh") ["12321", "", "ava"]]),
+    mkTestOneCommand [""]
+      Nothing,
+    mkTestOneCommand ["", "123", "456"]
+      Nothing,
+  --   empty
+    mkTestOneCommand [] $
+      Just Empty,
+  -- many commands
+    mkTestManyCommands [["pwd"], ["echo"]] $
+      Just (Commons $ fromList [Internal Pwd, Internal $ Echo []]),
+    mkTestManyCommands [] $
+      Just Empty,
+    mkTestManyCommands [[], []]
+      Nothing,
+    mkTestManyCommands [[], [], [], [], []]
+      Nothing,
+    mkTestManyCommands [["pwd"], ["exit"]]
+      Nothing,
+    mkTestManyCommands [["exit"], ["pwd"]]
+      Nothing,
+    mkTestManyCommands [["vim"], ["emacs-28.1"]] $
+      Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/vim") [], External $ Arguments (updAbsPath "/usr/bin/emacs-28.1") []]),
+    mkTestManyCommands [["sh"], ["pwd"], ["vim"]] $
+      Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/sh") [], Internal Pwd, External $ Arguments (updAbsPath "/bin/vim") []]),
+    mkTestManyCommands [["./my_game.py", "123", "61"], ["echo"], ["cat", "my_game.py"]] $
+      Just (Commons $ fromList [External $ Arguments (updAbsPath "/home/user/my_game.py") ["123", "61"], Internal $ Echo [], Internal $ Cat (updAbsPath "/home/user/my_game.py")]),
+    mkTestManyCommands [["echo", "1"], ["echo"], ["echo"]] $
+      Just (Commons $ fromList [Internal $ Echo ["1"], Internal $ Echo [], Internal $ Echo []]),
+    mkTestManyCommands [["echo", "1"], ["exit"], ["echo"]] $
+      Nothing,
+    mkTestManyCommands [["echo", "1"], ["echo"], ["exit"], ["echo"]] $
+      Nothing,
+    mkTestManyCommands [["echo", "1"], ["echo"], [], ["echo"]] $
+      Nothing,
+    mkTestManyCommands [["echo", "1"], [], ["echo"]] $
+      Nothing,
+  -- assignment
+    mkTestAssignment "a1_y5" "123" $
+      Just (Assignment (stable' "a1_y5") "123"),
+    mkTestAssignment "xyz" "" $
+      Just (Assignment (stable' "xyz") ""),
+    mkTestAssignment "" "abc"
+      Nothing,
+    mkTestAssignment "123" "123"
+      Nothing,
+    mkTestAssignment "Am__3_1V_18a4_l" "asdfghjkl" $
+      Just (Assignment (stable' "Am__3_1V_18a4_l") "asdfghjkl"),
+    mkTestAssignment "r.p" "q"
+      Nothing,
+    mkTestAssignment "a=" "b"
+      Nothing,
+    mkTestAssignment "l4" "3hor2 qo  qw@$Q WK A<V>Fafohql fw\\ae s//* f465 ase + _!@+ 13r#@ rwjk sQFA K3Aw4fad as\"d ;a[] apjwi\'ohf uf aw" $
+      Just (Assignment (stable' "l4") "3hor2 qo  qw@$Q WK A<V>Fafohql fw\\ae s//* f465 ase + _!@+ 13r#@ rwjk sQFA K3Aw4fad as\"d ;a[] apjwi\'ohf uf aw")
+  ]

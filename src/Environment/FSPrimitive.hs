@@ -24,7 +24,7 @@ newtype AbsFilePath = AbsFilePath { asFilePath :: FilePath }
   deriving (Eq, Ord)
 
 instance Show AbsFilePath where
-  show (AbsFilePath path) = path
+  show (AbsFilePath path) = show path
 
 -- | Функция для конструирования значения типа @'AbsFilePath'@. При
 -- конструировании проверяется соблюдение инварианта, и в случае его нарушения
