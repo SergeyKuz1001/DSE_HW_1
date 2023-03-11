@@ -103,7 +103,7 @@ instance MonadPathReader Environment where
   getVarPath = getVarPathDefault
 
 instance MonadPwdReader Environment where
-  getVarPwd = toEnv D.getCurrentDirectory >>= absFilePath
+  getVarPwd = getVarPwdDefault
 
 getLocalTime :: IO LocalTime
 getLocalTime = do
@@ -122,7 +122,7 @@ instance MonadPathWriter Environment where
   setVarPath = setVarPathDefault
 
 instance MonadPwdWriter Environment where
-  setVarPwd = ST.modify . M.insert varPwd . asFilePath
+  setVarPwd = setVarPwdDefault
 
 throwAssignmentError :: MonadError m => String -> m ()
 throwAssignmentError = throwError . Error "AssignmentError"
@@ -130,8 +130,6 @@ throwAssignmentError = throwError . Error "AssignmentError"
 instance MonadVarWriter Environment where
   setVar (Specific LastExitCode) _ =
     throwAssignmentError "can't set value to special variable \"?\""
-  setVar var _ | var == varPwd =
-    throwAssignmentError "can't set value to special variable \"PWD\""
   setVar var value = ST.modify $ M.insert var value
 
 instance MonadFS Environment where

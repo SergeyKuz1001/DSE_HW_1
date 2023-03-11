@@ -82,6 +82,13 @@ testsAnalyzer = TestList [
       Just (Special . Exit $ Just 6),
     mkTestOneCommand ["exit", "hahaha"]
       Nothing,
+  --     cd
+    mkTestOneCommand ["cd"]
+      Nothing,
+    mkTestOneCommand ["cd", "!@e32riofuhw o3gq23rio q2kj fn2fak.slfaA#WGJ#Q3f   e "] $
+      Just (Special $ Cd "!@e32riofuhw o3gq23rio q2kj fn2fak.slfaA#WGJ#Q3f   e "),
+    mkTestOneCommand ["cd", "123", "456"]
+      Nothing,
   --   internal
   --     cat
     mkTestOneCommand ["cat"]

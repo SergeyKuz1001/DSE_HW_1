@@ -58,6 +58,10 @@ commandAnalyzer ("exit" : args) = do
   mInt <- forM mArg (\arg ->
     readMaybe arg @: error "argument of `exit` command must be integer")
   return . Special $ Exit mInt
+commandAnalyzer ("cd" : args) = do
+  length args == 1 ?: error "`cd` command must have only one argument"
+  let filePath = head args
+  return . Special $ Cd filePath
 commandAnalyzer (name : args) = do
   absFilePath <- doesExecutableExist name @>= error ("can't find executable file by path \"" ++ name ++ "\"")
   return . Common . External $ Arguments absFilePath args
