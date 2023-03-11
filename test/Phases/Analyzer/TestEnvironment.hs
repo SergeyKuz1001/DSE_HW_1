@@ -42,15 +42,7 @@ instance MonadFS TestEnvironment where
     \gs ->
       let allFiles = files gs
           allFilesWithPaths = (\file -> (asFilePath $ filePath file, file)) <$> allFiles
-          absPath' = simplifyPath $ asFilePath absPath
-      in  lookup absPath' allFilesWithPaths
-    where
-      simplifyPath = joinPath . reverse . foldl addToPath [] . splitPath
-      addToPath [] part = [part]
-      addToPath parts "./" = parts
-      addToPath [part] "../" = [part]
-      addToPath (_:parts) "../" = parts
-      addToPath parts part = part : parts
+      in  lookup (asFilePath absPath) allFilesWithPaths
 
 runTestEnvironment :: AbsFilePath -> [AbsFilePath] -> [File] -> TestEnvironment a -> Either Error a
 runTestEnvironment pwd_ path_ files_ (TestEnvironment m) = fst <$> runStateT m (GlobalState pwd_ path_ files_)
