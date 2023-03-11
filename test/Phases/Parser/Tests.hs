@@ -45,5 +45,10 @@ testsParser = TestList [
   mkTest "Pipes with spaces"                "  cmd1 | cmd2 | cmd3  "                $ Just $ Commands [["cmd1"], ["cmd2"], ["cmd3"]],
   mkTest "Pipes with args and spaces"       "  cmd1 arg1 | cmd2 arg2 | cmd3 arg3  " $ Just $ Commands [["cmd1", "arg1"], ["cmd2", "arg2"], ["cmd3", "arg3"]],
   mkTest "Empty"                            ""                                      $ Just $ Commands [],
-  mkTest "Command with empty string as arg" "cmd a1 \"\" a3"                        $ Just $ Commands [["cmd", "a1", "", "a3"]]
+  mkTest "Cmd with empty str in dq as arg"  "cmd a1 \"\" a3"                        $ Just $ Commands [["cmd", "a1", "", "a3"]],
+  mkTest "Cmd with empty str in dq as arg"  "cmd a1 \'\' a3"                        $ Just $ Commands [["cmd", "a1", "", "a3"]],
+  mkTest "Cmd with double quote as arg"     "cmd a1 \\\" a3"                        $ Just $ Commands [["cmd", "a1", "\"", "a3"]],
+  mkTest "Cmd with single quote as arg"     "cmd a1 \\\' a3"                        $ Just $ Commands [["cmd", "a1", "\'", "a3"]],
+  mkTest "Empty string in double q. as cmd" "\"\" b aa"                             $ Just $ Commands [["", "b", "aa"]],
+  mkTest "Empty string in single q. as cmd" "\'\' b aa"                             $ Just $ Commands [["", "b", "aa"]]
   ]
