@@ -1,4 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS_GHC -Wno-overlapping-patterns #-}
 
 module Phases.Executor.Tests (

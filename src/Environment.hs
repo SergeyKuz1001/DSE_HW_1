@@ -108,16 +108,15 @@ instance MonadPwdReader Environment where
 getLocalTime :: IO LocalTime
 getLocalTime = do
   timeZone <- getCurrentTimeZone
-  utcTime  <- getCurrentTime
-  return $ utcToLocalTime timeZone utcTime
+  utcToLocalTime timeZone <$> getCurrentTime
 
 instance MonadVarReader Environment where
-  getVar (Volatile Date) = toEnv getLocalTime >>= return . formatTime defaultTimeLocale "%e %B %Y"
-  getVar (Volatile Time) = toEnv getLocalTime >>= return . formatTime defaultTimeLocale "%H:%M:%S"
+  getVar (Volatile Date) = formatTime defaultTimeLocale "%e %B %Y" <$> toEnv getLocalTime
+  getVar (Volatile Time) = formatTime defaultTimeLocale "%H:%M:%S" <$> toEnv getLocalTime
   getVar (Stable var) = do
       vars <- ST.get
       return . fromMaybe "" $ vars M.!? var
-  getVars = M.toList <$> ST.get
+  getVars = ST.gets M.toList
 
 instance MonadPathWriter Environment where
   setVarPath = setVarPathDefault
