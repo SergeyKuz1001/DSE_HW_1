@@ -42,9 +42,10 @@ import qualified Control.Monad.Except as ME
 import qualified Control.Monad.IO.Class as MIO
 import qualified Control.Monad.State as ST
 import qualified Data.ByteString as BS
+import Data.Foldable (traverse_)
 import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Maybe (fromMaybe, mapMaybe, catMaybes)
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Format (formatTime, defaultTimeLocale)
 import Data.Time.LocalTime (LocalTime, getCurrentTimeZone, utcToLocalTime)
@@ -53,7 +54,7 @@ import qualified Prelude as P
 import qualified System.Directory as D
 import System.Environment (getEnvironment)
 import System.Exit (exitWith)
-import System.IO (isEOF, IOMode(..))
+import System.IO (isEOF, IOMode(..), hClose)
 import qualified System.Process as PRC
 
 -- | Главный контекст для вычислений в программе.
@@ -86,18 +87,24 @@ instance MonadPM Environment where
   createProcess absPath args vars (stdinA, stdoutA, stderrA) = toEnv $ do
     let vars' = map (\(var, value) -> (getVarName var, value)) vars
     let cmd   = asFilePath absPath
-    strIn  <- handleActionToStdStream stdinA ReadMode
-    strOut <- handleActionToStdStream stdoutA WriteMode
-    strErr <- handleActionToStdStream stderrA WriteMode
+    (strIn,  mFileHndlIn)  <- handleActionToStdStream stdinA ReadMode
+    (strOut, mFileHndlOut) <- handleActionToStdStream stdoutA WriteMode
+    (strErr, mFileHndlErr) <- handleActionToStdStream stderrA WriteMode
     let proc = (PRC.proc cmd args) {
         PRC.env = Just vars',
         PRC.std_in = strIn,
         PRC.std_out = strOut,
         PRC.std_err = strErr
       }
-    PRC.createProcess proc
-  waitForProcess = toEnv . fmap fromStandardEC . PRC.waitForProcess
-  terminateProcess = toEnv . PRC.terminateProcess
+    (mHndlIn, mHndlOut, mHndlErr, procHndl) <- PRC.createProcess proc
+    return . (mHndlIn, mHndlOut, mHndlErr, ) . ProcessHandle procHndl $ catMaybes [mFileHndlIn, mFileHndlOut, mFileHndlErr]
+  waitForProcess (ProcessHandle procHndl fileHndls) = toEnv $ do
+    ec <- fromStandardEC <$> PRC.waitForProcess procHndl
+    traverse_ hClose fileHndls
+    return ec
+  terminateProcess (ProcessHandle procHndl fileHndls) = toEnv $ do
+    PRC.terminateProcess procHndl
+    traverse_ hClose fileHndls
 
 instance MonadPathReader Environment where
   getVarPath = getVarPathDefault
