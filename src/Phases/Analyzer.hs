@@ -40,7 +40,7 @@ commandAnalyzer ("cat" : args) = do
   let filePath = head args
   absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
   isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
-  return . Common . Internal $ Cat absFilePath
+  return . Common . Internal $ Cat $ Just absFilePath
 commandAnalyzer ("echo" : args) = do
   return . Common . Internal $ Echo args
 commandAnalyzer ("wc" : args) = do
@@ -48,7 +48,7 @@ commandAnalyzer ("wc" : args) = do
   let filePath = head args
   absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
   isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
-  return . Common . Internal $ Wc absFilePath
+  return . Common . Internal $ Wc $ Just absFilePath
 commandAnalyzer ("pwd" : args) = do
   null args ?: error "`pwd` command hasn't arguments"
   return . Common . Internal $ Pwd

@@ -3,7 +3,7 @@
 выхода из данной программы.
 -}
 module Environment.MonadExit (
-    ExitCode,
+    ExitCode (ExitCode),
     toStandardEC,
     fromStandardEC,
     MonadExit(..),

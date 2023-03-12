@@ -45,7 +45,7 @@ data Common = Internal Internal | External External
 --     * @echo@ — вывод аргументов через пробел;
 --     * @wc@ — статистика для файла;
 --     * @pwd@ — имя текущей директории.
-data Internal = Cat AbsFilePath | Echo [String] | Wc AbsFilePath | Pwd
+data Internal = Cat (Maybe AbsFilePath) | Echo [String] | Wc (Maybe AbsFilePath) | Pwd
   deriving (Eq, Show)
 
 -- | Внешняя команда вызывается по пути к исполняемому файлу с указанными

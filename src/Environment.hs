@@ -55,7 +55,9 @@ import qualified System.Directory as D
 import System.Environment (getEnvironment)
 import System.Exit (exitWith)
 import System.IO (isEOF, IOMode(..), hClose)
+import System.IO as SIO
 import qualified System.Process as PRC
+import System.Process (StdStream(UseHandle))
 
 -- | Главный контекст для вычислений в программе.
 newtype Environment a = Environment (ST.StateT (Map Stable String) (ME.ExceptT Error IO) a)
@@ -87,17 +89,17 @@ instance MonadPM Environment where
   createProcess absPath args vars (stdinA, stdoutA, stderrA) = toEnv $ do
     let vars' = map (\(var, value) -> (getVarName var, value)) vars
     let cmd   = asFilePath absPath
-    (strIn,  mFileHndlIn)  <- handleActionToStdStream stdinA ReadMode
-    (strOut, mFileHndlOut) <- handleActionToStdStream stdoutA WriteMode
-    (strErr, mFileHndlErr) <- handleActionToStdStream stderrA WriteMode
+    -- (strIn,  mFileHndlIn)  <- handleActionToStdStream stdinA ReadMode
+    -- (strOut, mFileHndlOut) <- handleActionToStdStream stdoutA WriteMode
+    -- (strErr, mFileHndlErr) <- handleActionToStdStream stderrA WriteMode
     let proc = (PRC.proc cmd args) {
         PRC.env = Just vars',
-        PRC.std_in = strIn,
-        PRC.std_out = strOut,
-        PRC.std_err = strErr
+        PRC.std_in = UseHandle stdinA,
+        PRC.std_out = UseHandle stdoutA,
+        PRC.std_err = UseHandle stderrA
       }
-    (mHndlIn, mHndlOut, mHndlErr, procHndl) <- PRC.createProcess proc
-    return . (mHndlIn, mHndlOut, mHndlErr, ) . ProcessHandle procHndl $ catMaybes [mFileHndlIn, mFileHndlOut, mFileHndlErr]
+    (_, _, _, procHndl) <- PRC.createProcess proc
+    return . ProcessHandle procHndl $ catMaybes []
   waitForProcess (ProcessHandle procHndl fileHndls) = toEnv $ do
     ec <- fromStandardEC <$> PRC.waitForProcess procHndl
     traverse_ hClose fileHndls
@@ -105,6 +107,10 @@ instance MonadPM Environment where
   terminateProcess (ProcessHandle procHndl fileHndls) = toEnv $ do
     PRC.terminateProcess procHndl
     traverse_ hClose fileHndls
+  hPutStr = (toEnv .) . SIO.hPutStr
+  hGetLine = toEnv . SIO.hGetLine
+  createPipe = toEnv PRC.createPipe
+  hGetContents = toEnv . SIO.hGetContents
 
 instance MonadPathReader Environment where
   getVarPath = getVarPathDefault
