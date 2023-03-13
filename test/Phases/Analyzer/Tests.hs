@@ -7,6 +7,7 @@ import Data.ImprovedPrimitive
 import Data.Variable
 import Phases.Analyzer (analyzer)
 import Phases.Analyzer.TestEnvironment
+import Environment.MonadExit (ExitCode(..))
 
 import Data.List.NonEmpty (fromList)
 import Data.Maybe (fromMaybe)
@@ -79,7 +80,7 @@ testsAnalyzer = TestList [
     mkTestOneCommand ["exit"] $
       Just (Special . Exit $ Nothing),
     mkTestOneCommand ["exit", "6"] $
-      Just (Special . Exit $ Just 6),
+      Just (Special . Exit . Just $ ExitCode 6),
     mkTestOneCommand ["exit", "hahaha"]
       Nothing,
   --     cd
@@ -92,13 +93,13 @@ testsAnalyzer = TestList [
   --   internal
   --     cat
     mkTestOneCommand ["cat"] $
-      Just (Commons $ fromList [Internal $ Cat Nothing]),
+      Just (Commons $ fromList [Internal . Streaming $ Cat Nothing]),
     mkTestOneCommand ["cat", "123"]
       Nothing,
     mkTestOneCommand ["cat", ".vimrc"] $
-      Just (Commons $ fromList [Internal . Cat . Just $ updAbsPath "/home/user/.vimrc"]),
+      Just (Commons $ fromList [Internal . Streaming . Cat . Just $ updAbsPath "/home/user/.vimrc"]),
     mkTestOneCommand ["cat", "./.vimrc"] $
-      Just (Commons $ fromList [Internal . Cat . Just $ updAbsPath "/home/user/.vimrc"]),
+      Just (Commons $ fromList [Internal . Streaming . Cat . Just $ updAbsPath "/home/user/.vimrc"]),
     mkTestOneCommand ["cat", "vim"]
       Nothing,
     mkTestOneCommand ["cat", "something_unreadable.txt"]
@@ -106,13 +107,13 @@ testsAnalyzer = TestList [
     mkTestOneCommand ["cat", updAbsPath' "/GitHub_PASSWORD.txt"] $
       Nothing,
     mkTestOneCommand ["cat", updAbsPath' "/some_VERY_VERY_IMPORTANT_file.txt"] $
-      Just (Commons $ fromList [Internal . Cat . Just $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
+      Just (Commons $ fromList [Internal . Streaming . Cat . Just $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
     mkTestOneCommand ["cat", updPath "../../some_VERY_VERY_IMPORTANT_file.txt"] $
-      Just (Commons $ fromList [Internal . Cat . Just $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
+      Just (Commons $ fromList [Internal . Streaming . Cat . Just $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
     mkTestOneCommand ["cat", updPath "Documents/algo04.pdf"] $
-      Just (Commons $ fromList [Internal . Cat . Just $ updAbsPath "/home/user/Documents/algo04.pdf"]),
+      Just (Commons $ fromList [Internal . Streaming . Cat . Just $ updAbsPath "/home/user/Documents/algo04.pdf"]),
     mkTestOneCommand ["cat", updAbsPath' "/usr/bin/emacs-28.1/do_something"] $
-      Just (Commons $ fromList [Internal . Cat . Just $ updAbsPath "/usr/bin/emacs-28.1/do_something"]),
+      Just (Commons $ fromList [Internal . Streaming . Cat . Just $ updAbsPath "/usr/bin/emacs-28.1/do_something"]),
     mkTestOneCommand ["cat", ".vimrc", ".vimrc"]
       Nothing,
     mkTestOneCommand ["cat", ".vimrc", "my_game.py"]
@@ -121,20 +122,20 @@ testsAnalyzer = TestList [
       Nothing,
   --     echo
     mkTestOneCommand ["echo"] $
-      Just (Commons $ fromList [Internal $ Echo []]),
+      Just (Commons $ fromList [Internal . Streaming $ Echo []]),
     mkTestOneCommand ["echo", "bf q43h wui"] $
-      Just (Commons $ fromList [Internal $ Echo ["bf q43h wui"]]),
+      Just (Commons $ fromList [Internal . Streaming $ Echo ["bf q43h wui"]]),
     mkTestOneCommand ["echo", "1", "2"] $
-      Just (Commons $ fromList [Internal $ Echo ["1", "2"]]),
+      Just (Commons $ fromList [Internal . Streaming $ Echo ["1", "2"]]),
   --     wc
     mkTestOneCommand ["wc"] $
-      Just (Commons $ fromList [Internal $ Wc Nothing]),
+      Just (Commons $ fromList [Internal . Blocking $ WcStdin]),
     mkTestOneCommand ["wc", "123"]
       Nothing,
     mkTestOneCommand ["wc", ".vimrc"] $
-      Just (Commons $ fromList [Internal . Wc . Just $ updAbsPath "/home/user/.vimrc"]),
+      Just (Commons $ fromList [Internal . Streaming . WcFile $ updAbsPath "/home/user/.vimrc"]),
     mkTestOneCommand ["wc", "./.vimrc"] $
-      Just (Commons $ fromList [Internal . Wc . Just $ updAbsPath "/home/user/.vimrc"]),
+      Just (Commons $ fromList [Internal . Streaming . WcFile $ updAbsPath "/home/user/.vimrc"]),
     mkTestOneCommand ["wc", "vim"]
       Nothing,
     mkTestOneCommand ["wc", "something_unreadable.txt"]
@@ -142,13 +143,13 @@ testsAnalyzer = TestList [
     mkTestOneCommand ["wc", updAbsPath' "/GitHub_PASSWORD.txt"] $
       Nothing,
     mkTestOneCommand ["wc", updAbsPath' "/some_VERY_VERY_IMPORTANT_file.txt"] $
-      Just (Commons $ fromList [Internal . Wc . Just $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
+      Just (Commons $ fromList [Internal . Streaming . WcFile $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
     mkTestOneCommand ["wc", updPath "../../some_VERY_VERY_IMPORTANT_file.txt"] $
-      Just (Commons $ fromList [Internal . Wc . Just $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
+      Just (Commons $ fromList [Internal . Streaming . WcFile $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
     mkTestOneCommand ["wc", updPath "Documents/algo04.pdf"] $
-      Just (Commons $ fromList [Internal . Wc . Just $ updAbsPath "/home/user/Documents/algo04.pdf"]),
+      Just (Commons $ fromList [Internal . Streaming . WcFile $ updAbsPath "/home/user/Documents/algo04.pdf"]),
     mkTestOneCommand ["wc", updAbsPath' "/usr/bin/emacs-28.1/do_something"] $
-      Just (Commons $ fromList [Internal . Wc . Just $ updAbsPath "/usr/bin/emacs-28.1/do_something"]),
+      Just (Commons $ fromList [Internal . Streaming . WcFile $ updAbsPath "/usr/bin/emacs-28.1/do_something"]),
     mkTestOneCommand ["wc", ".vimrc", ".vimrc"]
       Nothing,
     mkTestOneCommand ["wc", ".vimrc", "my_game.py"]
@@ -157,7 +158,7 @@ testsAnalyzer = TestList [
       Nothing,
   --     pwd
     mkTestOneCommand ["pwd"] $
-      Just (Commons $ fromList [Internal Pwd]),
+      Just (Commons $ fromList [Internal $ Streaming Pwd]),
     mkTestOneCommand ["pwd", "."]
       Nothing,
     mkTestOneCommand ["pwd", "F", "1"]
@@ -200,7 +201,7 @@ testsAnalyzer = TestList [
       Just Empty,
   -- many commands
     mkTestManyCommands [["pwd"], ["echo"]] $
-      Just (Commons $ fromList [Internal Pwd, Internal $ Echo []]),
+      Just (Commons $ fromList [Internal $ Streaming Pwd, Internal . Streaming $ Echo []]),
     mkTestManyCommands [] $
       Just Empty,
     mkTestManyCommands [[], []]
@@ -214,11 +215,11 @@ testsAnalyzer = TestList [
     mkTestManyCommands [["vim"], ["emacs-28.1"]] $
       Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/vim") [], External $ Arguments (updAbsPath "/usr/bin/emacs-28.1") []]),
     mkTestManyCommands [["sh"], ["pwd"], ["vim"]] $
-      Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/sh") [], Internal Pwd, External $ Arguments (updAbsPath "/bin/vim") []]),
+      Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/sh") [], Internal $ Streaming Pwd, External $ Arguments (updAbsPath "/bin/vim") []]),
     mkTestManyCommands [["./my_game.py", "123", "61"], ["echo"], ["cat", "my_game.py"]] $
-      Just (Commons $ fromList [External $ Arguments (updAbsPath "/home/user/my_game.py") ["123", "61"], Internal $ Echo [], Internal . Cat . Just  $updAbsPath "/home/user/my_game.py"]),
+      Just (Commons $ fromList [External $ Arguments (updAbsPath "/home/user/my_game.py") ["123", "61"], Internal . Streaming $ Echo [], Internal . Streaming . Cat . Just  $updAbsPath "/home/user/my_game.py"]),
     mkTestManyCommands [["echo", "1"], ["echo"], ["echo"]] $
-      Just (Commons $ fromList [Internal $ Echo ["1"], Internal $ Echo [], Internal $ Echo []]),
+      Just (Commons $ fromList [Internal . Streaming $ Echo ["1"], Internal . Streaming $ Echo [], Internal . Streaming $ Echo []]),
     mkTestManyCommands [["echo", "1"], ["exit"], ["echo"]] $
       Nothing,
     mkTestManyCommands [["echo", "1"], ["echo"], ["exit"], ["echo"]] $

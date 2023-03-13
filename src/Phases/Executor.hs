@@ -13,10 +13,11 @@ import Environment.MonadPM as PM
 import Environment.MonadVarReader (MonadVarReader (..))
 import Environment.MonadVarWriter (MonadVarWriter (..))
 import Environment.MonadPwdReader (MonadPwdReader (..))
+import Environment.MonadPwdWriter (MonadPwdWriter (..))
 import Data.Variable (varPwd, getVarName)
 import System.IO (Handle)
-import System.IO as SIO (stderr, stdin)
-import Environment.FSPrimitive (asFilePath)
+import System.IO as SIO (stderr, stdin, stdout)
+import Environment.FSPrimitive (asFilePath, (</>))
 
 import Data.Bool (bool)
 import qualified Data.ByteString.Char8 as ByteStr
@@ -29,31 +30,32 @@ type WcOutputArguments = (Int, Int, Int, Bool)
 
 -- | Функция принимает, разбирает и исполняет распарсшенный примитив.
 executor :: (MonadIO m, MonadPM m, MonadExit m, MonadVarWriter m, MonadVarReader m) => Primitive -> m ()
-executor = \case
+executor = undefined
+{-executor = \case
   Special special -> executeSpecial special
-  Commons commons -> do
-    handles <- PM.createPipe
-    executeCommons (SIO.stdin, handles, SIO.stderr) commons
+  Commons commons -> executeCommons SIO.stdin commons
   Assignment var value -> setVar var value
   Empty -> return ()
 
-executeCommons :: (MonadIO m, MonadVarReader m, MonadPM m) => (Handle, (Handle, Handle), Handle) -> NonEmpty Common -> m ()
-executeCommons allHandles@(_, (hIn, _), hErr) = \case
-  x :| [] -> execCommon allHandles x >> putStrFromHandle hIn
-  x :| (l : xs) -> do
-    execCommon allHandles x
-    newHandles <- PM.createPipe
-    executeCommons (hIn, newHandles, hErr) (l :| xs)
+executeCommons :: (MonadIO m, MonadVarReader m, MonadPM m) => Handle -> NonEmpty Common -> m ()
+executeCommons hIn = \case
+  x :| [] -> execCommon (hIn, SIO.stdout, SIO.stderr) x
+  x :| (x' : xs) -> do
+    (newHIn, newHOut) <- PM.createPipe
+    execCommon (hIn, newHOut, SIO.stderr) x
+    executeCommons newHIn (x' :| xs)
   where
-    execCommon (hInOld, (_, hOut), hErrCurrent) = \case
-      Internal internal -> executeInternal (hInOld, hOut) internal
-      External external -> executeExternal (hInOld, hOut, hErrCurrent) external
+    execCommon (hIn, hOut, hErr) = \case
+      Internal internal -> executeInternal (hIn, hOut) internal
+      External external -> executeExternal (hIn, hOut, hErr) external
 
 -- | Функция для исполнения специальных команд.
-executeSpecial :: (MonadExit m, MonadVarWriter m) => Special -> m ()
+executeSpecial :: (MonadExit m, MonadPwdReader m, MonadVarWriter m) => Special -> m ()
 executeSpecial = \case
-  Cd filePath -> setVar varPwd (getVarName varPwd ++ '/' : filePath)
-  Exit mb -> exit (ExitCode $ fromMaybe 0 mb)
+  Cd path -> do
+    pwd <- getVarPwd
+    setVarPwd (pwd </> path)
+  Exit mec -> exit $ fromMaybe (ExitCode 0) mec
 
 -- | Функция для исполнения внутренних команд.
 executeInternal :: (MonadIO m, MonadPwdReader m, MonadPM m) => (Handle, Handle) -> Internal -> m ()
@@ -62,7 +64,7 @@ executeInternal (hIn, hOut) = \case
     file <- maybe (PM.hGetContents hIn) EnvIO.readFile maybeFilePath
     PM.hPutStr hOut file
   Echo ls -> do
-    PM.hPutStr hOut $ drop 1 $ concatMap (' ' :) ls
+    PM.hPutStr hOut $ unwords ls ++ "\n"
   Wc maybeFilePath -> do
     file <- maybe (pack <$> PM.hGetContents hIn) EnvIO.readFileFromBytes maybeFilePath
     let (countLines, countWords, bytes, isPrevSpace) = ByteStr.foldl' wcgo (0, 0, 0, False) file
@@ -71,7 +73,6 @@ executeInternal (hIn, hOut) = \case
   Pwd -> do
     pwd <- asFilePath <$> getVarPwd
     PM.hPutStr hOut pwd
-
   where
     wcgo :: WcOutputArguments -> Char -> WcOutputArguments
     wcgo (countLines, countWords, bytes, isPrevSpace) c =
@@ -90,4 +91,4 @@ executeExternal handles = \case
     (ExitCode code) <- waitForProcess process
     if code == 0
     then return ()
-    else terminateProcess process
+    else terminateProcess process-}

@@ -13,6 +13,7 @@ import qualified System.Exit as SE
 
 -- | Код возврата. 0 означает штатное завершение, не 0 - завершение с ошибкой.
 newtype ExitCode = ExitCode Int
+  deriving (Eq, Show)
 
 -- | Функция преобразования нашего кода возврата в стандартный.
 toStandardEC :: ExitCode -> SE.ExitCode

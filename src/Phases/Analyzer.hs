@@ -13,6 +13,7 @@ import Data.ImprovedPrimitive hiding (Primitive(..))
 import qualified Data.ImprovedPrimitive as IP
 import Data.Variable (variable, asStable)
 import Environment.MonadError
+import Environment.MonadExit (ExitCode(..))
 import Environment.MonadFS
 import Environment.MonadPathReader
 import Environment.MonadPwdReader
@@ -42,26 +43,27 @@ commandAnalyzer ("cat" : args) = do
     absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
     isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
     return absFilePath)
-  return . Common . Internal $ Cat mAbsFilePath
+  return . Common . Internal . Streaming $ Cat mAbsFilePath
 commandAnalyzer ("echo" : args) = do
-  return . Common . Internal $ Echo args
+  return . Common . Internal . Streaming $ Echo args
+commandAnalyzer ("wc" : []) = do
+  return . Common . Internal $ Blocking WcStdin
 commandAnalyzer ("wc" : args) = do
-  length args <= 1 ?: error "too many arguments of `wc` command"
-  let mFilePath = listToMaybe args
-  mAbsFilePath <- forM mFilePath (\filePath -> do
-    absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
-    isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
-    return absFilePath)
-  return . Common . Internal $ Wc mAbsFilePath
+  length args == 1 ?: error "too many arguments of `wc` command"
+  let filePath = head args
+  absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
+  isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
+  return . Common . Internal . Streaming $ WcFile absFilePath
 commandAnalyzer ("pwd" : args) = do
   null args ?: error "`pwd` command hasn't arguments"
-  return . Common . Internal $ Pwd
+  return . Common . Internal $ Streaming Pwd
 commandAnalyzer ("exit" : args) = do
   length args <= 1 ?: error "too many arguments of `exit` command"
   let mArg = listToMaybe args
-  mInt <- forM mArg (\arg ->
-    readMaybe arg @: error "argument of `exit` command must be integer")
-  return . Special $ Exit mInt
+  mEc <- forM mArg (\arg -> do
+    ec <- readMaybe arg @: error "argument of `exit` command must be integer"
+    return $ ExitCode ec)
+  return . Special $ Exit mEc
 commandAnalyzer ("cd" : args) = do
   length args == 1 ?: error "`cd` command must have only one argument"
   let filePath = head args
