@@ -91,14 +91,14 @@ testsAnalyzer = TestList [
       Nothing,
   --   internal
   --     cat
-    mkTestOneCommand ["cat"]
-      Nothing,
+    mkTestOneCommand ["cat"] $
+      Just (Commons $ fromList [Internal $ Cat Nothing]),
     mkTestOneCommand ["cat", "123"]
       Nothing,
     mkTestOneCommand ["cat", ".vimrc"] $
-      Just (Commons $ fromList [Internal . Cat $ updAbsPath "/home/user/.vimrc"]),
+      Just (Commons $ fromList [Internal . Cat . Just $ updAbsPath "/home/user/.vimrc"]),
     mkTestOneCommand ["cat", "./.vimrc"] $
-      Just (Commons $ fromList [Internal . Cat $ updAbsPath "/home/user/.vimrc"]),
+      Just (Commons $ fromList [Internal . Cat . Just $ updAbsPath "/home/user/.vimrc"]),
     mkTestOneCommand ["cat", "vim"]
       Nothing,
     mkTestOneCommand ["cat", "something_unreadable.txt"]
@@ -106,13 +106,13 @@ testsAnalyzer = TestList [
     mkTestOneCommand ["cat", updAbsPath' "/GitHub_PASSWORD.txt"] $
       Nothing,
     mkTestOneCommand ["cat", updAbsPath' "/some_VERY_VERY_IMPORTANT_file.txt"] $
-      Just (Commons $ fromList [Internal . Cat $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
+      Just (Commons $ fromList [Internal . Cat . Just $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
     mkTestOneCommand ["cat", updPath "../../some_VERY_VERY_IMPORTANT_file.txt"] $
-      Just (Commons $ fromList [Internal . Cat $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
+      Just (Commons $ fromList [Internal . Cat . Just $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
     mkTestOneCommand ["cat", updPath "Documents/algo04.pdf"] $
-      Just (Commons $ fromList [Internal . Cat $ updAbsPath "/home/user/Documents/algo04.pdf"]),
+      Just (Commons $ fromList [Internal . Cat . Just $ updAbsPath "/home/user/Documents/algo04.pdf"]),
     mkTestOneCommand ["cat", updAbsPath' "/usr/bin/emacs-28.1/do_something"] $
-      Just (Commons $ fromList [Internal . Cat $ updAbsPath "/usr/bin/emacs-28.1/do_something"]),
+      Just (Commons $ fromList [Internal . Cat . Just $ updAbsPath "/usr/bin/emacs-28.1/do_something"]),
     mkTestOneCommand ["cat", ".vimrc", ".vimrc"]
       Nothing,
     mkTestOneCommand ["cat", ".vimrc", "my_game.py"]
@@ -127,14 +127,14 @@ testsAnalyzer = TestList [
     mkTestOneCommand ["echo", "1", "2"] $
       Just (Commons $ fromList [Internal $ Echo ["1", "2"]]),
   --     wc
-    mkTestOneCommand ["wc"]
-      Nothing,
+    mkTestOneCommand ["wc"] $
+      Just (Commons $ fromList [Internal $ Wc Nothing]),
     mkTestOneCommand ["wc", "123"]
       Nothing,
     mkTestOneCommand ["wc", ".vimrc"] $
-      Just (Commons $ fromList [Internal . Wc $ updAbsPath "/home/user/.vimrc"]),
+      Just (Commons $ fromList [Internal . Wc . Just $ updAbsPath "/home/user/.vimrc"]),
     mkTestOneCommand ["wc", "./.vimrc"] $
-      Just (Commons $ fromList [Internal . Wc $ updAbsPath "/home/user/.vimrc"]),
+      Just (Commons $ fromList [Internal . Wc . Just $ updAbsPath "/home/user/.vimrc"]),
     mkTestOneCommand ["wc", "vim"]
       Nothing,
     mkTestOneCommand ["wc", "something_unreadable.txt"]
@@ -142,13 +142,13 @@ testsAnalyzer = TestList [
     mkTestOneCommand ["wc", updAbsPath' "/GitHub_PASSWORD.txt"] $
       Nothing,
     mkTestOneCommand ["wc", updAbsPath' "/some_VERY_VERY_IMPORTANT_file.txt"] $
-      Just (Commons $ fromList [Internal . Wc $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
+      Just (Commons $ fromList [Internal . Wc . Just $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
     mkTestOneCommand ["wc", updPath "../../some_VERY_VERY_IMPORTANT_file.txt"] $
-      Just (Commons $ fromList [Internal . Wc $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
+      Just (Commons $ fromList [Internal . Wc . Just $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
     mkTestOneCommand ["wc", updPath "Documents/algo04.pdf"] $
-      Just (Commons $ fromList [Internal . Wc $ updAbsPath "/home/user/Documents/algo04.pdf"]),
+      Just (Commons $ fromList [Internal . Wc . Just $ updAbsPath "/home/user/Documents/algo04.pdf"]),
     mkTestOneCommand ["wc", updAbsPath' "/usr/bin/emacs-28.1/do_something"] $
-      Just (Commons $ fromList [Internal . Wc $ updAbsPath "/usr/bin/emacs-28.1/do_something"]),
+      Just (Commons $ fromList [Internal . Wc . Just $ updAbsPath "/usr/bin/emacs-28.1/do_something"]),
     mkTestOneCommand ["wc", ".vimrc", ".vimrc"]
       Nothing,
     mkTestOneCommand ["wc", ".vimrc", "my_game.py"]
@@ -216,7 +216,7 @@ testsAnalyzer = TestList [
     mkTestManyCommands [["sh"], ["pwd"], ["vim"]] $
       Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/sh") [], Internal Pwd, External $ Arguments (updAbsPath "/bin/vim") []]),
     mkTestManyCommands [["./my_game.py", "123", "61"], ["echo"], ["cat", "my_game.py"]] $
-      Just (Commons $ fromList [External $ Arguments (updAbsPath "/home/user/my_game.py") ["123", "61"], Internal $ Echo [], Internal $ Cat (updAbsPath "/home/user/my_game.py")]),
+      Just (Commons $ fromList [External $ Arguments (updAbsPath "/home/user/my_game.py") ["123", "61"], Internal $ Echo [], Internal . Cat . Just  $updAbsPath "/home/user/my_game.py"]),
     mkTestManyCommands [["echo", "1"], ["echo"], ["echo"]] $
       Just (Commons $ fromList [Internal $ Echo ["1"], Internal $ Echo [], Internal $ Echo []]),
     mkTestManyCommands [["echo", "1"], ["exit"], ["echo"]] $

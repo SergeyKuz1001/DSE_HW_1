@@ -36,19 +36,23 @@ data Command
 -- | Анализ корректности и преобразование одной команды с аргументами.
 commandAnalyzer :: (MonadError m, MonadFS m, MonadPwdReader m, MonadPathReader m) => [String] -> m Command
 commandAnalyzer ("cat" : args) = do
-  length args == 1 ?: error "`cat` command must have only one argument"
-  let filePath = head args
-  absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
-  isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
-  return . Common . Internal $ Cat $ Just absFilePath
+  length args <= 1 ?: error "too many arguments of `cat` command"
+  let mFilePath = listToMaybe args
+  mAbsFilePath <- forM mFilePath (\filePath -> do
+    absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
+    isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
+    return absFilePath)
+  return . Common . Internal $ Cat mAbsFilePath
 commandAnalyzer ("echo" : args) = do
   return . Common . Internal $ Echo args
 commandAnalyzer ("wc" : args) = do
-  length args == 1 ?: error "`wc` command must have only one argument"
-  let filePath = head args
-  absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
-  isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
-  return . Common . Internal $ Wc $ Just absFilePath
+  length args <= 1 ?: error "too many arguments of `wc` command"
+  let mFilePath = listToMaybe args
+  mAbsFilePath <- forM mFilePath (\filePath -> do
+    absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
+    isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
+    return absFilePath)
+  return . Common . Internal $ Wc mAbsFilePath
 commandAnalyzer ("pwd" : args) = do
   null args ?: error "`pwd` command hasn't arguments"
   return . Common . Internal $ Pwd
