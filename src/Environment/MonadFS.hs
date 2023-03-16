@@ -39,11 +39,10 @@ findFile path = case absFilePath path of
 findFileAsExecutable :: (MonadFS m, MonadVarPwdReader m, MonadVarPathReader m) => FilePath -> m (Maybe File)
 findFileAsExecutable path = case absFilePath path of
   Left _ -> do
-    pwd <- getVarPwd
     binLocations <-
       if isBaseName path
-        then return [pwd]
-        else (pwd :) <$> getVarPath
+        then getVarPath
+        else pure <$> getVarPwd
     fmap asum . traverse (findFileByAbsPath . (</> path)) $ binLocations
   Right absPath ->
     findFileByAbsPath absPath

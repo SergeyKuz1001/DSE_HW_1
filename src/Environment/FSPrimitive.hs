@@ -24,7 +24,7 @@ newtype AbsFilePath = AbsFilePath { asFilePath :: FilePath }
   deriving (Eq, Ord)
 
 instance Show AbsFilePath where
-  show (AbsFilePath path) = path
+  show (AbsFilePath path) = show path
 
 -- | Функция для конструирования значения типа @'AbsFilePath'@. При
 -- конструировании проверяется соблюдение инварианта, и в случае его нарушения
@@ -40,9 +40,16 @@ isBaseName :: FilePath -> Bool
 isBaseName = notElem FP.pathSeparator
 
 -- | Операция конкатенации пути. В отличие от @'FP.</>'@ конкатенируются
--- абсолютный и относительный пути, получая в итоге абсолютный.
+-- абсолютный и относительный пути, получая в итоге абсолютный, сокращая при
+-- этом специальные директории @.@ и @..@.
 (</>) :: AbsFilePath -> FilePath -> AbsFilePath
-(</>) (AbsFilePath path) = AbsFilePath . (path FP.</>)
+(</>) (AbsFilePath path) = AbsFilePath . FP.joinPath . reverse . foldl addToPath [] . FP.splitPath . (path FP.</>)
+  where
+    addToPath [] part = [part]
+    addToPath parts "./" = parts
+    addToPath [part] "../" = [part]
+    addToPath (_:parts) "../" = parts
+    addToPath parts part = part : parts
 
 -- | Разрешения файла.
 data Permissions = Permissions
