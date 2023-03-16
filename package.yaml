@@ -29,6 +29,8 @@ dependencies:
 - process
 - ansi-terminal
 - time
+- text
+- pretty-simple
 
 ghc-options:
 - -Wall

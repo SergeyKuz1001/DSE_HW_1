@@ -1,31 +1,31 @@
+{-# LANGUAGE TypeFamilies #-}
+
 module Environment.MonadPM (
     MonadPM (..),
-    putStrFromHandle
   ) where
 
 import Data.Variable (Stable)
+import Data.Handles (InputHandle, OutputHandle)
 import Environment.FSPrimitive (AbsFilePath)
-import Environment.HandlePrimitive
 import Environment.MonadExit (ExitCode)
-import Environment.MonadIO (MonadIO, putStr)
-import Prelude hiding (putStr)
 
 class Monad m => MonadPM m where
+  type Stream  m :: *
+  type Process m :: *
+  defaultStream :: m (Stream m)
+  applyFuncToStream ::
+    (String -> String) ->
+    InputHandle ->
+    OutputHandle ->
+    Stream m ->
+    m (Stream m)
   createProcess ::
     AbsFilePath ->
     [String] ->
+    InputHandle ->
+    OutputHandle ->
     [(Stable, String)] ->
-    (Handle, Handle, Handle) ->
-    m ProcessHandle
-  waitForProcess :: ProcessHandle -> m ExitCode
-  terminateProcess :: ProcessHandle -> m ()
-  hPutStr :: Handle -> String -> m ()
-  hGetLine :: Handle -> m String
-  createPipe :: m (Handle, Handle)
-  hGetContents :: Handle -> m String
-
-putStrFromHandle :: (MonadIO m, MonadPM m) => Handle -> m ()
-putStrFromHandle hIn = hGetContents hIn >>= (\content -> putStr $
-  if null content || last content /= '\n' 
-  then content ++ "\n" 
-  else content)
+    Stream m ->
+    m (Process m, Stream m)
+  waitForProcess :: Process m -> m ExitCode
+  terminateProcess :: Process m -> m ()

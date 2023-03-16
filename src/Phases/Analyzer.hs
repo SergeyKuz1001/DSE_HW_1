@@ -8,9 +8,9 @@ module Phases.Analyzer (
     analyzer,
   ) where
 
-import qualified Data.Primitive as P
-import Data.ImprovedPrimitive hiding (Primitive(..))
-import qualified Data.ImprovedPrimitive as IP
+import qualified Data.ParsedPrimitive as PP
+import Data.AnalyzedPrimitive hiding (Primitive(..))
+import qualified Data.AnalyzedPrimitive as AP
 import Data.Variable (variable, asStable)
 import Environment.MonadError
 import Environment.MonadExit (ExitCode(..))
@@ -43,20 +43,20 @@ commandAnalyzer ("cat" : args) = do
     absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
     isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
     return absFilePath)
-  return . Common . Internal . Streaming $ Cat mAbsFilePath
+  return . Common . Internal $ Cat mAbsFilePath
 commandAnalyzer ("echo" : args) = do
-  return . Common . Internal . Streaming $ Echo args
-commandAnalyzer ("wc" : []) = do
-  return . Common . Internal $ Blocking WcStdin
+  return . Common . Internal $ Echo args
 commandAnalyzer ("wc" : args) = do
-  length args == 1 ?: error "too many arguments of `wc` command"
-  let filePath = head args
-  absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
-  isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
-  return . Common . Internal . Streaming $ WcFile absFilePath
+  length args <= 1 ?: error "too many arguments of `wc` command"
+  let mFilePath = listToMaybe args
+  mAbsFilePath <- forM mFilePath (\filePath -> do
+    absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
+    isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
+    return absFilePath)
+  return . Common . Internal $ Wc mAbsFilePath
 commandAnalyzer ("pwd" : args) = do
   null args ?: error "`pwd` command hasn't arguments"
-  return . Common . Internal $ Streaming Pwd
+  return . Common $ Internal Pwd
 commandAnalyzer ("exit" : args) = do
   length args <= 1 ?: error "too many arguments of `exit` command"
   let mArg = listToMaybe args
@@ -75,22 +75,22 @@ commandAnalyzer [] = do
   return Empty
 
 -- | Анализ корректности и преобразование пользовательского запроса.
-analyzer :: (MonadError m, MonadFS m, MonadPwdReader m, MonadPathReader m) => P.Primitive -> m IP.Primitive
-analyzer (P.Commands []) =
-  return IP.Empty
-analyzer (P.Commands [command]) = do
+analyzer :: (MonadError m, MonadFS m, MonadPwdReader m, MonadPathReader m) => PP.Primitive -> m AP.Primitive
+analyzer (PP.Commands []) =
+  return AP.Empty
+analyzer (PP.Commands [command]) = do
   command' <- commandAnalyzer command
   return $ case command' of
-    Special c -> IP.Special c
-    Common c  -> IP.Commons $ c :| []
-    Empty     -> IP.Empty
-analyzer (P.Commands (command : commands)) =
-  IP.Commons <$> traverse (commandAnalyzer >=> asCommon) (command :| commands)
+    Special c -> AP.Special c
+    Common c  -> AP.Commons $ c :| []
+    Empty     -> AP.Empty
+analyzer (PP.Commands (command : commands)) =
+  AP.Commons <$> traverse (commandAnalyzer >=> asCommon) (command :| commands)
     where
       asCommon :: MonadError m => Command -> m Common
       asCommon (Common c) = return c
       asCommon _ = throwError $ error "can't using non-common command with pipes"
-analyzer (P.Assignment name value) = do
+analyzer (PP.Assignment name value) = do
   var <- variable name
   stVar <- asStable var @: error "can't assign volatile variable"
-  return $ IP.Assignment stVar value
+  return $ AP.Assignment stVar value

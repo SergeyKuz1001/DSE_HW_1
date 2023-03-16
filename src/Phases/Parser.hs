@@ -6,7 +6,7 @@
 -- но их использовать явно запрещено в задании.
 module Phases.Parser (parser) where
 
-import qualified Data.Primitive         as P
+import qualified Data.ParsedPrimitive    as PP
 import           Environment.MonadError (Error (..), MonadError, throwError)
 
 import           Control.Monad
@@ -38,16 +38,16 @@ data Primitive
 -- либо пустую команду (пустая строка или строка только из пробелов),
 -- либо присваивание переменной.
 -- Кидает исключение, если строка имеет некорректный синтаксис.
-parser :: MonadError m => String -> m P.Primitive
+parser :: MonadError m => String -> m PP.Primitive
 parser s = firstWord (dropWhile isSpace s) >>= removeNulls
 
 -- | Убирает пустые строки из команд,
 -- затем проверяет, что все команды корректны,
 -- т.е. содержат хотя бы одну строку.
-removeNulls :: MonadError m => Primitive -> m P.Primitive
-removeNulls (Assignment x v) = pure $ P.Assignment x v
-removeNulls (Commands []) = pure $ P.Commands []
-removeNulls (Commands lst) = fmap P.Commands $ forM lst $ \case
+removeNulls :: MonadError m => Primitive -> m PP.Primitive
+removeNulls (Assignment x v) = pure $ PP.Assignment x v
+removeNulls (Commands []) = pure $ PP.Commands []
+removeNulls (Commands lst) = fmap PP.Commands $ forM lst $ \case
   []       -> throwModError "Empty command between pipes"
   (x : xs) -> pure $ x : xs
 

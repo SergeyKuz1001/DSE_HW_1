@@ -2,7 +2,7 @@
 В данном модуле объявлены основные примитивы, в которые транслируется
 пользовательский запрос после его парсинга.
 -}
-module Data.Primitive (
+module Data.ParsedPrimitive (
     Primitive (..),
   ) where
 

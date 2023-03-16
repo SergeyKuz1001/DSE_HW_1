@@ -1,6 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeFamilies #-}
 
 {- |
 В данном модуле объявлен тип @'Environment'@ как главный контекст, в котором
@@ -25,7 +26,7 @@ module Environment (
 
 import Data.Variable
 import Environment.FSPrimitive
-import Environment.HandlePrimitive
+import Data.Handles
 import Environment.MonadError
 import Environment.MonadExit
 import Environment.MonadFS
@@ -54,7 +55,8 @@ import qualified Prelude as P
 import qualified System.Directory as D
 import System.Environment (getEnvironment)
 import System.Exit (exitWith)
-import System.IO (isEOF, IOMode(..), hClose)
+import System.FilePath (pathSeparator)
+import System.IO (isEOF, IOMode(..), hClose, stdin, stdout)
 import System.IO as SIO
 import qualified System.Process as PRC
 import System.Process (StdStream(UseHandle))
@@ -75,6 +77,9 @@ newtype Environment a = Environment (ST.StateT (Map Stable String) (ME.ExceptT E
 toEnv :: IO a -> Environment a
 toEnv = Environment . MIO.liftIO
 
+instance MonadFail Environment where
+  fail msg = throwError $ Error "CrucialError" msg
+
 instance MonadIO Environment where
   putStr  = toEnv . P.putStr
   getLine = toEnv $ do
@@ -86,31 +91,73 @@ instance MonadIO Environment where
   readFileFromBytes absPath = toEnv $ BS.readFile $ asFilePath absPath
 
 instance MonadPM Environment where
-  createProcess absPath args vars (stdinA, stdoutA, stderrA) = toEnv $ do
+  type Stream  Environment = Maybe Handle
+  type Process Environment = (PRC.ProcessHandle, [Handle])
+  defaultStream = return $ Just stdin
+  applyFuncToStream func hIn hOut stream = do
+    strIn <- case hIn of
+      FromParentHandle -> do
+        Just hndl <- return stream
+        toEnv $ hGetContents hndl
+      FromFile path -> do
+        toEnv . SIO.readFile $ asFilePath path
+      FromString str ->
+        return str
+    let strOut = func strIn
+    case hOut of
+      ToStdout -> do
+        toEnv $ SIO.hPutStr stdout strOut
+        return Nothing
+      ToNewPipe -> do
+        (hndlIn, hndlOut) <- toEnv PRC.createPipe
+        toEnv $ hPutStr hndlIn strOut
+        return $ Just hndlOut
+      ToNowhere ->
+        return Nothing
+  createProcess path args hIn hOut vars stream = do
     let vars' = map (\(var, value) -> (getVarName var, value)) vars
-    let cmd   = asFilePath absPath
-    -- (strIn,  mFileHndlIn)  <- handleActionToStdStream stdinA ReadMode
-    -- (strOut, mFileHndlOut) <- handleActionToStdStream stdoutA WriteMode
-    -- (strErr, mFileHndlErr) <- handleActionToStdStream stderrA WriteMode
+    let cmd   = asFilePath path
+    (std_in, mHndl_in) <- case hIn of
+      FromParentHandle -> do
+        Just hndl <- return stream
+        return (PRC.UseHandle hndl, Nothing)
+      FromFile path -> do
+        hndl <- toEnv $ openFile (asFilePath path) ReadMode
+        return (PRC.UseHandle hndl, Just hndl)
+      FromString _ ->
+        return (PRC.CreatePipe, Nothing)
+    (std_out, mHndl_out) <- case hOut of
+      ToStdout ->
+        return (PRC.UseHandle stdout, Nothing)
+      ToNewPipe ->
+        return (PRC.CreatePipe, Nothing)
+      ToNowhere ->
+        if pathSeparator == '/'
+          then do
+            hndl <- toEnv $ openFile "/dev/null" WriteMode
+            return (PRC.UseHandle hndl, Just hndl)
+          else
+            return (PRC.NoStream, Nothing)
     let proc = (PRC.proc cmd args) {
         PRC.env = Just vars',
-        PRC.std_in = UseHandle stdinA,
-        PRC.std_out = UseHandle stdoutA,
-        PRC.std_err = UseHandle stderrA
+        PRC.std_in = std_in,
+        PRC.std_out = std_out
       }
-    (_, _, _, procHndl) <- PRC.createProcess proc
-    return . ProcessHandle procHndl $ catMaybes []
-  waitForProcess (ProcessHandle procHndl fileHndls) = toEnv $ do
+    (mHndlIn, mHndlOut, _, procHndl) <- toEnv $ PRC.createProcess proc
+    case hIn of
+      FromString str -> do
+        Just hndlIn <- return mHndlIn
+        toEnv $ hPutStr hndlIn str
+        toEnv $ hClose hndlIn
+      _ -> return ()
+    return ((procHndl, catMaybes [mHndl_in, mHndl_out]), mHndlOut)
+  waitForProcess (procHndl, fileHndls) = toEnv $ do
     ec <- fromStandardEC <$> PRC.waitForProcess procHndl
     traverse_ hClose fileHndls
     return ec
-  terminateProcess (ProcessHandle procHndl fileHndls) = toEnv $ do
+  terminateProcess (procHndl, fileHndls) = toEnv $ do
     PRC.terminateProcess procHndl
     traverse_ hClose fileHndls
-  hPutStr = (toEnv .) . SIO.hPutStr
-  hGetLine = toEnv . SIO.hGetLine
-  createPipe = toEnv PRC.createPipe
-  hGetContents = toEnv . SIO.hGetContents
 
 instance MonadPathReader Environment where
   getVarPath = getVarPathDefault
@@ -137,12 +184,7 @@ instance MonadPathWriter Environment where
 instance MonadPwdWriter Environment where
   setVarPwd = setVarPwdDefault
 
-throwAssignmentError :: MonadError m => String -> m ()
-throwAssignmentError = throwError . Error "AssignmentError"
-
 instance MonadVarWriter Environment where
-  setVar (Specific LastExitCode) _ =
-    throwAssignmentError "can't set value to special variable \"?\""
   setVar var value = ST.modify $ M.insert var value
 
 instance MonadFS Environment where

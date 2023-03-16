@@ -24,12 +24,14 @@ source-repository head
 
 library
   exposed-modules:
-      Data.ImprovedPrimitive
-      Data.Primitive
+      Data.AnalyzedPrimitive
+      Data.DebugInfo
+      Data.Handles
+      Data.LinkedPrimitive
+      Data.ParsedPrimitive
       Data.Variable
       Environment
       Environment.FSPrimitive
-      Environment.HandlePrimitive
       Environment.MonadError
       Environment.MonadExit
       Environment.MonadFS
@@ -44,6 +46,8 @@ library
       Phases
       Phases.Analyzer
       Phases.Executor
+      Phases.Linker
+      Phases.Linker.Commands
       Phases.Parser
       Phases.StringReader
       Phases.VarSubstitutor
@@ -61,7 +65,9 @@ library
     , directory
     , filepath
     , mtl
+    , pretty-simple
     , process
+    , text
     , time
   default-language: Haskell2010
 
@@ -82,7 +88,9 @@ executable cli-exe
     , directory
     , filepath
     , mtl
+    , pretty-simple
     , process
+    , text
     , time
   default-language: Haskell2010
 
@@ -109,6 +117,8 @@ test-suite cli-test
     , directory
     , filepath
     , mtl
+    , pretty-simple
     , process
+    , text
     , time
   default-language: Haskell2010

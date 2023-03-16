@@ -8,6 +8,7 @@ module Main (
     main,
   ) where
 
+import Data.DebugInfo
 import Environment
 import Phases
 
@@ -33,5 +34,10 @@ main = do
 -- классе @'MonadExit'@.
 main' :: (MonadError m, MonadIO m, MonadFS m, MonadPM m, MonadVarReader m, MonadVarWriter m, MonadExit m) => m ()
 main' = forever $ (
-      stringReader >>= varSubstitutor >>= parser >>= analyzer >>= executor
+      stringReader   >>= debugIfNecessary "Reader" 'r' >>=
+      varSubstitutor >>= debugIfNecessary "Substitutor" 's' >>=
+      parser         >>= debugIfNecessary "Parser" 'p' >>=
+      analyzer       >>= debugIfNecessary "Analyzer" 'a' >>=
+      linker         >>= debugIfNecessary "Linker" 'l' >>=
+      executor
     ) `catchError` print

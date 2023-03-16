@@ -4,6 +4,7 @@
 module Phases (
     analyzer,
     executor,
+    linker,
     parser,
     stringReader,
     varSubstitutor,
@@ -11,6 +12,7 @@ module Phases (
 
 import Phases.Analyzer
 import Phases.Executor
+import Phases.Linker
 import Phases.Parser
 import Phases.StringReader
 import Phases.VarSubstitutor

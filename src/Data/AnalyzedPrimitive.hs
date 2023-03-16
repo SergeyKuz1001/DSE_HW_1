@@ -2,13 +2,11 @@
 В данном модуле объявлены примитивы, в которые транслируется пользовательский
 запрос после этапа анализа.
 -}
-module Data.ImprovedPrimitive (
+module Data.AnalyzedPrimitive (
     Primitive (..),
     Special (..),
     Common (..),
     Internal (..),
-    Blocking (..),
-    Streaming (..),
     External (..),
   ) where
 
@@ -48,23 +46,7 @@ data Common = Internal Internal | External External
 --     * @echo@ — вывод аргументов через пробел;
 --     * @wc@ — статистика для файла;
 --     * @pwd@ — имя текущей директории.
---
--- Мы разделяем команды на блокирующие и потоковые по тому, могут ли они
--- запускаться с другими параллельно.
-data Internal = Blocking Blocking | Streaming Streaming
-  deriving (Eq, Show)
-
--- | Единственная блокирующая команда - это @wc@ без параметра, так как
--- необходимо подождать исполнение последней команды чтобы вычислить статистику
--- её вывода.
-data Blocking = WcStdin
-  deriving (Eq, Show)
-
--- | Обычно все внутренние команды являются потоковыми, то есть их работу мы
--- делаем во время запуска из-за быстроты их исполнения (не считая @wc@ с
--- большим файлом в качестве параметра, но и блокирующей эту команду назвать
--- нельзя).
-data Streaming = Cat (Maybe AbsFilePath) | Echo [String] | WcFile AbsFilePath | Pwd
+data Internal = Cat (Maybe AbsFilePath) | Echo [String] | Wc (Maybe AbsFilePath) | Pwd
   deriving (Eq, Show)
 
 -- | Внешняя команда вызывается по пути к исполняемому файлу с указанными
