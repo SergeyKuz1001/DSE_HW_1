@@ -30,7 +30,7 @@ addInputHandles = traverse go
     go (AP.Internal (AP.Wc (Just path)))  = return (Just . AP.Internal $ AP.Wc Nothing, FromFile path)
     go (AP.Internal AP.Pwd) = do
       pwd <- asFilePath <$> getVarPwd
-      return (Nothing, FromString pwd)
+      return (Nothing, FromString $ pwd ++ "\n")
 
 commonsToCommands :: Monad m => [(Maybe AP.Common, InputHandle)] -> m [(LP.Command, InputHandle)]
 commonsToCommands = return . go id
