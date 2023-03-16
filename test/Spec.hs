@@ -1,5 +1,6 @@
 import           Phases.Analyzer.Tests       (testsAnalyzer)
 import           Phases.Executor.Tests       (testsExecutor)
+import           Phases.Linker.Tests         (testsLinker)
 import           Phases.Parser.Tests         (testsParser)
 import           Phases.VarSubstitutor.Tests (testsSubstitutor)
 import           System.Environment
@@ -14,5 +15,6 @@ tests names = TestList $ map (uncurry TestLabel) $ filter (\(x, _) -> null names
     ( "Analyzer"       , testsAnalyzer    ),
     ( "VarSubstitutor" , testsSubstitutor ),
     ( "Parser"         , testsParser      ),
-    ( "Executor"       , testsExecutor    )
+    ( "Executor"       , testsExecutor    ),
+    ( "Linker"         , testsLinker      )
   ]

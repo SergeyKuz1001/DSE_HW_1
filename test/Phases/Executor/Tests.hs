@@ -4,7 +4,7 @@ module Phases.Executor.Tests (
     testsExecutor
 ) where
 
-import Data.ImprovedPrimitive
+import Data.LinkedPrimitive
 import Data.Variable
 import Environment.FSPrimitive (AbsFilePath(..), absFilePath)
 import Environment.MonadExit (ExitCode, MonadExit (exit))

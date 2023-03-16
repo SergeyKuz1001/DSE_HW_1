@@ -101,6 +101,8 @@ test-suite cli-test
       Phases.Analyzer.TestEnvironment
       Phases.Analyzer.Tests
       Phases.Executor.Tests
+      Phases.Linker.TestEnvironment
+      Phases.Linker.Tests
       Phases.Parser.Tests
       Phases.VarSubstitutor.Tests
       Paths_cli

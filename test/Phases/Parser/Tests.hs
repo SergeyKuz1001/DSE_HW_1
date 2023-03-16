@@ -3,7 +3,7 @@
 module Phases.Parser.Tests (testsParser) where
 
 import           Control.Monad.Except
-import           Data.Primitive
+import           Data.ParsedPrimitive
 import qualified Environment.MonadError as E
 import           Phases.Parser
 import           Test.HUnit
