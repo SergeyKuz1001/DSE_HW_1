@@ -208,7 +208,7 @@ runEnvironment (Environment m) = do
   let vars = M.fromList . mapMaybe (\(n, v) -> toMaybe (variable n) >>= asStable >>= return . (,v)) $ varsFromIO
   curDir <- D.getCurrentDirectory
   eRes <- ME.runExceptT $ ST.evalStateT m (
-    M.insert varPs1 "\ESC[01;31m\\t\ESC[00m|\ESC[01;32m\\u\ESC[00m:\ESC[01;34m\\w\ESC[00m$ " $
+    M.insert varPs1 "\\[01;31m\\]\\t\\[00m\\]|\\[01;32m\\]\\u\\[00m\\]:\\[01;34m\\]\\w\\[00m\\]$ " $
     M.insert varPwd curDir vars)
   case eRes of
     Right res -> return res
