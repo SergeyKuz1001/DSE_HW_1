@@ -104,7 +104,7 @@ testsAnalyzer = TestList [
       Nothing,
     mkTestOneCommand ["cat", "something_unreadable.txt"]
       Nothing,
-    mkTestOneCommand ["cat", updAbsPath' "/GitHub_PASSWORD.txt"] $
+    mkTestOneCommand ["cat", updAbsPath' "/GitHub_PASSWORD.txt"]
       Nothing,
     mkTestOneCommand ["cat", updAbsPath' "/some_VERY_VERY_IMPORTANT_file.txt"] $
       Just (Commons $ fromList [Internal . Cat . Just $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
@@ -140,7 +140,7 @@ testsAnalyzer = TestList [
       Nothing,
     mkTestOneCommand ["wc", "something_unreadable.txt"]
       Nothing,
-    mkTestOneCommand ["wc", updAbsPath' "/GitHub_PASSWORD.txt"] $
+    mkTestOneCommand ["wc", updAbsPath' "/GitHub_PASSWORD.txt"]
       Nothing,
     mkTestOneCommand ["wc", updAbsPath' "/some_VERY_VERY_IMPORTANT_file.txt"] $
       Just (Commons $ fromList [Internal . Wc . Just $ updAbsPath "/some_VERY_VERY_IMPORTANT_file.txt"]),
@@ -220,13 +220,13 @@ testsAnalyzer = TestList [
       Just (Commons $ fromList [External $ Arguments (updAbsPath "/home/user/my_game.py") ["123", "61"], Internal $ Echo [], Internal . Cat . Just $ updAbsPath "/home/user/my_game.py"]),
     mkTestManyCommands [["echo", "1"], ["echo"], ["echo"]] $
       Just (Commons $ fromList [Internal $ Echo ["1"], Internal $ Echo [], Internal $ Echo []]),
-    mkTestManyCommands [["echo", "1"], ["exit"], ["echo"]] $
+    mkTestManyCommands [["echo", "1"], ["exit"], ["echo"]]
       Nothing,
-    mkTestManyCommands [["echo", "1"], ["echo"], ["exit"], ["echo"]] $
+    mkTestManyCommands [["echo", "1"], ["echo"], ["exit"], ["echo"]]
       Nothing,
-    mkTestManyCommands [["echo", "1"], ["echo"], [], ["echo"]] $
+    mkTestManyCommands [["echo", "1"], ["echo"], [], ["echo"]]
       Nothing,
-    mkTestManyCommands [["echo", "1"], [], ["echo"]] $
+    mkTestManyCommands [["echo", "1"], [], ["echo"]]
       Nothing,
   -- assignment
     mkTestAssignment "a1_y5" "123" $

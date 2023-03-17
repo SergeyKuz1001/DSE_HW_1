@@ -8,41 +8,31 @@
 будут происходить все основные действия данной программы.
 -}
 module Environment (
-    module Environment.FSPrimitive,
-    module Environment.MonadError,
-    module Environment.MonadExit,
-    module Environment.MonadFS,
-    module Environment.MonadIO,
-    module Environment.MonadPM,
-    module Environment.MonadPathReader,
-    module Environment.MonadPwdReader,
-    module Environment.MonadVarReader,
-    module Environment.MonadPathWriter,
-    module Environment.MonadPwdWriter,
-    module Environment.MonadVarWriter,
     Environment,
     runEnvironment,
   ) where
 
-import Data.Variable
-import Environment.FSPrimitive
+import Data.Error
+import Data.ExitCode
 import Data.Handles
-import Environment.MonadError
-import Environment.MonadExit
-import Environment.MonadFS
-import Environment.MonadIO
-import Environment.MonadPM
-import Environment.MonadPathReader
-import Environment.MonadPwdReader
-import Environment.MonadVarReader
-import Environment.MonadPathWriter
-import Environment.MonadPwdWriter
-import Environment.MonadVarWriter
+import Data.FSObjects
+import Data.Variable
+import Monads.Error
+import Monads.Exit
+import Monads.FS
+import Monads.IO
+import Monads.PM
+import Monads.PathReader
+import Monads.PathWriter
+import Monads.PwdReader
+import Monads.PwdWriter
+import Monads.SelfReferenced
+import Monads.VarReader
+import Monads.VarWriter
 
 import qualified Control.Monad.Except as ME
 import qualified Control.Monad.IO.Class as MIO
 import qualified Control.Monad.State as ST
-import qualified Data.ByteString as BS
 import Data.Foldable (traverse_)
 import Data.Map (Map)
 import qualified Data.Map as M
@@ -53,13 +43,10 @@ import Data.Time.LocalTime (LocalTime, getCurrentTimeZone, utcToLocalTime)
 import Prelude hiding (putStr, putStrLn, print, readFile, getLine)
 import qualified Prelude as P
 import qualified System.Directory as D
-import System.Environment (getEnvironment)
+import System.Environment (getExecutablePath, getEnvironment)
 import System.Exit (exitWith)
-import System.FilePath (pathSeparator)
-import System.IO (isEOF, IOMode(..), hClose, stdin, stdout)
-import System.IO as SIO
 import qualified System.Process as PRC
-import System.Process (StdStream(UseHandle))
+import System.IO as SIO
 
 -- | Главный контекст для вычислений в программе.
 newtype Environment a = Environment (ST.StateT (Map Stable String) (ME.ExceptT Error IO) a)
@@ -87,13 +74,11 @@ instance MonadIO Environment where
     if eof
       then return Nothing
       else Just <$> P.getLine
-  readFile absPath = toEnv $ P.readFile $ asFilePath absPath
-  readFileFromBytes absPath = toEnv $ BS.readFile $ asFilePath absPath
 
 instance MonadPM Environment where
   type Stream  Environment = Maybe Handle
   type Process Environment = (PRC.ProcessHandle, [Handle])
-  defaultStream = return $ Just stdin
+  getDefaultStream = return $ Just stdin
   applyFuncToStream func hIn hOut stream = do
     strIn <- case hIn of
       FromParentHandle -> do
@@ -106,7 +91,7 @@ instance MonadPM Environment where
     let strOut = func strIn
     case hOut of
       ToStdout -> do
-        toEnv $ SIO.hPutStr stdout strOut
+        toEnv $ SIO.putStr strOut
         return Nothing
       ToNewPipe -> do
         (hndlIn, hndlOut) <- toEnv PRC.createPipe
@@ -121,8 +106,8 @@ instance MonadPM Environment where
       FromParentHandle -> do
         Just hndl <- return stream
         return (PRC.UseHandle hndl, Nothing)
-      FromFile path -> do
-        hndl <- toEnv $ openFile (asFilePath path) ReadMode
+      FromFile path' -> do
+        hndl <- toEnv $ openFile (asFilePath path') ReadMode
         return (PRC.UseHandle hndl, Just hndl)
       FromString _ ->
         return (PRC.CreatePipe, Nothing)
@@ -165,6 +150,7 @@ instance MonadPathReader Environment where
 instance MonadPwdReader Environment where
   getVarPwd = getVarPwdDefault
 
+-- | Функция для получения локального времени.
 getLocalTime :: IO LocalTime
 getLocalTime = do
   timeZone <- getCurrentTimeZone
@@ -198,6 +184,12 @@ instance MonadFS Environment where
         let perms' = (Permissions <$> D.readable <*> D.writable <*> D.executable) perms
         return . Just $ File absPath perms'
 
+instance MonadSelfReferenced Environment where
+  getSelfPath = do
+    path <- toEnv getExecutablePath
+    Just absPath <- doesFileExist path
+    return absPath
+
 instance MonadExit Environment where
   exit = toEnv . exitWith . toStandardEC
 
@@ -212,7 +204,7 @@ runEnvironment (Environment m) = do
     M.insert varPwd curDir vars)
   case eRes of
     Right res -> return res
-    Left err  -> fail $ "UnexpectedError: " ++ show err
+    Left _    -> undefined -- считаем, что все действия в монаде были безошибочны
     where
       toMaybe :: Either e a -> Maybe a
       toMaybe = either (const Nothing) Just

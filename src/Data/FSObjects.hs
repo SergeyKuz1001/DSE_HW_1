@@ -2,7 +2,7 @@
 В данном модуле объявлены основные примитивы для платформонезависимой работы с
 файловой системой.
 -}
-module Environment.FSPrimitive (
+module Data.FSObjects (
     AbsFilePath (asFilePath),
     absFilePath,
     isBaseName,
@@ -11,7 +11,8 @@ module Environment.FSPrimitive (
     File (..),
   ) where
 
-import Environment.MonadError (Error(..), MonadError, (?:))
+import Data.Error (Error(..))
+import Monads.Error (MonadError, (?:))
 
 import qualified System.FilePath as FP
 

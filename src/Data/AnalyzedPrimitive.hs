@@ -11,14 +11,17 @@ module Data.AnalyzedPrimitive (
   ) where
 
 import Data.Variable (Stable)
-import Environment.FSPrimitive (AbsFilePath)
-import Environment.MonadExit (ExitCode)
+import Data.FSObjects (AbsFilePath)
+import Data.ExitCode (ExitCode)
 
 import Data.List.NonEmpty (NonEmpty)
 
--- | Примитив является либо специальной командой, либо набором обычных,
--- разделённых pipeами, либо присваиванием стабильной переменной, либо пустой
--- командой.
+-- | Примитив — это
+--
+--     * специальная команда (@exit@ или @cd@),
+--     * непустой набор обычных команд, разделённых pipeами,
+--     * присваивание стабильной переменной или
+--     * пустая команда.
 data Primitive
   = Special Special
   | Commons (NonEmpty Common)
@@ -46,7 +49,11 @@ data Common = Internal Internal | External External
 --     * @echo@ — вывод аргументов через пробел;
 --     * @wc@ — статистика для файла;
 --     * @pwd@ — имя текущей директории.
-data Internal = Cat (Maybe AbsFilePath) | Echo [String] | Wc (Maybe AbsFilePath) | Pwd
+data Internal
+  = Cat (Maybe AbsFilePath)
+  | Echo [String]
+  | Wc (Maybe AbsFilePath)
+  | Pwd
   deriving (Eq, Show)
 
 -- | Внешняя команда вызывается по пути к исполняемому файлу с указанными

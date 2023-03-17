@@ -16,17 +16,32 @@ module Data.Variable (
     varPs1,
   ) where
 
-import Environment.MonadError (Error(..), MonadError, throwError)
+import Data.Error (Error(..))
+import Monads.Error (MonadError, throwError)
 
+-- | Тип переменной. В нашей программе переменные разделяются на
+--
+--     * стабильные — после установки их значения оно не меняется, и
+--     * нестабильные — постоянно и/или неконтролируемо изменяется.
+--
+-- На практике обычно применяется то их различие, что стабильные можно хранить
+-- в какой-либо структуре данных, а нестабильные — нельзя.
 data Variable = Stable Stable | Volatile Volatile
   deriving (Eq, Ord, Show)
 
+-- | Стабильная переменная может быть специфичной или обычной. Различие между
+-- ними заключается в том, что у обычной переменной имя имеет строго
+-- определённый вид, и этот вид гарантируется отсутствием конструктора @'Usual'@
+-- вне этого модуля. Множество же специфичных переменных строго ограничено.
 data Stable = Specific Specific | Usual String
   deriving (Eq, Ord, Show)
 
+-- | Нестабильная переменная — это переменная, хранящая дату или время.
 data Volatile = Date | Time
   deriving (Eq, Ord, Show)
 
+-- | Специфичная переменная — это переменная, содержащая код возврата последнего
+-- пользовательского запроса.
 data Specific = LastExitCode
   deriving (Eq, Ord, Show)
 
@@ -49,8 +64,8 @@ readVariable (c:cs)
   | isLC c = let (gcs, bcs) = span isLCOU cs in return (toVar $ c : gcs, bcs)
   | otherwise = fail "can't get non-empty name"
     where
-      isLCOU c = c `elem` (['A'..'Z'] ++ ['a'..'z'] ++ ['0'..'9'] ++ ['_'])
-      isLC c = c `elem` (['A'..'Z'] ++ ['a'..'z'])
+      isLCOU = (`elem` (['A'..'Z'] ++ ['a'..'z'] ++ ['0'..'9'] ++ ['_']))
+      isLC = (`elem` (['A'..'Z'] ++ ['a'..'z']))
       toVar "DATE" = Volatile Date
       toVar "TIME" = Volatile Time
       toVar name   = Stable $ Usual name
@@ -68,14 +83,14 @@ getVarName :: Stable -> String
 getVarName (Usual name) = name
 getVarName (Specific LastExitCode) = "LAST_EXIT_CODE"
 
--- | Стабильная переменная PATH
+-- | Стабильная переменная PATH.
 varPath :: Stable
 varPath = Usual "PATH"
 
--- | Стабильная переменная PWD
+-- | Стабильная переменная PWD.
 varPwd :: Stable
 varPwd = Usual "PWD"
 
--- | Стабильная переменная PS1
+-- | Стабильная переменная PS1.
 varPs1 :: Stable
 varPs1 = Usual "PS1"

@@ -2,19 +2,20 @@
 В данном модуле объявлена монада @'MonadVarReader'@ для получения значений
 переменных.
 -}
-module Environment.MonadVarReader (
-    module Environment.MonadPathReader,
-    module Environment.MonadPwdReader,
+module Monads.VarReader (
+    module Monads.PathReader,
+    module Monads.PwdReader,
     MonadVarReader (..),
     getVarPathDefault,
     getVarPwdDefault,
   ) where
 
+import Monads.PathReader
+import Monads.PwdReader
+
 import Data.Variable (Variable(..), Stable, varPath, varPwd)
-import Environment.FSPrimitive (AbsFilePath, absFilePath)
-import Environment.MonadError (MonadError)
-import Environment.MonadPathReader
-import Environment.MonadPwdReader
+import Data.FSObjects (AbsFilePath, absFilePath)
+import Monads.Error (MonadError)
 
 -- | Монада для получения значений переменных.
 class (MonadPathReader m, MonadPwdReader m) => MonadVarReader m where

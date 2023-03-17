@@ -11,12 +11,13 @@ module Phases.Analyzer (
 import qualified Data.ParsedPrimitive as PP
 import Data.AnalyzedPrimitive hiding (Primitive(..))
 import qualified Data.AnalyzedPrimitive as AP
+import Data.Error (Error(..))
+import Data.ExitCode (ExitCode(..))
 import Data.Variable (variable, asStable)
-import Environment.MonadError
-import Environment.MonadExit (ExitCode(..))
-import Environment.MonadFS
-import Environment.MonadPathReader
-import Environment.MonadPwdReader
+import Monads.Error
+import Monads.FS
+import Monads.PathReader
+import Monads.PwdReader
 
 import Control.Monad (forM, (>=>))
 import Data.List.NonEmpty (NonEmpty(..))

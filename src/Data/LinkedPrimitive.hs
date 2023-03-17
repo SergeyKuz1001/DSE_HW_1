@@ -1,27 +1,42 @@
+{- |
+В данном модуле объявлены примитивы, в которые транслируется пользовательский
+запрос после линковки.
+-}
 module Data.LinkedPrimitive (
     Primitive (..),
     Special (..),
-    CommandWithHandles,
-    Command (..),
+    CommonWithHandles,
+    Common (..),
     Internal (..),
     External (..),
   ) where
 
-import Data.Variable (Stable(..))
 import Data.AnalyzedPrimitive (Special(..), External(..))
 import Data.Handles
+import Data.Variable (Stable(..))
 
+-- | Примитив — это
+--
+--     * специальная команда,
+--     * присваивание стабильной переменной или
+--     * набор обычных команд с заданными типами потоков ввода и вывода.
 data Primitive
   = Special Special
   | Assignment Stable String
-  | Commands [CommandWithHandles]
+  | Commons [CommonWithHandles]
   deriving (Eq, Show)
 
-type CommandWithHandles = (Command, InputHandle, OutputHandle)
+-- | Обычная команда с заданными типами потоков ввода и вывода.
+type CommonWithHandles = (Common, InputHandle, OutputHandle)
 
-data Command = External External | Internal Internal
+-- | Обычная команда, может быть внутренней или внешней.
+data Common = External External | Internal Internal
   deriving (Eq, Show)
 
+-- | Внутренняя команда, представляется в виде чистой функции над текстом с её
+-- названием. Название необходимо для сравнения двух функций. Обычно
+-- выполняется, что две команды с одинковым названием имеют эквивалентные
+-- функции, но этот инвариант никак не гарантируется.
 data Internal = Func String (String -> String)
 
 instance Eq Internal where

@@ -2,13 +2,13 @@
 В данном модуле объявлена монада @'MonadPathWriter'@ для записи значения
 переменной PATH.
 -}
-module Environment.MonadPathWriter (
+module Monads.PathWriter (
     MonadPathWriter (..),
     formatVarPath,
   ) where
 
-import Environment.FSPrimitive (AbsFilePath (asFilePath))
-import Environment.MonadPathReader (varPathSeparator)
+import Data.FSObjects (AbsFilePath (asFilePath))
+import Monads.PathReader (varPathSeparator)
 
 -- | Монада для записи списка абсолютных путей в переменную PATH.
 class Monad m => MonadPathWriter m where
@@ -18,4 +18,4 @@ class Monad m => MonadPathWriter m where
 -- корректным значением переменной PATH.
 formatVarPath :: [AbsFilePath] -> String
 formatVarPath [] = ""
-formatVarPath afps = foldr1 (\x y -> x ++ pure varPathSeparator ++ y) $ map asFilePath afps
+formatVarPath afps = foldr1 (\x y -> x ++ [varPathSeparator] ++ y) $ map asFilePath afps

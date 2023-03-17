@@ -8,161 +8,84 @@ module Phases.Executor (
   ) where
 
 import Data.LinkedPrimitive
-import Environment.MonadExit (MonadExit (exit), ExitCode (ExitCode))
-import Environment.MonadIO as EnvIO
-import Environment.MonadPM as PM
-import Environment.MonadVarReader (MonadVarReader (..))
-import Environment.MonadVarWriter (MonadVarWriter (..))
-import Environment.MonadPwdReader (MonadPwdReader (..))
-import Environment.MonadPwdWriter (MonadPwdWriter (..))
+import Data.ExitCode (ExitCode (..))
+import Data.FSObjects ((</>))
 import Data.Variable
-import System.IO (Handle)
-import System.IO as SIO (stderr, stdin, stdout)
-import Environment.FSPrimitive (asFilePath, (</>))
+import Monads.Exit (MonadExit (exit))
+import Monads.PM (MonadPM(..))
+import Monads.VarReader (MonadVarReader(..), MonadPwdReader(..))
+import Monads.VarWriter (MonadVarWriter(..), MonadPwdWriter(..))
 
-import Data.Foldable (traverse_)
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (fromMaybe)
 
-type WcOutputArguments = (Int, Int, Int, Bool)
-
--- | Функция принимает, разбирает и исполняет распарсшенный примитив.
-executor :: (MonadIO m, MonadPM m, MonadExit m, MonadVarWriter m, MonadVarReader m) => Primitive -> m ()
+-- | Функция для исполнения примитива. Исполняет список команд "почти"
+-- параллельно, а именно подряд идущие внешние команды выполняются
+-- параллельно, а внутренние - последовательно. Такое поведение вызвано
+-- ограничениями реальной реализации.
+executor :: (MonadPM m, MonadExit m, MonadVarWriter m, MonadVarReader m) => Primitive -> m ()
 executor = \case
   Special special      -> executeSpecial special
   Assignment var value -> setVar var value
-  Commands commands    -> executeCommands commands
+  Commons commands     -> executeCommons commands
 
 -- | Функция для исполнения специальных команд.
-executeSpecial :: (MonadExit m, MonadPwdReader m, MonadVarWriter m) => Special -> m ()
+executeSpecial :: (MonadExit m, MonadPwdReader m, MonadPwdWriter m) => Special -> m ()
 executeSpecial = \case
   Cd path -> do
     pwd <- getVarPwd
     setVarPwd (pwd </> path)
   Exit mec -> exit $ fromMaybe (ExitCode 0) mec
 
-executeCommands :: (MonadPM m, MonadVarReader m, MonadVarWriter m) => [CommandWithHandles] -> m ()
-executeCommands cmds = do
-  stream <- defaultStream
-  ExitCode ec <- exec stream [] cmds
+-- | Функция для исполнения обычных команд с указанными типами потоков ввода и
+-- вывода.
+executeCommons :: (MonadPM m, MonadVarReader m, MonadVarWriter m) => [CommonWithHandles] -> m ()
+executeCommons cmns = do
+  stream <- getDefaultStream
+  ExitCode ec <- execProc stream [] cmns
   setVar (Specific LastExitCode) (show ec)
-    where
-      exec stream runned [] =
-        wait $ reverse runned
-      exec stream runned ((External (Arguments path args), hIn, hOut) : commands) = do
-        vars <- getVars
-        (proc, stream') <- createProcess path args hIn hOut vars stream
-        exec stream' (proc : runned) commands
-      exec stream runned ((Internal (Func _ func), hIn, hOut) : commands) = do
-        ec <- wait $ reverse runned
-        if ec /= ExitCode 0
-          then return ec
-          else do
-            stream' <- applyFuncToStream func hIn hOut stream
-            exec stream' [] commands
-      wait [] =
-        return $ ExitCode 0
-      wait (proc : procs) = do
-        ec <- waitForProcess proc
-        if ec == ExitCode 0
-          then
-            wait procs
-          else do
-            term procs
-            return ec
-      term [] =
-        return ()
-      term (proc : procs) = do
-        terminateProcess proc
-        term procs
 
-{-spanMaybe :: (a -> Maybe b) -> [a] -> ([b], [a])
-spanMaybe = go []
-  where
-    go acc f [] = (acc [], [])
-    go acc f (x : xs) = case f x of
-      Nothing -> (acc [], x : xs)
-      Just y  -> go (acc . (x :)) f xs
-
-planForCommons :: [Common] -> [Either Blocking [(External, (InputHandle, OutputHandle, OutputHandle))]]
-planForCommons commons =
-  let (streamings, other) = spanMaybe isStreaming commons
-  in  case spanMaybe toStreaming commons of
-        ()
-  where
-    toStreaming (Internal (Blocking _)) = Nothing
-    toStreaming cmd = Just cmd
-
-planForStreamings :: [Common] -> [(External, (InputHandle, OutputHandle, OutputHandle))]
-planForStreamings = 
-
-executeCommons :: (MonadIO m, MonadVarReader m, MonadPM m) => InputHandle -> [Common] -> m ()
-exetuteCommons hIn (External cmd1 : Internal (Blocking cmd2) : commons) = do
-executeCommons hIn = \case
-  x :| [] ->
-    execCommon (hIn, SIO.stdout, SIO.stderr) x
-  x :| (x' : xs) -> do
-    (newHIn, newHOut) <- PM.createPipe
-    execCommon (hIn, newHOut, SIO.stderr) x
-    executeCommons newHIn (x' :| xs)
-  where
-    execCommon (hIn, hOut, hErr) = \case
-      Internal internal -> executeInternal (hIn, hOut) internal
-      External external -> executeExternal (hIn, hOut, hErr) external
-
-executeStreamings :: (MonadIO m) => (InputHandle, OutputHandle) -> [Either External Streaming] -> m ExitCode
-executeStreamings _ _ [] = return $ ExitCode 0
-executeStreamings hIn hOut commands = do
-  mProcHndls' <- foldl (\inp command -> do
-      (mProcHndl, nextOutp) <- runStreaming inp NewPipe command
-    ) (return (hIn, [])) $ init commands
-  
-
-runExternals ::
-  (MonadPM m, MonadVarReader m) =>
-  [(External, (InputHandle, OutputHandle, OutputHandle))] ->
-  m ([ProcessHandle], Maybe InputHandle)
-runExternals [] = return ([], Nothing)
-runExternals [(Arguments path args, hndls)] = do
+-- | Функция запуска и остановки процессов. Принимает поток с данными
+-- предыдущего процесса, ссылки на уже запущенные процессы и команды с типами
+-- потоков ввода/вывода, которые необходимо запустить. Возвращает код возврата
+-- первой команды с ненулевым кодом или нулевой код иначе.
+--
+-- Запуск процессов возможен только для внешних команд, таким образом подряд
+-- идущие внешние команды запускаются параллельно, а при встрече внутренней
+-- команды (или конца списка команд) все запущенные процессы останавливаются (не
+-- убиваются). При возникновении ошибки (ненулевой код возврата) все запущенные
+-- процессы убиваются, а все незапущенные - не запускаются.
+execProc :: (MonadPM m, MonadVarReader m) => Stream m -> [Process m] -> [CommonWithHandles] -> m ExitCode
+execProc _ runned [] =
+  waitProc $ reverse runned
+execProc stream runned ((External (Arguments path args), hIn, hOut) : cmns) = do
   vars <- getVars
-  createProcess path args vars hndls
-runExternals ((Arguments path args, hndls) : (command, (hIn', hOut', hErr')) : commands) = do
-  vars <- getVars
-  (procHndl, mHIn') <- createProcess path args vars hndls
-  (procHndls, mHIn) <- runExternals $ (command, (mHIn' <|> Just hIn', hOut', hErr')) : commands
-  return (procHndl : procHndls, mHIn)
+  (proc, stream') <- createProcess path args hIn hOut vars stream
+  execProc stream' (proc : runned) cmns
+execProc stream runned ((Internal (Func _ func), hIn, hOut) : cmns) = do
+  ec <- waitProc $ reverse runned
+  if ec /= ExitCode 0
+    then return ec
+    else do
+      stream' <- applyFuncToStream func hIn hOut stream
+      execProc stream' [] cmns
 
--- | Функция для исполнения внутренних команд.
-executeInternal :: (MonadIO m, MonadPwdReader m, MonadPM m) => (Handle, Handle) -> Internal -> m ()
-executeInternal (hIn, hOut) = \case
-  Cat maybeFilePath -> do
-    file <- maybe (PM.hGetContents hIn) EnvIO.readFile maybeFilePath
-    PM.hPutStr hOut file
-  Echo ls -> do
-    PM.hPutStr hOut $ unwords ls ++ "\n"
-  Wc maybeFilePath -> do
-    file <- maybe (pack <$> PM.hGetContents hIn) EnvIO.readFileFromBytes maybeFilePath
-    let (countLines, countWords, bytes, isPrevSpace) = ByteStr.foldl' wcgo (0, 0, 0, False) file
-    let newCountWords = countWords + bool 1 0 isPrevSpace
-    PM.hPutStr hOut $ show countLines ++ ' ' : show newCountWords ++ ' ' : show bytes
-  Pwd -> do
-    pwd <- asFilePath <$> getVarPwd
-    PM.hPutStr hOut pwd
-  where
-    wcgo :: WcOutputArguments -> Char -> WcOutputArguments
-    wcgo (countLines, countWords, bytes, isPrevSpace) c =
-      (countLines + checkOnLine, countWords + checkOnWord, bytes + 1, isSpace c)
-      where
-        checkOnLine = bool 0 1 $ c == '\n'
-        checkOnWord = bool 0 1 $ not isPrevSpace && isSpace c
+-- | Функция остановки запущенных процессов.
+waitProc :: MonadPM m => [Process m] -> m ExitCode
+waitProc [] =
+  return $ ExitCode 0
+waitProc (proc : procs) = do
+  ec <- waitForProcess proc
+  if ec == ExitCode 0
+    then
+      waitProc procs
+    else do
+      termProc procs
+      return ec
 
--- | Функция для исполнения внешних команд.
-executeExternal :: (MonadIO m, MonadVarReader m, MonadPM m) => (Handle, Handle, Handle) ->
-  External -> m () -- Maybe Handle, Maybe Handle, Maybe Handle, ProcessHandle
-executeExternal handles = \case
-  Arguments pathToCmd args -> do
-    vars <- getVars
-    process <- createProcess pathToCmd args vars handles
-    (ExitCode code) <- waitForProcess process
-    if code == 0
-    then return ()
-    else terminateProcess process-}
+-- | Функция убийства запущенных процессов.
+termProc :: MonadPM m => [Process m] -> m ()
+termProc [] =
+  return ()
+termProc (proc : procs) = do
+  terminateProcess proc
+  termProc procs

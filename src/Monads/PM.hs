@@ -1,18 +1,20 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module Environment.MonadPM (
+module Monads.PM (
     MonadPM (..),
   ) where
 
-import Data.Variable (Stable)
+import Data.ExitCode (ExitCode)
+import Data.FSObjects (AbsFilePath)
 import Data.Handles (InputHandle, OutputHandle)
-import Environment.FSPrimitive (AbsFilePath)
-import Environment.MonadExit (ExitCode)
+import Data.Variable (Stable)
+
+import Data.Kind (Type)
 
 class Monad m => MonadPM m where
-  type Stream  m :: *
-  type Process m :: *
-  defaultStream :: m (Stream m)
+  type Stream  m :: Type
+  type Process m :: Type
+  getDefaultStream :: m (Stream m)
   applyFuncToStream ::
     (String -> String) ->
     InputHandle ->

@@ -1,8 +1,14 @@
-module Phases.VarSubstitutor (varSubstitutor) where
+{- |
+Модуль для подстановки значений переменных в пользовательский запрос.
+-}
+module Phases.Substitutor (
+    substitutor
+  ) where
 
 import           Data.Variable              (readVariable)
-import           Environment.MonadError     (Error (..), MonadError, throwError)
-import           Environment.MonadVarReader (MonadVarReader, getVar)
+import           Data.Error                 (Error (..))
+import           Monads.Error               (MonadError, throwError)
+import           Monads.VarReader           (MonadVarReader (..))
 
 -- | Сконструировать специфичную для модуля ошибку
 modError :: String -> Error
@@ -16,19 +22,19 @@ throwModError = throwError . modError
 -- Преобразовывает строку с $varname и ${varname}
 -- в строку без них.
 -- Учитываются кавычки, разбор строки не производится.
-varSubstitutor :: (MonadError m, MonadVarReader m) => String -> m String
-varSubstitutor "" = pure ""
-varSubstitutor ('\\' : c : cs)  = ('\\' :) . (c :) <$> varSubstitutor cs
-varSubstitutor ('\'' : cs) = ('\'' :) <$> singleQuotes cs
-varSubstitutor ('$' : cs) = parseVariable varSubstitutor cs
-varSubstitutor ('\"' : cs) = ('\"' :) <$> doubleQuotes cs
-varSubstitutor (c : cs) = (c :) <$> varSubstitutor cs
+substitutor :: (MonadError m, MonadVarReader m) => String -> m String
+substitutor "" = pure ""
+substitutor ('\\' : c : cs)  = ('\\' :) . (c :) <$> substitutor cs
+substitutor ('\'' : cs) = ('\'' :) <$> singleQuotes cs
+substitutor ('$' : cs) = parseVariable substitutor cs
+substitutor ('\"' : cs) = ('\"' :) <$> doubleQuotes cs
+substitutor (c : cs) = (c :) <$> substitutor cs
 
 -- | Обработка внутри одинарных кавычек.
 singleQuotes :: (MonadError m, MonadVarReader m) => String -> m String
 singleQuotes "" = throwModError "Unexpected end of line in single quotes"
 singleQuotes ('\\' : c : cs)  = ('\\' :) . (c :) <$> singleQuotes cs
-singleQuotes ('\'' : cs) = ('\'' :) <$> varSubstitutor cs
+singleQuotes ('\'' : cs) = ('\'' :) <$> substitutor cs
 singleQuotes (c : cs) = (c :) <$> singleQuotes cs
 
 -- | Обработка внутри двойных кавычек.
@@ -37,7 +43,7 @@ doubleQuotes :: (MonadError m, MonadVarReader m) => String -> m String
 doubleQuotes "" = throwModError "Unexpected end of line in double quotes"
 doubleQuotes ('\\' : c : cs)  = ('\\' :) . (c :) <$> doubleQuotes cs
 doubleQuotes ('$' : cs) = parseVariable doubleQuotes cs
-doubleQuotes ('\"' : cs) = ('\"' :) <$> varSubstitutor cs
+doubleQuotes ('\"' : cs) = ('\"' :) <$> substitutor cs
 doubleQuotes (c : cs) = (c :) <$> doubleQuotes cs
 
 -- | Парсинг имени переменной. Принимает функцию для продолжения парсинга после

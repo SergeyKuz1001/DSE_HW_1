@@ -2,16 +2,16 @@
 В данном модуле объявлена монада @'MonadPathReader'@ для получения значения
 переменной PATH.
 -}
-module Environment.MonadPathReader (
+module Monads.PathReader (
     MonadPathReader (..),
+    pathSeparator,
     varPathSeparator,
     parseVarPath,
   ) where
 
-import Environment.FSPrimitive (AbsFilePath, absFilePath)
-import Environment.MonadError (MonadError)
+import Data.FSObjects (AbsFilePath, absFilePath)
+import Monads.Error (MonadError)
 
-import Data.List (unfoldr)
 import System.FilePath (pathSeparator, searchPathSeparator, splitSearchPath)
 
 -- | Монада для получения списка путей к директориям с исполняемыми файлами,

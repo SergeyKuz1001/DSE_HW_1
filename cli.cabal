@@ -24,33 +24,35 @@ source-repository head
 
 library
   exposed-modules:
+      AbstractMain
       Data.AnalyzedPrimitive
       Data.DebugInfo
+      Data.Error
+      Data.ExitCode
+      Data.FSObjects
       Data.Handles
       Data.LinkedPrimitive
       Data.ParsedPrimitive
       Data.Variable
-      Environment
-      Environment.FSPrimitive
-      Environment.MonadError
-      Environment.MonadExit
-      Environment.MonadFS
-      Environment.MonadIO
-      Environment.MonadPathReader
-      Environment.MonadPathWriter
-      Environment.MonadPM
-      Environment.MonadPwdReader
-      Environment.MonadPwdWriter
-      Environment.MonadVarReader
-      Environment.MonadVarWriter
-      Phases
+      Monads.Error
+      Monads.Exit
+      Monads.FS
+      Monads.IO
+      Monads.PathReader
+      Monads.PathWriter
+      Monads.PM
+      Monads.PwdReader
+      Monads.PwdWriter
+      Monads.SelfReferenced
+      Monads.VarReader
+      Monads.VarWriter
       Phases.Analyzer
       Phases.Executor
       Phases.Linker
       Phases.Linker.Commands
       Phases.Parser
-      Phases.StringReader
-      Phases.VarSubstitutor
+      Phases.Reader
+      Phases.Substitutor
   other-modules:
       Paths_cli
   hs-source-dirs:
@@ -74,6 +76,7 @@ library
 executable cli-exe
   main-is: Main.hs
   other-modules:
+      Environment
       Paths_cli
   hs-source-dirs:
       app

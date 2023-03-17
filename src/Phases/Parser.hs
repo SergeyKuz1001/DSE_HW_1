@@ -1,13 +1,15 @@
 {-# LANGUAGE LambdaCase #-}
 
--- | Модуль для парсинга пользовательского запроса.
---
--- Весь этот модуль выглядел бы куда красивее на парсер-комбинаторах,
--- но их использовать явно запрещено в задании.
+{- | Модуль для парсинга пользовательского запроса.
+
+Весь этот модуль выглядел бы куда красивее на парсер-комбинаторах,
+но их использовать явно запрещено в задании.
+-}
 module Phases.Parser (parser) where
 
-import qualified Data.ParsedPrimitive    as PP
-import           Environment.MonadError (Error (..), MonadError, throwError)
+import qualified Data.ParsedPrimitive   as PP
+import           Data.Error             (Error (..))
+import           Monads.Error           (MonadError, throwError)
 
 import           Control.Monad
 import           Data.Bifunctor         (first)

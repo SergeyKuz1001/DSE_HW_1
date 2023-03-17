@@ -2,11 +2,11 @@
 В данном модуле объявлена монада @'MonadPwdReader'@ для получения значения
 переменной PWD.
 -}
-module Environment.MonadPwdReader (
+module Monads.PwdReader (
     MonadPwdReader (..),
   ) where
 
-import Environment.FSPrimitive (AbsFilePath)
+import Data.FSObjects (AbsFilePath)
 
 -- | Монада для получения значения переменной PWD (то есть абсолютного пути до
 -- текущей директории).

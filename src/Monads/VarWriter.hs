@@ -2,19 +2,19 @@
 В данном модуле объявлена монада @'MonadVarWriter'@ для записи значений
 переменных.
 -}
-module Environment.MonadVarWriter (
-    module Environment.MonadPathWriter,
-    module Environment.MonadPwdWriter,
+module Monads.VarWriter (
+    module Monads.PathWriter,
+    module Monads.PwdWriter,
     MonadVarWriter (..),
     setVarPathDefault,
     setVarPwdDefault,
   ) where
 
+import Monads.PathWriter
+import Monads.PwdWriter
+
 import Data.Variable (Stable, varPath, varPwd)
-import Environment.FSPrimitive (AbsFilePath(..))
-import Environment.MonadError (Error(..), MonadError, (@:))
-import Environment.MonadPathWriter
-import Environment.MonadPwdWriter
+import Data.FSObjects (AbsFilePath (asFilePath))
 
 -- | Монада для записи значений переменных.
 class (MonadPathWriter m, MonadPwdWriter m) => MonadVarWriter m where
@@ -22,9 +22,9 @@ class (MonadPathWriter m, MonadPwdWriter m) => MonadVarWriter m where
   setVar :: Stable -> String -> m ()
 
 -- | Функция @'setVarPath'@, выраженная через функции монады @'MonadVarWriter'@.
-setVarPathDefault :: (MonadVarWriter m, MonadError m) => [AbsFilePath] -> m ()
+setVarPathDefault :: MonadVarWriter m => [AbsFilePath] -> m ()
 setVarPathDefault absPaths = setVar varPath $ formatVarPath absPaths
 
 -- | Функция @'setVarPwd'@, выраженная через функции монады @'MonadVarWriter'@.
-setVarPwdDefault :: (MonadVarWriter m, MonadError m) => AbsFilePath -> m ()
+setVarPwdDefault :: MonadVarWriter m => AbsFilePath -> m ()
 setVarPwdDefault absPath = setVar varPwd $ asFilePath absPath

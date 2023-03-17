@@ -2,7 +2,7 @@
 В данном модуле объявлена монада @'MonadFS'@ для платформонезависимой работы с
 файловой системой.
 -}
-module Environment.MonadFS (
+module Monads.FS (
     MonadFS (..),
     findFile,
     findFileAsExecutable,
@@ -13,9 +13,9 @@ module Environment.MonadFS (
     isExecutable,
   ) where
 
-import Environment.FSPrimitive
-import Environment.MonadPathReader (MonadPathReader(..))
-import Environment.MonadPwdReader (MonadPwdReader(..))
+import Data.FSObjects
+import Monads.PathReader (MonadPathReader(..))
+import Monads.PwdReader (MonadPwdReader(..))
 
 import Control.Applicative (asum)
 
