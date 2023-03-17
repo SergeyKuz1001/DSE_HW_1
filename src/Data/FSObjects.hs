@@ -44,13 +44,17 @@ isBaseName = notElem FP.pathSeparator
 -- абсолютный и относительный пути, получая в итоге абсолютный, сокращая при
 -- этом специальные директории @.@ и @..@.
 (</>) :: AbsFilePath -> FilePath -> AbsFilePath
-(</>) (AbsFilePath path) = AbsFilePath . FP.joinPath . reverse . foldl addToPath [] . FP.splitPath . (path FP.</>)
+(</>) (AbsFilePath path) = AbsFilePath . joinPath . reverse . foldl addToPath [] . splitPath [""] . (path FP.</>)
   where
     addToPath [] part = [part]
-    addToPath parts "./" = parts
-    addToPath [part] "../" = [part]
-    addToPath (_:parts) "../" = parts
+    addToPath parts "." = parts
+    addToPath [part] ".." = [part]
+    addToPath (_:parts) ".." = parts
     addToPath parts part = part : parts
+    splitPath (p:ps) [] = reverse (if p == "" then ps else reverse p : ps)
+    splitPath (p:ps) (c:cs) | c == FP.pathSeparator = splitPath ("" : (if p == "" && ps /= [] then ps else reverse p : ps)) cs
+    splitPath (p:ps) (c:cs) = splitPath ((c:p):ps) cs
+    joinPath = (\l -> if length l == 1 then head l else init $ concat l) . map (++ [FP.pathSeparator])
 
 -- | Разрешения файла.
 data Permissions = Permissions
