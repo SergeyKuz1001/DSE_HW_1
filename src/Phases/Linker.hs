@@ -112,7 +112,7 @@ addOutputHandles cmds = return $
   zipWith (\(cmd, hIn) (_, hIn') ->
       (cmd, hIn, if hIn' == FromParentHandle then ToNewPipe else ToNowhere))
     cmds (tail cmds) ++
-  map (\(cmd, hIn) -> (cmd, hIn, ToStdout)) [last cmds]
+  [(\(cmd, hIn) -> (cmd, hIn, ToStdout)) $ last cmds]
 
 -- | Функция добавления внешней команды в начало плана выполнения запроса в
 -- случае необходимости.
