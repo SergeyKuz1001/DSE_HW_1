@@ -13,4 +13,4 @@ import Data.Text.Lazy (Text, pack)
 -- | Команда @pwd@ принимает текст, игнорирует его и возвращает путь до текущей
 -- директории в виде текста.
 pwd :: MonadPwdReader m => Text -> m Text
-pwd _ = pack . asFilePath <$> getVarPwd
+pwd _ = pack . (++ "\n") . asFilePath <$> getVarPwd

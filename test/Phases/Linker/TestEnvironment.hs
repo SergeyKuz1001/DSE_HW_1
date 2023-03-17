@@ -1,8 +1,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Phases.Linker.TestEnvironment (
+    module Data.FSObjects,
     module Monads.FS,
-    module Monads.PwdReader,
     module Monads.SelfReferenced,
     TestEnvironment,
     runTestEnvironment,
@@ -10,20 +10,28 @@ module Phases.Linker.TestEnvironment (
 
 import Data.FSObjects
 import Monads.FS
-import Monads.PwdReader
 import Monads.SelfReferenced
 
-newtype TestEnvironment a = TestEnvironment (AbsFilePath -> a)
-  deriving (Functor, Applicative, Monad)
+import Data.Functor.Identity
+import System.FilePath (pathSeparator)
 
-instance MonadPwdReader TestEnvironment where
-  getVarPwd = TestEnvironment id
+newtype TestEnvironment a = TestEnvironment (Identity a)
+  deriving (Functor, Applicative, Monad)
 
 instance MonadFS TestEnvironment where
   findFileByAbsPath = undefined
 
-instance MonadSelfReferenced TestEnvironment where
-  getSelfPath = TestEnvironment . const . either undefined id $ absFilePath "/home/user/cli-exe"
+replace :: Eq a => a -> a -> [a] -> [a]
+replace x y = foldr (\z -> if x == z then (y:) else (z:)) []
 
-runTestEnvironment :: AbsFilePath -> TestEnvironment a -> a
-runTestEnvironment pwd (TestEnvironment func) = func pwd
+updAbsPath :: FilePath -> AbsFilePath
+updAbsPath path = either (error "it isn't AbsFilePath") id . absFilePath $
+  if pathSeparator == '/'
+    then path
+    else "C:" ++ replace '/' '\\' path
+
+instance MonadSelfReferenced TestEnvironment where
+  getSelfPath = TestEnvironment . Identity $ updAbsPath "/home/user/cli-exe"
+
+runTestEnvironment :: TestEnvironment a -> a
+runTestEnvironment (TestEnvironment m) = runIdentity m

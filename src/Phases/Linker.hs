@@ -50,15 +50,15 @@ linker (AP.Commons cmns) =
 --
 -- Таким образом из внутренних команд остаются @wc@ без аргументов и @pwd@.
 addInputHandles :: Monad m => [AP.Common] -> m [(Maybe AP.Common, InputHandle)]
-addInputHandles = traverse go
+addInputHandles = return . map go
   where
-    go cmn@(AP.External _)                = return (Just cmn, FromParentHandle)
-    go (AP.Internal (AP.Cat Nothing))     = return (Nothing,  FromParentHandle)
-    go (AP.Internal (AP.Cat (Just path))) = return (Nothing,  FromFile path)
-    go (AP.Internal (AP.Echo args))       = return (Nothing,  FromString $ echo args)
-    go cmn@(AP.Internal (AP.Wc Nothing))  = return (Just cmn, FromParentHandle)
-    go (AP.Internal (AP.Wc (Just path)))  = return (Just . AP.Internal $ AP.Wc Nothing, FromFile path)
-    go cmn@(AP.Internal AP.Pwd)           = return (Just cmn, FromString "")
+    go cmn@(AP.External _)                = (Just cmn, FromParentHandle)
+    go (AP.Internal (AP.Cat Nothing))     = (Nothing,  FromParentHandle)
+    go (AP.Internal (AP.Cat (Just path))) = (Nothing,  FromFile path)
+    go (AP.Internal (AP.Echo args))       = (Nothing,  FromString $ echo args)
+    go cmn@(AP.Internal (AP.Wc Nothing))  = (Just cmn, FromParentHandle)
+    go (AP.Internal (AP.Wc (Just path)))  = (Just . AP.Internal $ AP.Wc Nothing, FromFile path)
+    go cmn@(AP.Internal AP.Pwd)           = (Just cmn, FromString "")
 
 -- | Функция преобразования команд из одного типа в другой. Здесь также
 -- проводится оптимизация, связанная с удалением @Nothing@-команд (которые
@@ -78,7 +78,9 @@ commonsTransformation = return . go id
         then acc [(LP.Internal (LP.Pure "cat" cat), inp)]
         else acc []
     go acc ((Nothing, inp) : (cmn, inp') : cmns) =
-      go acc ((cmn, if inp' == FromParentHandle then inp else inp') : cmns)
+      if null (acc []) && inp == FromParentHandle && inp' /= FromParentHandle
+        then go (acc . ((LP.Internal (LP.Pure "cat" cat), inp) : )) ((cmn, inp') : cmns)
+        else go acc ((cmn, if inp' == FromParentHandle then inp else inp') : cmns)
     go acc ((Just (AP.External (AP.Arguments path args)), inp) : cmns) =
       go (acc . ((LP.External (LP.Arguments path args), inp) : )) cmns
     go acc ((Just (AP.Internal (AP.Wc Nothing)), inp) : cmns) =
@@ -92,24 +94,20 @@ commonsTransformation = return . go id
 -- Также здесь происходит отбрасывание любых внутренних команд, результат
 -- которых нигде не используется.
 concatInternals :: Monad m => [(LP.Common, InputHandle)] -> m [(LP.Common, InputHandle)]
-concatInternals = return . go True id
+concatInternals = return . go (Nothing :: Maybe Int) []
   where
     go _ acc [] =
-      acc []
-    go canDrop acc ((LP.Internal (LP.Pure name1 func1), inp1) : (LP.Internal (LP.Pure name2 func2), FromParentHandle) : cmds) =
-      go canDrop acc ((LP.Internal (LP.Pure (name2 ++ "." ++ name1) (func2 . func1)), inp1) : cmds)
-    go canDrop acc ((LP.Internal int@(LP.Pure _ _), inp) : cmds) | inp /= FromParentHandle =
-      if canDrop
-        then go True  (       (LP.Internal int, inp) :  ) cmds
-        else go False (acc . ((LP.Internal int, inp) : )) cmds
-    go canDrop acc ((LP.External ext, inp) : cmds) | inp /= FromParentHandle =
-      if canDrop
-        then go False (       (LP.External ext, inp) :  ) cmds
-        else go False (acc . ((LP.External ext, inp) : )) cmds
-    go canDrop acc (cmd@(LP.Internal _, _) : cmds) =
-      go canDrop (acc . (cmd : )) cmds
+      reverse acc
+    go mCanDropAmt acc ((LP.Internal (LP.Pure name1 func1), inp1) : (LP.Internal (LP.Pure name2 func2), FromParentHandle) : cmds) =
+      go mCanDropAmt acc ((LP.Internal (LP.Pure (name2 ++ "." ++ name1) (func2 . func1)), inp1) : cmds)
+    go mCanDropAmt acc ((LP.Internal int, inp) : cmds) | inp /= FromParentHandle =
+      go (Just 1) ((LP.Internal int, inp) : (maybe id drop mCanDropAmt) acc) cmds
+    go mCanDropAmt acc ((LP.External ext, inp) : cmds) | inp /= FromParentHandle =
+      go Nothing  ((LP.External ext, inp) : (maybe id drop mCanDropAmt) acc) cmds
+    go mCanDropAmt acc (cmd@(LP.Internal _, _) : cmds) =
+      go ((+ 1) <$> mCanDropAmt) (cmd : acc) cmds
     go _ acc (cmd@(LP.External _, _) : cmds) =
-      go False (acc . (cmd : )) cmds
+      go Nothing  (cmd : acc) cmds
 
 -- | Функция добавления типа потока вывода для каждой (из оставшихся) команды.
 addOutputHandles :: Monad m => [(LP.Common, InputHandle)] -> m [LP.CommonWithHandles]
@@ -133,8 +131,8 @@ addExternalAtBegin cwhs@((LP.Internal int, FromParentHandle, outp):_) = do
     -- абстрактной, будет поддерживать такой специфичный параметр без явного
     -- указания этого где-либо — плохая идея, лучше как-то исправить в будущем
   return $
-    if int == LP.Pure "cat" undefined && outp == ToStdout
-      then (self, FromParentHandle, ToStdout)  : tail cwhs
+    if int == LP.Pure "cat" undefined
+      then (self, FromParentHandle, outp)      : tail cwhs
       else (self, FromParentHandle, ToNewPipe) : cwhs
 addExternalAtBegin cwhs = return cwhs
 
