@@ -107,7 +107,8 @@ test-suite cli-test
       Phases.Linker.TestEnvironment
       Phases.Linker.Tests
       Phases.Parser.Tests
-      Phases.VarSubstitutor.Tests
+      Phases.Substitutor.TestEnvironment
+      Phases.Substitutor.Tests
       Paths_cli
   hs-source-dirs:
       test

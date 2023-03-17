@@ -2,14 +2,16 @@
 
 module Phases.Parser.Tests (testsParser) where
 
-import           Control.Monad.Except
+import           Data.Error
 import           Data.ParsedPrimitive
-import qualified Environment.MonadError as E
+import qualified Monads.Error as E
 import           Phases.Parser
+
+import           Control.Monad.Except
 import           Test.HUnit
 
-newtype TestEnvironment a = TestEnvironment {unwrap :: Either E.Error a}
-  deriving (Functor, Applicative, Monad, MonadError E.Error, E.MonadError)
+newtype TestEnvironment a = TestEnvironment {unwrap :: Either Error a}
+  deriving (Functor, Applicative, Monad, MonadError Error, E.MonadError)
 
 mkTest :: String -> String -> Maybe Primitive -> Test
 mkTest name arg expected = TestCase . assertEqual name expected . eitherToMaybe . unwrap $ parser arg

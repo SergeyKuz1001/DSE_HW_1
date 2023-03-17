@@ -4,14 +4,13 @@ module Phases.Analyzer.Tests (
 
 import qualified Data.ParsedPrimitive as PP
 import Data.AnalyzedPrimitive
+import Data.ExitCode (ExitCode(..))
 import Data.Variable
 import Phases.Analyzer (analyzer)
 import Phases.Analyzer.TestEnvironment
-import Environment.MonadExit (ExitCode(..))
 
 import Data.List.NonEmpty (fromList)
 import Data.Maybe (fromMaybe)
-import System.FilePath (pathSeparator)
 import Test.HUnit hiding (path)
 
 replace :: Eq a => a -> a -> [a] -> [a]

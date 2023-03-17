@@ -2,25 +2,26 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Phases.Analyzer.TestEnvironment (
-    module Environment.FSPrimitive,
-    module Environment.MonadError,
-    module Environment.MonadFS,
-    module Environment.MonadPathReader,
-    module Environment.MonadPwdReader,
+    module Data.Error,
+    module Data.FSObjects,
+    module Monads.Error,
+    module Monads.FS,
+    module Monads.PathReader,
+    module Monads.PwdReader,
     TestEnvironment,
     runTestEnvironment,
   ) where
 
-import Environment.FSPrimitive
-import Environment.MonadError
-import Environment.MonadFS
-import Environment.MonadPathReader
-import Environment.MonadPwdReader
+import Data.Error
+import Data.FSObjects
+import Monads.Error
+import Monads.FS
+import Monads.PathReader
+import Monads.PwdReader
 
 import qualified Control.Monad.Except as ME
 import Control.Monad.State (StateT, gets, runStateT)
 import Prelude hiding (putStr, putStrLn, getLine)
-import System.FilePath (splitPath, joinPath)
 
 data GlobalState = GlobalState
   { pwd   :: AbsFilePath

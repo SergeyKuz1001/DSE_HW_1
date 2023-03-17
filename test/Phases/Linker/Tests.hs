@@ -3,10 +3,10 @@ module Phases.Linker.Tests (
   ) where
 
 import qualified Data.AnalyzedPrimitive as AP
+import Data.FSObjects
 import Data.LinkedPrimitive
 import Phases.Linker (linker)
 import Phases.Linker.TestEnvironment
-import Environment.FSPrimitive
 
 import Data.List.NonEmpty (NonEmpty(..))
 import System.FilePath (pathSeparator)
@@ -37,5 +37,5 @@ mkTest (cmn : cmns) lPrim = TestCase $ env1 (linker . AP.Commons $ cmn :| cmns) 
 testsLinker :: Test
 testsLinker = TestList [
     mkTest [] $
-      Commands []
+      Commons []
   ]

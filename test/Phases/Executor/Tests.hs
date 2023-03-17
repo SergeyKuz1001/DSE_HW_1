@@ -5,11 +5,12 @@ module Phases.Executor.Tests (
 ) where
 
 import Data.LinkedPrimitive
+import Data.ExitCode (ExitCode)
+import Data.FSObjects (AbsFilePath(..), absFilePath)
 import Data.Variable
-import Environment.FSPrimitive (AbsFilePath(..), absFilePath)
-import Environment.MonadExit (ExitCode, MonadExit (exit))
-import Environment.MonadVarReader
-import Environment.MonadIO as EnvIO ( MonadIO(..) )
+import Monads.Exit (MonadExit(..))
+import Monads.VarReader
+import Monads.IO (MonadIO(..))
 import Phases.Executor (executor)
 
 import Control.Monad.State hiding (MonadIO)
