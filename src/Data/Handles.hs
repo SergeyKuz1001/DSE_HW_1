@@ -8,6 +8,8 @@ module Data.Handles (
 
 import Data.FSObjects (AbsFilePath)
 
+import Data.Text.Lazy (Text)
+
 -- | Тип типа потока ввода. Ввод бывает
 --
 --     * из потока, предоставляемого предыдущей командой;
@@ -19,7 +21,7 @@ import Data.FSObjects (AbsFilePath)
 data InputHandle
   = FromParentHandle
   | FromFile AbsFilePath
-  | FromString String
+  | FromString Text
   deriving (Eq, Show)
 
 -- | Тип типа потока вывода. Вывод бывает

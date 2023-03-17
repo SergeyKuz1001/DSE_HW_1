@@ -37,6 +37,7 @@ import Data.Foldable (traverse_)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe, mapMaybe, catMaybes)
+import qualified Data.Text.Lazy.IO as TIO
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Format (formatTime, defaultTimeLocale)
 import Data.Time.LocalTime (LocalTime, getCurrentTimeZone, utcToLocalTime)
@@ -46,7 +47,7 @@ import qualified System.Directory as D
 import System.Environment (getExecutablePath, getEnvironment)
 import System.Exit (exitWith)
 import qualified System.Process as PRC
-import System.IO as SIO
+import System.IO
 
 -- | Главный контекст для вычислений в программе.
 newtype Environment a = Environment (ST.StateT (Map Stable String) (ME.ExceptT Error IO) a)
@@ -83,19 +84,19 @@ instance MonadPM Environment where
     strIn <- case hIn of
       FromParentHandle -> do
         Just hndl <- return stream
-        toEnv $ hGetContents hndl
+        toEnv $ TIO.hGetContents hndl
       FromFile path -> do
-        toEnv . SIO.readFile $ asFilePath path
+        toEnv . TIO.readFile $ asFilePath path
       FromString str ->
         return str
     let strOut = func strIn
     case hOut of
       ToStdout -> do
-        toEnv $ SIO.putStr strOut
+        toEnv $ TIO.putStr strOut
         return Nothing
       ToNewPipe -> do
         (hndlIn, hndlOut) <- toEnv PRC.createPipe
-        toEnv $ hPutStr hndlIn strOut
+        toEnv $ TIO.hPutStr hndlIn strOut
         return $ Just hndlOut
       ToNowhere ->
         return Nothing
@@ -132,7 +133,7 @@ instance MonadPM Environment where
     case hIn of
       FromString str -> do
         Just hndlIn <- return mHndlIn
-        toEnv $ hPutStr hndlIn str
+        toEnv $ TIO.hPutStr hndlIn str
         toEnv $ hClose hndlIn
       _ -> return ()
     return ((procHndl, catMaybes [mHndl_in, mHndl_out]), mHndlOut)

@@ -8,31 +8,35 @@ module Phases.Linker.Commands (
   ) where
 
 import Data.Bool (bool)
-import qualified Data.ByteString.Char8 as BS
-import Data.Char (isSpace)
+import qualified Data.ByteString.Lazy as BS
+import Data.Char (isSpace, chr)
+import Data.Text.Lazy (Text, pack)
+import Data.Text.Lazy.Encoding (encodeUtf8)
 
 -- | Команда @cat@ принимает текст на вход и возвращает его.
-cat :: String -> String
+cat :: Text -> Text
 cat = id
 
 -- | Команда @echo@ принимает набор строк-аргументов и возвращает их запись
 -- через пробел.
-echo :: [String] -> String
-echo = (++ "\n") . unwords
+echo :: [String] -> Text
+echo = pack . (++ "\n") . unwords
 
 -- | Команда @wc@ принимает текст и возвращает его статистику (тоже в виде
 -- текста).
-wc :: String -> String
+wc :: Text -> Text
 wc text =
-  let bytes = BS.pack text
+  let bytes = encodeUtf8 text
       checkOnLine c = bool 0 1 $ c == '\n'
       checkOnWord c isPS = bool 0 1 $ not isPS && isSpace c
-      wcgo (cLs, cWs, cBs, isPS) c =
-        (cLs + checkOnLine c, cWs + checkOnWord c isPS, cBs + 1, isSpace c)
+      wcgo (cLs, cWs, cBs, isPS) w =
+        let c = chr $ fromIntegral w
+        in  (cLs + checkOnLine c, cWs + checkOnWord c isPS, cBs + 1, isSpace c)
       (countLines, countWords, countBytes, isPrevSpace) =
         BS.foldl' wcgo (0 :: Int, 0 :: Int, 0 :: Int, False) bytes
       countWords' = countWords + bool 1 0 isPrevSpace
-  in  show countLines ++ "\t" ++ show countWords' ++ "\t" ++ show countBytes ++ "\n"
+  in  pack $
+        "\t" ++ show countLines ++ "\t" ++ show countWords' ++ "\t" ++ show countBytes ++ "\n"
 
 -- Команды @pwd@ здесь нет так как
 --

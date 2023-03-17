@@ -15,6 +15,8 @@ import Data.AnalyzedPrimitive (Special(..), External(..))
 import Data.Handles
 import Data.Variable (Stable(..))
 
+import Data.Text.Lazy (Text)
+
 -- | Примитив — это
 --
 --     * специальная команда,
@@ -37,7 +39,7 @@ data Common = External External | Internal Internal
 -- названием. Название необходимо для сравнения двух функций. Обычно
 -- выполняется, что две команды с одинковым названием имеют эквивалентные
 -- функции, но этот инвариант никак не гарантируется.
-data Internal = Func String (String -> String)
+data Internal = Func String (Text -> Text)
 
 instance Eq Internal where
   Func name1 _ == Func name2 _ = name1 == name2
