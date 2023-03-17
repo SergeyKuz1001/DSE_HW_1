@@ -1,34 +1,42 @@
 {-# OPTIONS_GHC -Wno-overlapping-patterns #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Phases.Executor.Tests (
     testsExecutor
 ) where
 
 import Data.LinkedPrimitive
-import Data.ExitCode (ExitCode)
-import Data.FSObjects (AbsFilePath(..), absFilePath)
 import Data.Variable
-import Monads.Exit (MonadExit(..))
-import Monads.VarReader
-import Monads.IO (MonadIO(..))
+import Phases.Linker.Pure
 import Phases.Executor (executor)
+import Data.ExitCode (ExitCode(..))
+import Data.FSObjects (AbsFilePath(..), absFilePath)
+import Data.Handles (InputHandle(..), OutputHandle (..))
+import Monads.Exit (MonadExit(..))
+import Monads.IO (MonadIO(..))
+import Monads.PM (MonadPM(..))
+import Monads.VarReader
+import Monads.VarWriter (MonadVarWriter (..))
+import Monads.PwdWriter (MonadPwdWriter (..))
+import Monads.PathWriter (MonadPathWriter (..))
 
 import Control.Monad.State hiding (MonadIO)
-import Data.ByteString.Char8 (pack)
 import qualified Data.Map as Map
 import Test.HUnit (Test(TestList, TestCase), assertEqual)
+import Data.Text.Lazy as TZ (Text, unpack, pack, empty, append)
 
-testsExecutor :: Test
-testsExecutor = TestList []
-
-{-type TestFileInfo = (AbsFilePath, String)
+type TestFileInfo = (AbsFilePath, Text, Text)
 
 data IOState = IOState
-  { stdOut :: String,
-    externalCommands :: [(AbsFilePath, [String], [(VarName, String)])],
+  { bufIn :: Text,
+    bufOut :: Text,
+    stdOut :: Text,
     pwd :: AbsFilePath,
-    vars :: Map.Map VarName String,
-    exitCode :: Maybe ExitCode
+    vars :: Map.Map Stable String,
+    exitCode :: Maybe ExitCode,
+    externalCommands :: [(String, [String])]
   }
   deriving (Eq, Show)
 
@@ -36,21 +44,56 @@ newtype TestEnvironment a = TestEnvironment { runTestEnvironment :: State IOStat
   deriving (Functor, Applicative, Monad)
 
 instance MonadIO TestEnvironment where
-  putStr str = TestEnvironment $ modify (\st -> st { stdOut = str })
-  readFile absPath = TestEnvironment . return $ files Map.! absPath
-  readFileFromBytes filePath = EnvIO.readFile filePath >>= (TestEnvironment . return . pack)
-  createProcess absPath args vars = TestEnvironment (modify (\st -> st { externalCommands = (absPath, args, vars) : externalCommands st })) >> return 0
+  putStr str = TestEnvironment $ modify (\st -> st { stdOut = pack str })
   getLine = undefined -- Not used
 
-instance MonadVarPwdReader TestEnvironment where
+instance MonadPM TestEnvironment where
+  type Stream TestEnvironment = IOState
+  type Process TestEnvironment = IOState
+  getDefaultStream = TestEnvironment get
+  applyFuncToStream func hIn hOut stream = do
+    strIn <- TestEnvironment $ case hIn of
+      FromParentHandle -> do
+        let oldStdIn = bufIn stream
+        modify (\st -> st { bufOut = empty })
+        return oldStdIn
+      FromFile path -> return $ files Map.! path
+      FromString str -> return str
+    strOut <- func strIn
+    TestEnvironment $ do
+      case hOut of
+        ToStdout -> modify (\st -> st { stdOut = stdOut st `append` strOut, bufIn = empty, bufOut = empty })
+        ToNewPipe -> modify (\st -> st { bufIn = strOut, bufOut = empty })
+        ToNowhere -> modify id
+      get
+
+  createProcess path args _ _ _ _ = TestEnvironment $ do
+    modify (\st -> st { externalCommands = externalCommands st ++ [(asFilePath path, args)] })
+    st <- get
+    return (st, st)
+  waitForProcess _ = TestEnvironment $ return $ ExitCode 0
+  terminateProcess _ = TestEnvironment $ return ()
+
+instance MonadPwdReader TestEnvironment where
   getVarPwd = TestEnvironment $ gets pwd
 
-instance MonadVarPathReader TestEnvironment where
+instance MonadPathReader TestEnvironment where
   getVarPath = undefined -- Not used
 
-instance MonadVarsReader TestEnvironment where
-  getVar str = TestEnvironment $ gets ((Map.! str) . vars)
+instance MonadVarReader TestEnvironment where
+  getVar var = case var of
+    Stable stable -> TestEnvironment $ gets ((Map.! stable) . vars)
+    Volatile _ -> undefined -- Not used
   getVars = TestEnvironment $ gets (Map.toList . vars)
+
+instance MonadPwdWriter TestEnvironment where
+  setVarPwd path = TestEnvironment $ modify (\st -> st { vars = Map.insert varPwd (asFilePath path) (vars st) })
+
+instance MonadPathWriter TestEnvironment where
+  setVarPath paths = TestEnvironment $ modify (\st -> st { vars = Map.insert varPath (foldr (\x xs -> asFilePath x ++ ':' : xs) [] paths) (vars st) })
+
+instance MonadVarWriter TestEnvironment where
+  setVar var value = TestEnvironment $ modify (\st -> st { vars = Map.insert var value $ vars st })
 
 instance MonadExit TestEnvironment where
   exit code = TestEnvironment $ modify (\st -> st { exitCode = Just code })
@@ -58,59 +101,72 @@ instance MonadExit TestEnvironment where
 replace :: Eq a => a -> a -> [a] -> [a]
 replace x y = foldr (\z -> if x == z then (y:) else (z:)) []
 
-absFilePath' :: String -> AbsFilePath
-absFilePath' path = case absFilePath path of
-  Left _ -> either undefined id . absFilePath $ "C:" ++ replace '/' '\\' path
-  Right absPath -> absPath
+updAbsPath :: FilePath -> AbsFilePath
+updAbsPath path = either (error "it isn't AbsFilePath") id . absFilePath $
+  if pathSeparator == '/'
+    then path
+    else "C:" ++ replace '/' '\\' path
 
-varName' :: String -> VarName
-varName' = either undefined id . varName
-
-fileTestExample :: TestFileInfo
-fileTestExample = (absFilePath' "/Example.txt", "Some example text")
 fileTestMSE :: TestFileInfo
-fileTestMSE = (absFilePath' "/MSE.txt", "I love MSE!")
+fileTestMSE = (updAbsPath "/MSE.txt", pack "I love MSE!", "\t0\t3\t11\n")
+fileTestExample :: TestFileInfo
+fileTestExample = (updAbsPath "/Example.txt", pack "Some example text", "\t0\t3\t17\n")
 
-files :: Map.Map AbsFilePath String
-files = Map.fromList
-  [fileTestExample, fileTestMSE]
+files :: Map.Map AbsFilePath Text
+files = Map.fromList $ map (\(path, text, _) -> (path, text))
+  [fileTestMSE, fileTestExample]
 
 checkState :: String -> IOState -> IOState -> Primitive -> Test
 checkState textError excepted actual prim = TestCase $ assertEqual textError excepted $ execState (runTestEnvironment (executor prim)) actual
 
-emptyState :: IOState
-emptyState = IOState {
-  stdOut = "",
-  externalCommands = [],
-  pwd = absFilePath' "/",
-  vars = Map.empty,
-  exitCode = Nothing
+defaultState :: IOState
+defaultState = IOState {
+  bufIn = empty,
+  bufOut = empty,
+  stdOut = empty,
+  pwd = updAbsPath "/",
+  vars = Map.fromList [(Specific LastExitCode, "0")],
+  exitCode = Nothing,
+  externalCommands = []
 }
 
 testsExecutor :: Test
-testsExecutor = TestList [
-  checkState "empty command" emptyState emptyState EmptyCommand,  
-  checkState "exit - check exit code" (emptyState { exitCode = Just 2 }) emptyState $ Command $ Special $ Exit $ Just 2,
+testsExecutor = let
+  catCommand = Internal $ Pure "cat" cat
+  wcCommand = Internal $ Pure "wc" wc
+  pwdCommand = Internal $ Impure Pwd
+  in TestList [
+    checkState "empty command" defaultState defaultState $ Commons [],
+    checkState "exit - check exit code" (defaultState { exitCode = Just $ ExitCode 2 }) defaultState $ Special $ Exit $ Just $ ExitCode 2,
 
-  let (fileAbsPath, fileText) = fileTestMSE
-    in checkState "cat -- MSE file" (emptyState { stdOut = fileText ++ "\n" }) emptyState $ Command $ Common $ Internal $ Cat fileAbsPath,
-  let (fileAbsPath, fileText) = fileTestExample
-    in checkState "cat -- Example file" (emptyState { stdOut = fileText ++ "\n" }) emptyState $ Command $ Common $ Internal $ Cat fileAbsPath,
+    let (fileAbsPath, fileText, _) = fileTestMSE
+      in checkState "cat -- MSE file" (defaultState { stdOut = fileText }) defaultState $ Commons [(catCommand, FromFile fileAbsPath, ToStdout)],
+    let (fileAbsPath, fileText, _) = fileTestExample
+      in checkState "cat -- Example file" (defaultState { stdOut = fileText }) defaultState $ Commons [(catCommand, FromFile fileAbsPath, ToStdout)],
 
-  let output = "Hello"
-    in checkState "echo -- One word" (emptyState { stdOut = output ++ "\n" }) emptyState $ Command $ Common $ Internal $ Echo $ words output,
-  let output = "It's a new day!"
-    in checkState "echo -- Few word" (emptyState { stdOut = output ++ "\n" }) emptyState $ Command $ Common $ Internal $ Echo $ words output,
+    let output = "Hello"
+      in checkState "echo -- One word" (defaultState { stdOut = output `append` "\n" }) defaultState $ Commons [(catCommand, FromString $ echo $ words (unpack output), ToStdout)],
+    let output = "It's a new day!"
+      in checkState "echo -- Few word" (defaultState { stdOut = output `append` "\n" }) defaultState $ Commons [(catCommand, FromString $ echo $ words (unpack output), ToStdout)],
 
-  let (fileAbsPath, _) = fileTestMSE
-    in checkState "wc -- MSE file" (emptyState { stdOut = "0 3 11\n"}) emptyState $ Command $ Common $ Internal $ Wc fileAbsPath,
-  let (fileAbsPath, _) = fileTestExample
-    in checkState "wc -- example file" (emptyState { stdOut = "0 3 17\n"}) emptyState $ Command $ Common $ Internal $ Wc fileAbsPath,
+    let (fileAbsPath, _, wcOutput) = fileTestMSE
+      in checkState "wc -- MSE file" (defaultState { stdOut = wcOutput}) defaultState $ Commons [(wcCommand, FromFile fileAbsPath, ToStdout)],
+    let (fileAbsPath, _, wcOutput) = fileTestExample
+      in checkState "wc -- example file" (defaultState { stdOut = wcOutput}) defaultState $ Commons [(wcCommand, FromFile fileAbsPath, ToStdout)],
 
-  let absPwd = absFilePath' "/home/"
-    in checkState "pwd" (emptyState { stdOut = show absPwd ++ "\n", pwd = absPwd }) (emptyState { pwd = absPwd }) $ Command $ Common $ Internal Pwd,
+    let absPwd = updAbsPath "/home/"
+      in checkState "pwd" (defaultState { stdOut = pack $ asFilePath absPwd ++ "\n", pwd = absPwd }) (defaultState { pwd = absPwd }) $ Commons [(pwdCommand, FromString "", ToStdout)],
 
-  let cmd@(name, args, vars) = (absFilePath' "/usr/bin/ls", ["~/example/"], [(varName' "example", "test")])
-    in let varsMap = Map.fromList vars
-      in checkState "external 'ls'" (emptyState { externalCommands = [cmd], vars = varsMap }) (emptyState { vars = varsMap }) $ Command $ Common $ External $ Arguments name args
-  ]-}
+    let (name, args, currentVars) = (updAbsPath "/usr/bin/example", ["~/example/"], [(varPath, "Test")])
+        varsMap = Map.fromList currentVars `Map.union` vars defaultState
+      in checkState "external command" (defaultState { externalCommands = [(asFilePath name, args)], vars = varsMap }) (defaultState { vars = varsMap }) $ Commons [(External (Arguments name args), FromParentHandle, ToStdout)],
+    let [(name1, args1), (name2, args2)] = [(updAbsPath "/usr/bin/example1", ["~/example1/"]), (updAbsPath "/usr/bin/example1", ["~/example1/"])]
+      in checkState "few external commands" (defaultState { externalCommands = [(asFilePath name1, args1), (asFilePath name2, args2)]}) defaultState $ Commons [(External (Arguments name1 args1), FromParentHandle, ToNewPipe), (External (Arguments name2 args2), FromParentHandle, ToNewPipe)],
+
+    let (fileAbsPath, fileText, _) = fileTestMSE
+      in checkState "many cat -- MSE file" (defaultState { stdOut = fileText }) defaultState $ Commons [(catCommand, FromFile fileAbsPath, ToNewPipe), (catCommand, FromParentHandle, ToNowhere), (catCommand, FromParentHandle, ToStdout)],
+    let (fileAbsPath, _, wcOutput) = fileTestExample
+      in checkState "cat example | wc" (defaultState { stdOut = wcOutput }) defaultState $ Commons [(catCommand, FromFile fileAbsPath, ToNewPipe), (wcCommand, FromParentHandle, ToStdout)],
+    let (fileAbsPath, _, _) = fileTestExample
+      in checkState "cat example | wc | wc" (defaultState { stdOut = "\t1\t4\t8\n" }) defaultState $ Commons [(catCommand, FromFile fileAbsPath, ToNewPipe), (wcCommand, FromParentHandle, ToNewPipe), (wcCommand, FromParentHandle, ToStdout)]
+  ]

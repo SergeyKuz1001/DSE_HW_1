@@ -8,9 +8,9 @@ module Phases.Executor.Impure.Pwd (
 import Data.FSObjects (asFilePath)
 import Monads.PwdReader (MonadPwdReader(..))
 
-import Data.Text.Lazy (Text, pack)
+import Data.Text.Lazy (Text, pack, append)
 
 -- | Команда @pwd@ принимает текст, игнорирует его и возвращает путь до текущей
 -- директории в виде текста.
 pwd :: MonadPwdReader m => Text -> m Text
-pwd _ = pack . asFilePath <$> getVarPwd
+pwd _ = (`append` pack "\n") . pack . asFilePath <$> getVarPwd
