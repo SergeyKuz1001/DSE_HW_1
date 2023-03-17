@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 {- |
 Модуль для связывания команд, написанных через pipes.
 -}
@@ -5,13 +7,11 @@ module Phases.Linker (
     linker,
   ) where
 
-import Phases.Linker.Commands
+import Phases.Linker.Pure
 
-import Data.FSObjects
 import Data.Handles
 import qualified Data.AnalyzedPrimitive as AP
 import qualified Data.LinkedPrimitive as LP
-import Monads.PwdReader (MonadPwdReader(..))
 import Monads.SelfReferenced (MonadSelfReferenced(..))
 
 import Data.List.NonEmpty (toList)
@@ -26,7 +26,7 @@ import Data.List.NonEmpty (toList)
 -- Под "связыванием" команд здесь понимается определение типов потоков ввода и
 -- вывода для каждой команды, а также некоторая оптимизация плана исполнения
 -- пользовательского запроса.
-linker :: (MonadPwdReader m, MonadSelfReferenced m) => AP.Primitive -> m LP.Primitive
+linker :: MonadSelfReferenced m => AP.Primitive -> m LP.Primitive
 linker (AP.Special sp) = return $ LP.Special sp
 linker (AP.Assignment name value) = return $ LP.Assignment name value
 linker AP.Empty = return $ LP.Commons []
@@ -39,39 +39,35 @@ linker (AP.Commons cmns) =
   toPrimitive
 
 -- | Функция определения типа потока ввода для каждой команды, а также маленькая
--- оптимизация, звязанная со следующими соображениями:
+-- оптимизация, связанная со следующими соображениями:
 --
 --   * @cat@ равносилен простому переносу текста из одного потока в другой,
 --     поэтому он заменяется на @Nothing@ с соответствующим типом потока ввода;
 --   * @echo@ равносилен @cat@ (мы сначала выполняем @echo@ как чистую функцию
 --     от своих аргументов, а потом заменяем на @cat@, читающий из строки);
 --   * @wc@ с аргументом равносилен @wc@ без аргументов, но с другим типом
---     потока ввода;
---   * @pwd@ равносилен @echo@ от абсолютного пути до текущей директории.
+--     потока ввода.
 --
--- Таким образом из внутренних команд остаётся только @wc@ без аргументов.
-addInputHandles :: MonadPwdReader m => [AP.Common] -> m [(Maybe AP.Common, InputHandle)]
+-- Таким образом из внутренних команд остаются @wc@ без аргументов и @pwd@.
+addInputHandles :: Monad m => [AP.Common] -> m [(Maybe AP.Common, InputHandle)]
 addInputHandles = traverse go
   where
     go cmn@(AP.External _)                = return (Just cmn, FromParentHandle)
-    go (AP.Internal (AP.Cat Nothing))     = return (Nothing, FromParentHandle)
-    go (AP.Internal (AP.Cat (Just path))) = return (Nothing, FromFile path)
-    go (AP.Internal (AP.Echo args))       = return (Nothing, FromString $ echo args)
+    go (AP.Internal (AP.Cat Nothing))     = return (Nothing,  FromParentHandle)
+    go (AP.Internal (AP.Cat (Just path))) = return (Nothing,  FromFile path)
+    go (AP.Internal (AP.Echo args))       = return (Nothing,  FromString $ echo args)
     go cmn@(AP.Internal (AP.Wc Nothing))  = return (Just cmn, FromParentHandle)
     go (AP.Internal (AP.Wc (Just path)))  = return (Just . AP.Internal $ AP.Wc Nothing, FromFile path)
-    go (AP.Internal AP.Pwd) = do
-      pwd <- asFilePath <$> getVarPwd
-      return (Nothing, FromString $ echo [pwd])
+    go cmn@(AP.Internal AP.Pwd)           = return (Just cmn, FromString "")
 
 -- | Функция преобразования команд из одного типа в другой. Здесь также
 -- проводится оптимизация, связанная с удалением @Nothing@-команд (которые
 -- просто переносят информацию из одного потока в другой).
 --
--- Заметим, что на входе в качестве внутренней команды полагается возможным
--- только команда @wc@ без аргументов. На выходе же внутренней командой также
--- может быть и @cat@ без аргументов. Это связано с преобразованием
--- @Nothing@-команды обратно в @cat@ в случае невозможного её удаления из плана
--- выполнения запроса без изменения поведения.
+-- Заметим, что на входе в качестве чистой команды полагается возможным только
+-- команда @wc@ без аргументов. На выходе же чистой командой также может быть и
+-- @cat@ без аргументов. Это связано с преобразованием @Nothing@-команды обратно
+-- в @cat@ в случае невозможного её удаления из плана выполнения запроса.
 commonsTransformation :: Monad m => [(Maybe AP.Common, InputHandle)] -> m [(LP.Common, InputHandle)]
 commonsTransformation = return . go id
   where
@@ -79,31 +75,41 @@ commonsTransformation = return . go id
       acc []
     go acc [(Nothing, inp)] =
       if null (acc []) || inp /= FromParentHandle
-        then acc [(LP.Internal (LP.Func "cat" cat), inp)]
+        then acc [(LP.Internal (LP.Pure "cat" cat), inp)]
         else acc []
     go acc ((Nothing, inp) : (cmn, inp') : cmns) =
       go acc ((cmn, if inp' == FromParentHandle then inp else inp') : cmns)
     go acc ((Just (AP.External (AP.Arguments path args)), inp) : cmns) =
       go (acc . ((LP.External (LP.Arguments path args), inp) : )) cmns
     go acc ((Just (AP.Internal (AP.Wc Nothing)), inp) : cmns) =
-      go (acc . ((LP.Internal (LP.Func "wc" wc), inp) : )) cmns
+      go (acc . ((LP.Internal (LP.Pure "wc" wc), inp) : )) cmns
+    go acc ((Just (AP.Internal AP.Pwd), inp) : cmns) =
+      go (acc . ((LP.Internal (LP.Impure LP.Pwd), inp) : )) cmns
     go _ _ = undefined -- по неявному инварианту иного быть не может
 
--- | Функция склеивания подряд идущих внутренних команд в одну, так как каждая
--- внутренняя команда представима здесь как чистая функция, преобразующая текст.
+-- | Функция склеивания подряд идущих чистых команд в одну, так как каждая
+-- чистая команда представима здесь как чистая функция, преобразующая текст.
+-- Также здесь происходит отбрасывание любых внутренних команд, результат
+-- которых нигде не используется.
 concatInternals :: Monad m => [(LP.Common, InputHandle)] -> m [(LP.Common, InputHandle)]
-concatInternals = return . go id
+concatInternals = return . go True id
   where
-    go acc [] =
+    go _ acc [] =
       acc []
-    go acc ((LP.Internal (LP.Func name1 func1), inp1) : (LP.Internal (LP.Func name2 func2), FromParentHandle) : cmds) =
-      go acc ((LP.Internal (LP.Func (name2 ++ "." ++ name1) (func2 . func1)), inp1) : cmds)
-    go acc ((LP.Internal _, _) : (LP.Internal int, inp) : cmds) | inp /= FromParentHandle =
-      go acc ((LP.Internal int, inp) : cmds)
-    go acc ((LP.Internal _, _) : (LP.External ext, inp) : cmds) | inp /= FromParentHandle =
-      go acc ((LP.External ext, inp) : cmds)
-    go acc (cmd : cmds) =
-      go (acc . (cmd : )) cmds
+    go canDrop acc ((LP.Internal (LP.Pure name1 func1), inp1) : (LP.Internal (LP.Pure name2 func2), FromParentHandle) : cmds) =
+      go canDrop acc ((LP.Internal (LP.Pure (name2 ++ "." ++ name1) (func2 . func1)), inp1) : cmds)
+    go canDrop acc ((LP.Internal int@(LP.Pure _ _), inp) : cmds) | inp /= FromParentHandle =
+      if canDrop
+        then go True  (       (LP.Internal int, inp) :  ) cmds
+        else go False (acc . ((LP.Internal int, inp) : )) cmds
+    go canDrop acc ((LP.External ext, inp) : cmds) | inp /= FromParentHandle =
+      if canDrop
+        then go False (       (LP.External ext, inp) :  ) cmds
+        else go False (acc . ((LP.External ext, inp) : )) cmds
+    go canDrop acc (cmd@(LP.Internal _, _) : cmds) =
+      go canDrop (acc . (cmd : )) cmds
+    go _ acc (cmd@(LP.External _, _) : cmds) =
+      go False (acc . (cmd : )) cmds
 
 -- | Функция добавления типа потока вывода для каждой (из оставшихся) команды.
 addOutputHandles :: Monad m => [(LP.Common, InputHandle)] -> m [LP.CommonWithHandles]
@@ -120,24 +126,18 @@ addOutputHandles cmds = return $
 -- Эта функция была добавлена для исправления ситуации, когда при заканчивании
 -- потока ввода для @cat@ также заканчивался поток ввода команд пользователя.
 addExternalAtBegin :: MonadSelfReferenced m => [LP.CommonWithHandles] -> m [LP.CommonWithHandles]
-addExternalAtBegin cwhs@((LP.Internal (LP.Func name _), FromParentHandle, outp):_) = do
+addExternalAtBegin cwhs@((LP.Internal int, FromParentHandle, outp):_) = do
   selfPath <- getSelfPath
   let self = LP.External (LP.Arguments selfPath ["--work-as-cat"])
     -- полагаться на то, что реальная программа, построенная на этой
     -- абстрактной, будет поддерживать такой специфичный параметр без явного
     -- указания этого где-либо — плохая идея, лучше как-то исправить в будущем
   return $
-    if name == "cat" && outp == ToStdout
+    if int == LP.Pure "cat" undefined && outp == ToStdout
       then (self, FromParentHandle, ToStdout)  : tail cwhs
       else (self, FromParentHandle, ToNewPipe) : cwhs
 addExternalAtBegin cwhs = return cwhs
 
 -- | Функция преобразования списка команд в примитив.
---
--- Заметим, что тип примитива для пользовательского запроса после линковки не
--- гарантирует того инварианта, что в плане нет двух последовательных внутренних
--- команд, однако этот инвариант в этой реализации выполняется. Так сделано
--- из-за того, что в процессе исполнения плана этот инвариант не имеет значения,
--- при этом исполнение плана, выраженного в существующем типе примитива, проще.
 toPrimitive :: Monad m => [LP.CommonWithHandles] -> m LP.Primitive
 toPrimitive = return . LP.Commons

@@ -89,7 +89,7 @@ instance MonadPM Environment where
         toEnv . TIO.readFile $ asFilePath path
       FromString str ->
         return str
-    let strOut = func strIn
+    strOut <- func strIn
     case hOut of
       ToStdout -> do
         toEnv $ TIO.putStr strOut

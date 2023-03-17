@@ -48,8 +48,13 @@ library
       Monads.VarWriter
       Phases.Analyzer
       Phases.Executor
+      Phases.Executor.Impure
+      Phases.Executor.Impure.Pwd
       Phases.Linker
-      Phases.Linker.Commands
+      Phases.Linker.Pure
+      Phases.Linker.Pure.Cat
+      Phases.Linker.Pure.Echo
+      Phases.Linker.Pure.Wc
       Phases.Parser
       Phases.Reader
       Phases.Substitutor

@@ -9,6 +9,7 @@ module Data.LinkedPrimitive (
     Common (..),
     Internal (..),
     External (..),
+    Impure (..),
   ) where
 
 import Data.AnalyzedPrimitive (Special(..), External(..))
@@ -35,14 +36,31 @@ type CommonWithHandles = (Common, InputHandle, OutputHandle)
 data Common = External External | Internal Internal
   deriving (Eq, Show)
 
--- | Внутренняя команда, представляется в виде чистой функции над текстом с её
--- названием. Название необходимо для сравнения двух функций. Обычно
--- выполняется, что две команды с одинковым названием имеют эквивалентные
--- функции, но этот инвариант никак не гарантируется.
-data Internal = Func String (Text -> Text)
+-- | Внутренняя команда, представляется либо в виде чистой функции над текстом
+-- с её названием, либо в виде нечистой команды.
+--
+-- Название в чистой функции необходимо для сравнения двух функций. Обычно
+-- выполняется инвариант, что две команды с одинковым названием имеют
+-- эквивалентные функции, но этот инвариант никак не гарантируется.
+data Internal
+  = Pure String (Text -> Text)
+  | Impure Impure
 
 instance Eq Internal where
-  Func name1 _ == Func name2 _ = name1 == name2
+  Pure name1 _ == Pure name2 _ = name1 == name2
+  Impure imp1  == Impure imp2  = imp1  == imp2
+  _            == _            = False
 
 instance Show Internal where
-  show (Func name _)    = "Func(" ++ name ++ ")"
+  show (Pure name _) = "Pure (" ++ name ++ ")"
+  show (Impure imp)  = show imp
+
+-- | Внутренняя нечистая команда, пока ею является только @pwd@ (требует доступ
+-- к классу @'MonadPwdReader'@).
+--
+-- Важно: пока предполагается, что любая нечистая команда не модифицирует
+-- реальное окружение (не изменяет файлы, не делает что-либо на удалённом
+-- сервере и т. д.), это используется как один из неявных инвариантов в работе
+-- @'linker'@.
+data Impure = Pwd
+  deriving (Eq, Show)

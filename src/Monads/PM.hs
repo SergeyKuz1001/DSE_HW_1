@@ -17,7 +17,7 @@ class Monad m => MonadPM m where
   type Process m :: Type
   getDefaultStream :: m (Stream m)
   applyFuncToStream ::
-    (Text -> Text) ->
+    (Text -> m Text) ->
     InputHandle ->
     OutputHandle ->
     Stream m ->

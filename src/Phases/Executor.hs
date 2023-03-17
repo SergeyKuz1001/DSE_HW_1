@@ -7,6 +7,8 @@ module Phases.Executor (
     executor,
   ) where
 
+import Phases.Executor.Impure
+
 import Data.LinkedPrimitive
 import Data.ExitCode (ExitCode (..))
 import Data.FSObjects ((</>))
@@ -32,8 +34,8 @@ executor = \case
 executeSpecial :: (MonadExit m, MonadPwdReader m, MonadPwdWriter m) => Special -> m ()
 executeSpecial = \case
   Cd path -> do
-    pwd <- getVarPwd
-    setVarPwd (pwd </> path)
+    cd <- getVarPwd
+    setVarPwd (cd </> path)
   Exit mec -> exit $ fromMaybe (ExitCode 0) mec
 
 -- | Функция для исполнения обычных команд с указанными типами потоков ввода и
@@ -61,11 +63,14 @@ execProc stream runned ((External (Arguments path args), hIn, hOut) : cmns) = do
   vars <- getVars
   (proc, stream') <- createProcess path args hIn hOut vars stream
   execProc stream' (proc : runned) cmns
-execProc stream runned ((Internal (Func _ func), hIn, hOut) : cmns) = do
+execProc stream runned ((Internal int, hIn, hOut) : cmns) = do
   ec <- waitProc $ reverse runned
   if ec /= ExitCode 0
     then return ec
     else do
+      let func = case int of
+            Pure _ f   -> pure . f
+            Impure Pwd -> pwd
       stream' <- applyFuncToStream func hIn hOut stream
       execProc stream' [] cmns
 

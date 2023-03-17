@@ -1,9 +1,7 @@
 {- |
-Модуль с определениями внутренних команд.
+Модуль с внутренней чистой командой @wc@.
 -}
-module Phases.Linker.Commands (
-    cat,
-    echo,
+module Phases.Linker.Pure.Wc(
     wc,
   ) where
 
@@ -12,15 +10,6 @@ import qualified Data.ByteString.Lazy as BS
 import Data.Char (isSpace, chr)
 import Data.Text.Lazy (Text, pack)
 import Data.Text.Lazy.Encoding (encodeUtf8)
-
--- | Команда @cat@ принимает текст на вход и возвращает его.
-cat :: Text -> Text
-cat = id
-
--- | Команда @echo@ принимает набор строк-аргументов и возвращает их запись
--- через пробел.
-echo :: [String] -> Text
-echo = pack . (++ "\n") . unwords
 
 -- | Команда @wc@ принимает текст и возвращает его статистику (тоже в виде
 -- текста).
@@ -37,8 +26,3 @@ wc text =
       countWords' = countWords + bool 1 0 isPrevSpace
   in  pack $
         "\t" ++ show countLines ++ "\t" ++ show countWords' ++ "\t" ++ show countBytes ++ "\n"
-
--- Команды @pwd@ здесь нет так как
---
---   1. @pwd@ - не чистая команда (требует @'MonadsPwdReader'@)
---   2. мы считаем её эквивалентной @echo@ с одним аргументом
