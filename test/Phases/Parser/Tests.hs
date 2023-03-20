@@ -37,6 +37,7 @@ testsParser = TestList [
   mkTest "Backslash ="                      "x\\="                                  $ Just $ Commands [["x="]],
   mkTest "Quoted command"                   "c'm 'd a\"rg1' ar\"g2' arg3'"          $ Just $ Commands [["cm d", "arg1' arg2 arg3"]],
   mkTest "Quotes and spaces"                " cmd 'arg 1' \"arg 2\" "               $ Just $ Commands [["cmd", "arg 1", "arg 2"]],
+  mkTest "End quotes"                       "echo'' meow"                           $ Just $ Commands [["echo", "meow"]],
   mkTest "Terminated single quote"          "cmd 'arg1"                             $ Nothing,
   mkTest "Terminated double quote"          "cmd \"arg1 \\\""                       $ Nothing,
   mkTest "Backslashes"                      "cmd arg\\ 1 arg\\ 2"                   $ Just $ Commands [["cmd", "arg 1", "arg 2"]],
