@@ -1,20 +1,20 @@
-{- |
-В данном модуле объявлены примитивы, в которые транслируется пользовательский
-запрос после этапа анализа.
--}
-module Data.AnalyzedPrimitive (
-    Primitive (..),
+-- |
+-- В данном модуле объявлены примитивы, в которые транслируется пользовательский
+-- запрос после этапа анализа.
+module Data.AnalyzedPrimitive
+  ( Primitive (..),
     Special (..),
     Common (..),
     Internal (..),
     External (..),
-  ) where
+    GrepArgs (..),
+  )
+where
 
-import Data.Variable (Stable)
-import Data.FSObjects (AbsFilePath)
 import Data.ExitCode (ExitCode)
-
+import Data.FSObjects (AbsFilePath)
 import Data.List.NonEmpty (NonEmpty)
+import Data.Variable (Stable)
 
 -- | Примитив — это
 --
@@ -54,9 +54,19 @@ data Internal
   | Echo [String]
   | Wc (Maybe AbsFilePath)
   | Pwd
+  | Grep GrepArgs
   deriving (Eq, Show)
 
 -- | Внешняя команда вызывается по пути к исполняемому файлу с указанными
 -- аргументами.
 data External = Arguments AbsFilePath [String]
+  deriving (Eq, Show)
+
+data GrepArgs = GrepArgs
+  { fullWords :: Bool,
+    ignoreCase :: Bool,
+    lineCount :: Int,
+    regex :: String,
+    inputFile :: Maybe AbsFilePath
+  }
   deriving (Eq, Show)

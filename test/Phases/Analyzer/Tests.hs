@@ -71,6 +71,9 @@ mkTestManyCommands = mkTest . PP.Commands
 mkTestAssignment :: String -> String -> Maybe Primitive -> Test
 mkTestAssignment var value = mkTest $ PP.Assignment var value
 
+mkTestGrep :: [String] -> GrepArgs -> Test
+mkTestGrep args prim = mkTestOneCommand ("grep" : regex prim : args) $ Just $ Commons $ fromList [Internal $ Grep prim]
+
 testsAnalyzer :: Test
 testsAnalyzer = TestList [
   -- one command
@@ -162,6 +165,23 @@ testsAnalyzer = TestList [
       Nothing,
     mkTestOneCommand ["pwd", "F", "1"]
       Nothing,
+  -- grep
+    mkTestOneCommand ["grep"] Nothing,
+    mkTestOneCommand ["grep", "-A=10", "example"] Nothing,
+    mkTestGrep [] $ GrepArgs False False 0 "example" Nothing,
+    mkTestGrep ["-w"] $ GrepArgs True False 0 "example" Nothing,
+    mkTestGrep ["-w", "-i"] $ GrepArgs True True 0 "example" Nothing,
+    mkTestGrep ["-wi"] $ GrepArgs True True 0 "example" Nothing,
+    mkTestGrep ["-iw"] $ GrepArgs True True 0 "example" Nothing,
+    mkTestGrep ["-w", "--ignorecase"] $ GrepArgs True True 0 "example" Nothing,
+    mkTestGrep ["--words", "--ignorecase"] $ GrepArgs True True 0 "example" Nothing,
+    mkTestGrep [".vimrc"] $ GrepArgs False False 0 "example" $ Just $ updAbsPath "/home/user/.vimrc",
+    mkTestGrep [updAbsPath' "/home/user/.vimrc"] $ GrepArgs False False 0 "example" $ Just $ updAbsPath "/home/user/.vimrc",
+    mkTestGrep ["-iw", ".vimrc"] $ GrepArgs True True 0 "example" $ Just $ updAbsPath "/home/user/.vimrc",
+    mkTestGrep ["-iw", updAbsPath' "/home/user/.vimrc"] $ GrepArgs True True 0 "example" $ Just $ updAbsPath "/home/user/.vimrc",
+    mkTestGrep ["-A", "10"] $ GrepArgs False False 10 "example" Nothing,
+    mkTestGrep ["--lines=10"] $ GrepArgs False False 10 "example" Nothing,
+    mkTestGrep ["--lines", "10"] $ GrepArgs False False 10 "example" Nothing,
   --   external
     mkTestOneCommand [updAbsPath' "/bin/vim", "-O", ".vimrc", "my_game.py"] $
       Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/vim") ["-O", ".vimrc", "my_game.py"]]),
