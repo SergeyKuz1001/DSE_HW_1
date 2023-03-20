@@ -48,5 +48,6 @@ testsParser = TestList [
   mkTest "Backslashes"                      "cmd arg\\ 1 arg\\ 2"          $ Just $ Command $ "cmd" : ["arg 1", "arg 2"],
   mkTest "Backslash space"                  "    \\    "                   $ Just $ Command $ " " : [],
   mkTest "Escaped quotes"                   "cmd \\\"arg1\\\"\\ arg2"      $ Just $ Command $ "cmd" : ["\"arg1\" arg2"],
+  mkTest "End quotes"                       "echo'' meow"                  $ Just $ Command $ "echo" : ["meow"],
   mkTest "Empty"                            ""                             $ Just $ Command []
   ]

@@ -41,8 +41,8 @@ firstWord   ( '\\' : ' '  : cs ) = Command . filter (not . null) . headMap (' ' 
 firstWord   ( '\\' : '='  : cs ) = Command . filter (not . null) . headMap ('=' :) <$> splitBySpaces cs
 firstWord   (        ' '  : cs ) = Command . ("" :) . filter (not . null)          <$> splitBySpaces cs
 firstWord   (        '\t' : cs ) = firstWord (' ' : cs)
-firstWord s@(        '\'' : _  ) = Command . filter (not . null) <$> splitBySpaces s
-firstWord s@(        '\"' : _  ) = Command . filter (not . null) <$> splitBySpaces s
+firstWord s@(        '\'' : _  ) = Command . tailFilter (not . null) <$> splitBySpaces s
+firstWord s@(        '\"' : _  ) = Command . tailFilter (not . null) <$> splitBySpaces s
 firstWord   (        '='  : cs ) = Assignment <$> varName "" <*> parseValue cs
 firstWord   (        c    : cs ) = firstWord cs >>= prependChar c
 
@@ -83,6 +83,10 @@ splitBySpaces (        c   : cs) = headMap (c :) <$> splitBySpaces cs
 headMap :: (a -> a) -> [a] -> [a]
 headMap _ []       = []
 headMap f (x : xs) = f x : xs
+
+tailFilter :: (a -> Bool) -> [a] -> [a]
+tailFilter _ [] = []
+tailFilter f (x : xs) = x : filter f xs
 
 -- | Чтение фрагмента строки, заключённого в одинарные кавычки.
 singleQuotes :: MonadError m => String -> m (String, String)
