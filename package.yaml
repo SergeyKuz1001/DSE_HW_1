@@ -31,6 +31,7 @@ dependencies:
 - time
 - text
 - pretty-simple
+- optparse-applicative
 
 ghc-options:
 - -Wall

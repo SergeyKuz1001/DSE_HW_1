@@ -72,6 +72,7 @@ library
     , directory
     , filepath
     , mtl
+    , optparse-applicative
     , pretty-simple
     , process
     , text
@@ -96,6 +97,7 @@ executable cli-exe
     , directory
     , filepath
     , mtl
+    , optparse-applicative
     , pretty-simple
     , process
     , text
@@ -128,6 +130,7 @@ test-suite cli-test
     , directory
     , filepath
     , mtl
+    , optparse-applicative
     , pretty-simple
     , process
     , text
