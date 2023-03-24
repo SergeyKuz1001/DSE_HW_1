@@ -37,7 +37,8 @@ data Command
   | Common Common
   | Empty
 
-findRFile :: (MonadError m, MonadFS m, MonadPwdReader m) => Maybe String -> m (Maybe AbsFilePath)
+-- | Поиск файла по пути, а также проверка наличия разрешения на чтение.
+findRFile :: (MonadError m, MonadFS m, MonadPwdReader m) => Maybe FilePath -> m (Maybe AbsFilePath)
 findRFile mFilePath = forM mFilePath $ \filePath -> do
   absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
   isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")

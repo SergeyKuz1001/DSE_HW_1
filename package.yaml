@@ -32,6 +32,7 @@ dependencies:
 - text
 - pretty-simple
 - optparse-applicative
+- regex-tdfa
 
 ghc-options:
 - -Wall
