@@ -62,7 +62,8 @@ commandAnalyzer ("pwd" : args) = do
   return . Common $ Internal Pwd
 commandAnalyzer ("grep" : args) = do
   case execParserPure defaultPrefs argparseInfo args of
-    Success (GrepArgsRaw fw ic lc rx path) ->
+    Success (GrepArgsRaw fw ic lc rx path) -> do
+      lc >= 0 ?: error "Negative count of lines around matched one is not allowed"
       Common . Internal . Grep . GrepArgs fw ic lc rx
         <$> findRFile path
     Failure pf -> let (h, _, _) = execFailure pf "grep" in throwError . error $ show h

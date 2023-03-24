@@ -168,6 +168,7 @@ testsAnalyzer = TestList [
   -- grep
     mkTestOneCommand ["grep"] Nothing,
     mkTestOneCommand ["grep", "-A=10", "example"] Nothing,
+    mkTestOneCommand ["grep", "-A", "-1", "example"] Nothing,
     mkTestGrep [] $ GrepArgs False False 0 "example" Nothing,
     mkTestGrep ["-w"] $ GrepArgs True False 0 "example" Nothing,
     mkTestGrep ["-w", "-i"] $ GrepArgs True True 0 "example" Nothing,
