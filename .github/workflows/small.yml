@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-    - dev-3-**
+    - dev-4-**
 jobs:
   lint:
     runs-on: ubuntu-latest
