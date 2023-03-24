@@ -52,13 +52,16 @@ linker (AP.Commons cmns) =
 addInputHandles :: Monad m => [AP.Common] -> m [(Maybe AP.Common, InputHandle)]
 addInputHandles = return . map go
   where
-    go cmn@(AP.External _)                = (Just cmn, FromParentHandle)
-    go (AP.Internal (AP.Cat Nothing))     = (Nothing,  FromParentHandle)
-    go (AP.Internal (AP.Cat (Just path))) = (Nothing,  FromFile path)
-    go (AP.Internal (AP.Echo args))       = (Nothing,  FromString $ echo args)
-    go cmn@(AP.Internal (AP.Wc Nothing))  = (Just cmn, FromParentHandle)
-    go (AP.Internal (AP.Wc (Just path)))  = (Just . AP.Internal $ AP.Wc Nothing, FromFile path)
-    go cmn@(AP.Internal AP.Pwd)           = (Just cmn, FromString "")
+    go cmn@(AP.External _)                      = (Just cmn, FromParentHandle)
+    go (AP.Internal (AP.Cat Nothing))           = (Nothing,  FromParentHandle)
+    go (AP.Internal (AP.Cat (Just path)))       = (Nothing,  FromFile path)
+    go (AP.Internal (AP.Echo args))             = (Nothing,  FromString $ echo args)
+    go cmn@(AP.Internal (AP.Wc Nothing))        = (Just cmn, FromParentHandle)
+    go (AP.Internal (AP.Wc (Just path)))        = (Just . AP.Internal $ AP.Wc Nothing, FromFile path)
+    go cmn@(AP.Internal (AP.Grep (AP.GrepArgs
+      { AP.inputFile = Just path })))           = (Just cmn, FromFile path)
+    go cmn@(AP.Internal (AP.Grep _))            = (Just cmn, FromParentHandle)
+    go cmn@(AP.Internal AP.Pwd)                 = (Just cmn, FromString "")
 
 -- | Функция преобразования команд из одного типа в другой. Здесь также
 -- проводится оптимизация, связанная с удалением @Nothing@-команд (которые
@@ -87,6 +90,8 @@ commonsTransformation = return . go id
       go (acc . ((LP.Internal (LP.Pure "wc" wc), inp) : )) cmns
     go acc ((Just (AP.Internal AP.Pwd), inp) : cmns) =
       go (acc . ((LP.Internal (LP.Impure LP.Pwd), inp) : )) cmns
+    go acc ((Just (AP.Internal (AP.Grep args)), inp) : cmns) =
+      go (acc . ((LP.Internal (LP.Pure "grep" $ grep args), inp) : )) cmns
     go _ _ = undefined -- по неявному инварианту иного быть не может
 
 -- | Функция склеивания подряд идущих чистых команд в одну, так как каждая
