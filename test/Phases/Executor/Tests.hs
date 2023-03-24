@@ -8,6 +8,7 @@ module Phases.Executor.Tests (
 ) where
 
 import Data.LinkedPrimitive
+import Data.AnalyzedPrimitive (GrepArgs(..))
 import Data.Variable
 import Phases.Linker.Pure
 import Phases.Executor (executor)
@@ -25,7 +26,7 @@ import Monads.PathWriter (MonadPathWriter (..))
 import Control.Monad.State hiding (MonadIO)
 import qualified Data.Map as Map
 import Test.HUnit (Test(TestList, TestCase), assertEqual)
-import Data.Text.Lazy as TZ (Text, unpack, pack, empty, append)
+import Data.Text.Lazy as TZ (Text, unpack, pack, empty, append, unlines, lines)
 
 type TestFileInfo = (AbsFilePath, Text, Text)
 
@@ -108,13 +109,15 @@ updAbsPath path = either (error "it isn't AbsFilePath") id . absFilePath $
     else "C:" ++ replace '/' '\\' path
 
 fileTestMSE :: TestFileInfo
-fileTestMSE = (updAbsPath "/MSE.txt", pack "I love MSE!", "\t0\t3\t11\n")
+fileTestMSE = (updAbsPath "/MSE.txt", "I love MSE!", "\t0\t3\t11\n")
 fileTestExample :: TestFileInfo
-fileTestExample = (updAbsPath "/Example.txt", pack "Some example text", "\t0\t3\t17\n")
+fileTestExample = (updAbsPath "/Example.txt", "Some example text", "\t0\t3\t17\n")
+fileWithManyLines :: TestFileInfo
+fileWithManyLines = (updAbsPath "/ManyLines.txt", "First line\nSecond line\nThird line\nFourth line\nFifth line\nSixth line\nSeventh line\nEighth line\nNinth line\nTenth line\n", undefined)
 
 files :: Map.Map AbsFilePath Text
 files = Map.fromList $ map (\(path, text, _) -> (path, text))
-  [fileTestMSE, fileTestExample]
+  [fileTestMSE, fileTestExample, fileWithManyLines]
 
 checkState :: String -> IOState -> IOState -> Primitive -> Test
 checkState textError excepted actual prim = TestCase $ assertEqual textError excepted $ execState (runTestEnvironment (executor prim)) actual
@@ -130,11 +133,22 @@ defaultState = IOState {
   externalCommands = []
 }
 
+defaultGrepArgs :: GrepArgs
+defaultGrepArgs = GrepArgs {
+  fullWords = False,
+  ignoreCase = False,
+  lineCount = 0,
+  regex = "",
+  inputFile = Nothing
+}
+
 testsExecutor :: Test
 testsExecutor = let
   catCommand = Internal $ Pure "cat" cat
   wcCommand = Internal $ Pure "wc" wc
+  grepCommand args = Internal $ Pure "grep" $ grep args
   pwdCommand = Internal $ Impure Pwd
+  getLines indexes file = let fileLines = TZ.lines file in TZ.unlines $ map (fileLines !!) indexes
   in TestList [
     checkState "empty command" defaultState defaultState $ Commons [],
     checkState "exit - check exit code" (defaultState { exitCode = Just $ ExitCode 2 }) defaultState $ Special $ Exit $ Just $ ExitCode 2,
@@ -150,9 +164,18 @@ testsExecutor = let
       in checkState "echo -- Few word" (defaultState { stdOut = output `append` "\n" }) defaultState $ Commons [(catCommand, FromString $ echo $ words (unpack output), ToStdout)],
 
     let (fileAbsPath, _, wcOutput) = fileTestMSE
-      in checkState "wc -- MSE file" (defaultState { stdOut = wcOutput}) defaultState $ Commons [(wcCommand, FromFile fileAbsPath, ToStdout)],
+      in checkState "wc -- MSE file" (defaultState { stdOut = wcOutput }) defaultState $ Commons [(wcCommand, FromFile fileAbsPath, ToStdout)],
     let (fileAbsPath, _, wcOutput) = fileTestExample
-      in checkState "wc -- example file" (defaultState { stdOut = wcOutput}) defaultState $ Commons [(wcCommand, FromFile fileAbsPath, ToStdout)],
+      in checkState "wc -- example file" (defaultState { stdOut = wcOutput }) defaultState $ Commons [(wcCommand, FromFile fileAbsPath, ToStdout)],
+
+    let (fileAbsPath, fileText, _) = fileWithManyLines
+      in checkState "grep -- check -i" (defaultState { stdOut = getLines [4] fileText }) defaultState $ Commons [(grepCommand defaultGrepArgs { ignoreCase = True, regex = "Fifth" }, FromFile fileAbsPath, ToStdout)],
+    let (fileAbsPath, fileText, _) = fileWithManyLines
+      in checkState "grep -- without -w and regular expr" (defaultState { stdOut = getLines [6, 8, 9] fileText }) defaultState $ Commons [(grepCommand defaultGrepArgs { regex = "nth" }, FromFile fileAbsPath, ToStdout)],
+    let (fileAbsPath, fileText, _) = fileWithManyLines
+      in checkState "grep -- with -w and regular expr" (defaultState { stdOut = getLines [4] fileText }) defaultState $ Commons [(grepCommand defaultGrepArgs { fullWords = True, regex = "Fifth" }, FromFile fileAbsPath, ToStdout)],
+    let (fileAbsPath, fileText, _) = fileWithManyLines
+      in checkState "grep -- with -A2 and regular expr" (defaultState { stdOut = getLines [1, 2, 3, 6, 7, 8, 9] fileText }) defaultState $ Commons [(grepCommand defaultGrepArgs { lineCount = 2, regex = "nth|nd" }, FromFile fileAbsPath, ToStdout)],
 
     let absPwd = updAbsPath "/home/"
       in checkState "pwd" (defaultState { stdOut = pack $ asFilePath absPwd ++ "\n", pwd = absPwd }) (defaultState { pwd = absPwd }) $ Commons [(pwdCommand, FromString "", ToStdout)],
@@ -166,7 +189,9 @@ testsExecutor = let
     let (fileAbsPath, fileText, _) = fileTestMSE
       in checkState "many cat -- MSE file" (defaultState { stdOut = fileText }) defaultState $ Commons [(catCommand, FromFile fileAbsPath, ToNewPipe), (catCommand, FromParentHandle, ToNowhere), (catCommand, FromParentHandle, ToStdout)],
     let (fileAbsPath, _, wcOutput) = fileTestExample
-      in checkState "cat example | wc" (defaultState { stdOut = wcOutput }) defaultState $ Commons [(catCommand, FromFile fileAbsPath, ToNewPipe), (wcCommand, FromParentHandle, ToStdout)],
+      in checkState "cat Example.txt | wc" (defaultState { stdOut = wcOutput }) defaultState $ Commons [(catCommand, FromFile fileAbsPath, ToNewPipe), (wcCommand, FromParentHandle, ToStdout)],
     let (fileAbsPath, _, _) = fileTestExample
-      in checkState "cat example | wc | wc" (defaultState { stdOut = "\t1\t4\t8\n" }) defaultState $ Commons [(catCommand, FromFile fileAbsPath, ToNewPipe), (wcCommand, FromParentHandle, ToNewPipe), (wcCommand, FromParentHandle, ToStdout)]
+      in checkState "cat Example.txt | wc | wc" (defaultState { stdOut = "\t1\t4\t8\n" }) defaultState $ Commons [(catCommand, FromFile fileAbsPath, ToNewPipe), (wcCommand, FromParentHandle, ToNewPipe), (wcCommand, FromParentHandle, ToStdout)],
+    let (fileAbsPath, fileText, _) = fileWithManyLines
+      in checkState "cat ManyLines.txt | grep" (defaultState { stdOut = getLines [6, 8, 9] fileText }) defaultState $ Commons [(catCommand, FromFile fileAbsPath, ToNewPipe), (grepCommand defaultGrepArgs { regex = "nth" }, FromParentHandle, ToStdout)]
   ]
