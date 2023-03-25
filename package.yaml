@@ -33,6 +33,7 @@ dependencies:
 - pretty-simple
 - optparse-applicative
 - regex-tdfa
+- array
 
 ghc-options:
 - -Wall

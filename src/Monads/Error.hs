@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 
@@ -11,6 +12,7 @@ module Monads.Error (
     (@:),
     (?>=),
     (@>=),
+    (|>=),
     throwError,
     catchError,
   ) where
@@ -25,7 +27,14 @@ class ME.MonadError Error m => MonadError m
 
 instance MonadError (Either Error)
 
-infix 0 ?:, @:, ?>=, @>=
+-- | Тип для преобразования @'MonadFail'@ к @'MonadError'@.
+newtype FailWrapper a = FailWrapper (Either String a)
+  deriving (Functor, Applicative, Monad)
+
+instance MonadFail FailWrapper where
+  fail msg = FailWrapper $ Left msg
+
+infix 0 ?:, @:, ?>=, @>=, |>=
 
 -- | Операция для вызова исключения если написанное слева выражение ложно.
 (?:) :: MonadError m => Bool -> Error -> m ()
@@ -35,8 +44,8 @@ True  ?: _   = return ()
 -- | Операция для вызова исключения если написанное слева выражение не
 -- является значением.
 (@:) :: MonadError m => Maybe a -> Error -> m a
-Nothing    @: err = throwError err
-(Just res) @: _   = return res
+Nothing  @: err = throwError err
+Just res @: _   = return res
 
 -- | Аналог операции @'(?:)'@ для выражения в монаде.
 (?>=) :: MonadError m => m Bool -> Error -> m ()
@@ -45,3 +54,10 @@ m ?>= err = m >>= (?: err)
 -- | Аналог операции @'(\@:)'@ для выражения в монаде.
 (@>=) :: MonadError m => m (Maybe a) -> Error -> m a
 m @>= err = m >>= (@: err)
+
+-- | Операция для вызова исключения если написанное слева выражение не
+-- является значением, а содержит сообщение об ошибке. Предполагается, что
+-- данный оператор будет работать в основном со значениями в @'MonadFail'@.
+(|>=) :: MonadError m => FailWrapper a -> (String -> Error) -> m a
+FailWrapper (Left msg)  |>= fErr = throwError $ fErr msg
+FailWrapper (Right res) |>= _    = return res

@@ -7,7 +7,7 @@ module Data.AnalyzedPrimitive
     Common (..),
     Internal (..),
     External (..),
-    GrepArgs (..),
+    GrepArgs (..)
   )
 where
 
@@ -15,6 +15,7 @@ import Data.ExitCode (ExitCode)
 import Data.FSObjects (AbsFilePath)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Variable (Stable)
+import Phases.Analyzer.Internal.Grep (GrepArgs(..))
 
 -- | Примитив — это
 --
@@ -60,13 +61,4 @@ data Internal
 -- | Внешняя команда вызывается по пути к исполняемому файлу с указанными
 -- аргументами.
 data External = Arguments AbsFilePath [String]
-  deriving (Eq, Show)
-
-data GrepArgs = GrepArgs
-  { fullWords :: Bool,
-    ignoreCase :: Bool,
-    lineCount :: Int,
-    regex :: String,
-    inputFile :: Maybe AbsFilePath
-  }
   deriving (Eq, Show)

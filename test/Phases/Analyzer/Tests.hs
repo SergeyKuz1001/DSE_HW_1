@@ -71,8 +71,8 @@ mkTestManyCommands = mkTest . PP.Commands
 mkTestAssignment :: String -> String -> Maybe Primitive -> Test
 mkTestAssignment var value = mkTest $ PP.Assignment var value
 
-mkTestGrep :: [String] -> GrepArgs -> Test
-mkTestGrep args prim = mkTestOneCommand ("grep" : regex prim : args) $ Just $ Commons $ fromList [Internal $ Grep prim]
+mkTestGrep :: [String] -> Int -> String -> Maybe AbsFilePath -> Test
+mkTestGrep args expLC expRE expIF = mkTestOneCommand ("grep" : args) . Just . Commons $ fromList [Internal . Grep $ GrepArgs True expLC (expRE, undefined) expIF]
 
 testsAnalyzer :: Test
 testsAnalyzer = TestList [
@@ -165,24 +165,28 @@ testsAnalyzer = TestList [
       Nothing,
     mkTestOneCommand ["pwd", "F", "1"]
       Nothing,
-  -- grep
+  --     grep
     mkTestOneCommand ["grep"] Nothing,
-    mkTestOneCommand ["grep", "-A=10", "example"] Nothing,
-    mkTestOneCommand ["grep", "-A", "-1", "example"] Nothing,
-    mkTestGrep [] $ GrepArgs False False 0 "example" Nothing,
-    mkTestGrep ["-w"] $ GrepArgs True False 0 "example" Nothing,
-    mkTestGrep ["-w", "-i"] $ GrepArgs True True 0 "example" Nothing,
-    mkTestGrep ["-wi"] $ GrepArgs True True 0 "example" Nothing,
-    mkTestGrep ["-iw"] $ GrepArgs True True 0 "example" Nothing,
-    mkTestGrep ["-w", "--ignorecase"] $ GrepArgs True True 0 "example" Nothing,
-    mkTestGrep ["--words", "--ignorecase"] $ GrepArgs True True 0 "example" Nothing,
-    mkTestGrep [".vimrc"] $ GrepArgs False False 0 "example" $ Just $ updAbsPath "/home/user/.vimrc",
-    mkTestGrep [updAbsPath' "/home/user/.vimrc"] $ GrepArgs False False 0 "example" $ Just $ updAbsPath "/home/user/.vimrc",
-    mkTestGrep ["-iw", ".vimrc"] $ GrepArgs True True 0 "example" $ Just $ updAbsPath "/home/user/.vimrc",
-    mkTestGrep ["-iw", updAbsPath' "/home/user/.vimrc"] $ GrepArgs True True 0 "example" $ Just $ updAbsPath "/home/user/.vimrc",
-    mkTestGrep ["-A", "10"] $ GrepArgs False False 10 "example" Nothing,
-    mkTestGrep ["--lines=10"] $ GrepArgs False False 10 "example" Nothing,
-    mkTestGrep ["--lines", "10"] $ GrepArgs False False 10 "example" Nothing,
+    mkTestOneCommand ["grep", "-A=10", "example1"] Nothing,
+    mkTestOneCommand ["grep", "-A", "-1", "example2"] Nothing,
+    mkTestGrep ["example3"] 0 "example3" Nothing,
+    mkTestGrep ["-w", "example4"] 0 "[:w]example4" Nothing,
+    mkTestGrep ["-w", "example5", "-i"] 0 "[:wi]example5" Nothing,
+    mkTestGrep ["-wi", "example6"] 0 "[:wi]example6" Nothing,
+    mkTestGrep ["-iw", "example7"] 0 "[:wi]example7" Nothing,
+    mkTestGrep ["example8", "-w", "--ignorecase"] 0 "[:wi]example8" Nothing,
+    mkTestGrep ["--words", "example9", "--ignorecase"] 0 "[:wi]example9" Nothing,
+    mkTestGrep ["example10", ".vimrc"] 0 "example10" $ Just $ updAbsPath "/home/user/.vimrc",
+    mkTestOneCommand ["grep", ".vimrc", "example11"] Nothing,
+    mkTestGrep ["example12", updAbsPath' "/home/user/.vimrc"] 0 "example12" $ Just $ updAbsPath "/home/user/.vimrc",
+    mkTestGrep ["-iw", "example13", ".vimrc"] 0 "[:wi]example13" $ Just $ updAbsPath "/home/user/.vimrc",
+    mkTestGrep ["example14", "-iw", updAbsPath' "/home/user/.vimrc"] 0 "[:wi]example14" $ Just $ updAbsPath "/home/user/.vimrc",
+    mkTestGrep ["-A", "10", "example15"] 10 "example15" Nothing,
+    mkTestOneCommand ["-A", "-10", "example16"] Nothing,
+    mkTestGrep ["example17", "--lines=10"] 10 "example17" Nothing,
+    mkTestGrep ["example18", "--lines", "10"] 10 "example18" Nothing,
+    mkTestGrep ["--lines", "10", "example19"] 10 "example19" Nothing,
+    mkTestOneCommand ["--lines", "example20", "10"] Nothing,
   --   external
     mkTestOneCommand [updAbsPath' "/bin/vim", "-O", ".vimrc", "my_game.py"] $
       Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/vim") ["-O", ".vimrc", "my_game.py"]]),

@@ -1,35 +1,27 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
--- |
--- Модуль предназначен для анализа корректности пользовательского запроса и
--- преобразования его в более выразительный формат.
+{- |
+Модуль предназначен для анализа корректности пользовательского запроса и
+преобразования его в более выразительный формат.
+-}
 module Phases.Analyzer
   ( analyzer,
-  )
-where
+  ) where
 
-import           Control.Monad          (forM, (>=>), join)
-import           Data.List.NonEmpty     (NonEmpty (..))
-import           Data.Maybe             (listToMaybe)
-import           Monads.Error
-import           Monads.FS
-import           Monads.PathReader
-import           Monads.PwdReader
-import           Options.Applicative
-import           Prelude                hiding (error)
-import           Text.Read              (readMaybe)
+import           Phases.Analyzer.Common
+import           Phases.Analyzer.Internal.Grep
 
 import           Data.AnalyzedPrimitive hiding (Primitive (..))
 import qualified Data.AnalyzedPrimitive as AP
-import           Data.Error             (Error (..))
 import           Data.ExitCode          (ExitCode (..))
-import           Data.FSObjects         (AbsFilePath)
 import qualified Data.ParsedPrimitive   as PP
 import           Data.Variable          (asStable, variable)
+import           Monads.Error           (MonadError, throwError, (@:), (@>=))
+import           Monads.FS
+import           Monads.PathReader
+import           Monads.PwdReader
 
--- | Функция получения объекта-ошибки по информации об ошибке.
-error :: String -> Error
-error = Error "AnalyzingError"
+import           Control.Monad          (forM, (>=>))
+import           Data.List.NonEmpty     (NonEmpty (..))
+import           Text.Read              (readMaybe)
 
 -- | Вспомогательный тип для одной команды.
 data Command
@@ -37,59 +29,32 @@ data Command
   | Common Common
   | Empty
 
--- | Поиск файла по пути, а также проверка наличия разрешения на чтение.
-findRFile :: (MonadError m, MonadFS m, MonadPwdReader m) => Maybe FilePath -> m (Maybe AbsFilePath)
-findRFile mFilePath = forM mFilePath $ \filePath -> do
-  absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
-  isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
-  return absFilePath
-
 -- | Анализ корректности и преобразование одной команды с аргументами.
 commandAnalyzer :: (MonadError m, MonadFS m, MonadPwdReader m, MonadPathReader m) => [String] -> m Command
 commandAnalyzer ("cat" : args) = do
-  length args <= 1 ?: error "too many arguments of `cat` command"
-  let mFilePath = listToMaybe args
-  mAbsFilePath <- findRFile mFilePath
+  mFilePath <- checkOptionalArg "cat" args
+  mAbsFilePath <- traverse findReadable mFilePath
   return . Common . Internal $ Cat mAbsFilePath
 commandAnalyzer ("echo" : args) = do
   return . Common . Internal $ Echo args
 commandAnalyzer ("wc" : args) = do
-  length args <= 1 ?: error "too many arguments of `wc` command"
-  let mFilePath = listToMaybe args
-  mAbsFilePath <- findRFile mFilePath
+  mFilePath <- checkOptionalArg "wc" args
+  mAbsFilePath <- traverse findReadable mFilePath
   return . Common . Internal $ Wc mAbsFilePath
 commandAnalyzer ("pwd" : args) = do
-  null args ?: error "`pwd` command hasn't arguments"
+  checkNoneArg "pwd" args
   return . Common $ Internal Pwd
 commandAnalyzer ("grep" : args) = do
-  case execParserPure defaultPrefs argparseInfo args of
-    Success (GrepArgsRaw fw ic lc rx path) -> do
-      lc >= 0 ?: error "Negative count of lines around matched one is not allowed"
-      Common . Internal . Grep . GrepArgs fw ic lc rx
-        <$> findRFile path
-    Failure pf -> let (h, _, _) = execFailure pf "grep" in throwError . error $ show h
-    CompletionInvoked _ -> throwError $ error "Impossible situation occured"
-  where
-    argparse :: Parser GrepArgsRaw
-    argparse = GrepArgsRaw
-      <$> switch (short 'w' <> long "words" <> help "Match only whole words")
-      <*> switch (short 'i' <> long "ignorecase" <> help "Ignore case")
-      <*> option auto (short 'A' <> long "lines" <> value 0 <> metavar "COUNT" <> help "How many lines to show around the matched ones")
-      <*> strArgument (metavar "REGEX" <> help "Regular expression")
-      <*> (pure Nothing <|> Just <$> strArgument (metavar "FILE" <> help "File to use as source (if not present, standard input is used)"))
-      <**> helper
-    argparseInfo :: ParserInfo GrepArgsRaw
-    argparseInfo = info argparse fullDesc
+  grepArgs <- grep args
+  return . Common . Internal $ Grep grepArgs
 commandAnalyzer ("exit" : args) = do
-  length args <= 1 ?: error "too many arguments of `exit` command"
-  let mArg = listToMaybe args
+  mArg <- checkOptionalArg "exit" args
   mEc <- forM mArg (\arg -> do
     ec <- readMaybe arg @: error "argument of `exit` command must be integer"
     return $ ExitCode ec)
   return . Special $ Exit mEc
 commandAnalyzer ("cd" : args) = do
-  length args == 1 ?: error "`cd` command must have only one argument"
-  let filePath = head args
+  filePath <- checkRequiredArg "cd" args
   return . Special $ Cd filePath
 commandAnalyzer (name : args) = do
   absFilePath <- doesExecutableExist name @>= error ("can't find executable file by path \"" ++ name ++ "\"")
@@ -117,6 +82,3 @@ analyzer (PP.Assignment name value) = do
   var <- variable name
   stVar <- asStable var @: error "can't assign volatile variable"
   return $ AP.Assignment stVar value
-
-data GrepArgsRaw = GrepArgsRaw Bool Bool Int String (Maybe String)
-  deriving (Eq, Show)

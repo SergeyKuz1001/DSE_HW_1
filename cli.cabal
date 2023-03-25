@@ -47,6 +47,8 @@ library
       Monads.VarReader
       Monads.VarWriter
       Phases.Analyzer
+      Phases.Analyzer.Common
+      Phases.Analyzer.Internal.Grep
       Phases.Executor
       Phases.Executor.Impure
       Phases.Executor.Impure.Pwd
@@ -67,6 +69,7 @@ library
   build-depends:
       HUnit
     , ansi-terminal
+    , array
     , base >=4.7 && <5
     , bytestring
     , containers
@@ -92,6 +95,7 @@ executable cli-exe
   build-depends:
       HUnit
     , ansi-terminal
+    , array
     , base >=4.7 && <5
     , bytestring
     , cli
@@ -126,6 +130,7 @@ test-suite cli-test
   build-depends:
       HUnit
     , ansi-terminal
+    , array
     , base >=4.7 && <5
     , bytestring
     , cli

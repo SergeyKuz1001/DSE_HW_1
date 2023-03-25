@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 {- |
 Модуль с внутренней чистой командой @grep@.
 -}
@@ -7,33 +5,38 @@ module Phases.Linker.Pure.Grep(
     grep,
   ) where
 
-import Data.Text.Lazy as L (append, Text, unlines, pack, lines, null)
-import Text.Regex.TDFA
 import Data.AnalyzedPrimitive (GrepArgs (..))
+
+import Data.Array ((!))
 import Data.Bool (bool)
+import Data.Text.Lazy as L (Text, concat, unlines, lines, splitAt, pack)
+import System.Console.ANSI
+import Text.Regex.TDFA
 
 -- | Команда @grep@ принимает текст и регулярное выражение по которому
 -- возвращает отфильтрованный текст.
 grep :: GrepArgs -> Text -> Text
 grep GrepArgs {
-  fullWords = isFullWords,
-  ignoreCase = ignoreCase,
-  regex = regex,
+  isColorized = isColorized,
+  regex = (_, regex),
   lineCount = lineCount
   } text =
-      let getRegex =
-            let compOut = defaultCompOpt { multiline = True, caseSensitive = not ignoreCase }
-                execOptions = defaultExecOpt
-                toRegex = makeRegexOpts compOut execOptions
-                pattern = pack regex
-            in if isFullWords
-              then toRegex ("\\<" `append` pattern `append` "\\>")
-              else toRegex pattern
+      let colorizeLine match line =
+            let (start, len) = match ! 0
+                (leftPart, middlePart') = L.splitAt (fromIntegral start) line
+                (middlePart, rightPart) = L.splitAt (fromIntegral len) middlePart'
+            in  L.concat [
+                    leftPart,
+                    L.pack $ setSGRCode [SetColor Foreground Dull Red, SetConsoleIntensity BoldIntensity],
+                    middlePart,
+                    L.pack $ setSGRCode [Reset],
+                    rightPart
+                  ]
           allLines = reverse . snd $ foldl
             (\(remainedCount, xs) line ->
-              let isMatched = match getRegex line
-              in if isMatched
-                 then (lineCount, line : xs)
+              let matches = matchAll regex line
+              in if not $ null matches
+                 then (lineCount, foldr (bool (\_ -> id) colorizeLine isColorized) line matches : xs)
                  else (max (remainedCount - 1) 0,
                        bool xs (line : xs) (remainedCount > 0)))
             (0 :: Int, []) (L.lines text)
