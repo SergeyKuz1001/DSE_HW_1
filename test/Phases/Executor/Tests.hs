@@ -100,9 +100,9 @@ testsExecutor = TestList [
     in checkState "echo -- Few word" (emptyState { stdOut = output ++ "\n" }) emptyState $ Command $ Common $ Internal $ Echo $ words output,
 
   let (fileAbsPath, _) = fileTestMSE
-    in checkState "wc -- MSE file" (emptyState { stdOut = "0 3 11\n"}) emptyState $ Command $ Common $ Internal $ Wc fileAbsPath,
+    in checkState "wc -- MSE file" (emptyState { stdOut = "1 3 11\n"}) emptyState $ Command $ Common $ Internal $ Wc fileAbsPath,
   let (fileAbsPath, _) = fileTestExample
-    in checkState "wc -- example file" (emptyState { stdOut = "0 3 17\n"}) emptyState $ Command $ Common $ Internal $ Wc fileAbsPath,
+    in checkState "wc -- example file" (emptyState { stdOut = "1 3 17\n"}) emptyState $ Command $ Common $ Internal $ Wc fileAbsPath,
 
   let absPwd = absFilePath' "/home/"
     in checkState "pwd" (emptyState { stdOut = show absPwd ++ "\n", pwd = absPwd }) (emptyState { pwd = absPwd }) $ Command $ Common $ Internal Pwd,
