@@ -12,7 +12,7 @@ import           Monads.VarReader           (MonadVarReader (..))
 
 -- | Сконструировать специфичную для модуля ошибку
 modError :: String -> Error
-modError = Error "VarSubstututorError"
+modError = Error "SubstututorError"
 
 -- | Выбросить специфичную для модуля ошибку
 throwModError :: MonadError m => String -> m a
