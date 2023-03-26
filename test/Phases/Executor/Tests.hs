@@ -108,9 +108,9 @@ updAbsPath path = either (error "it isn't AbsFilePath") id . absFilePath $
     else "C:" ++ replace '/' '\\' path
 
 fileTestMSE :: TestFileInfo
-fileTestMSE = (updAbsPath "/MSE.txt", pack "I love MSE!", "\t0\t3\t11\n")
+fileTestMSE = (updAbsPath "/MSE.txt", pack "I love MSE!", "1\t3\t11\n")
 fileTestExample :: TestFileInfo
-fileTestExample = (updAbsPath "/Example.txt", pack "Some example text", "\t0\t3\t17\n")
+fileTestExample = (updAbsPath "/Example.txt", pack "Some example text", "1\t3\t17\n")
 
 files :: Map.Map AbsFilePath Text
 files = Map.fromList $ map (\(path, text, _) -> (path, text))
@@ -168,5 +168,5 @@ testsExecutor = let
     let (fileAbsPath, _, wcOutput) = fileTestExample
       in checkState "cat example | wc" (defaultState { stdOut = wcOutput }) defaultState $ Commons [(catCommand, FromFile fileAbsPath, ToNewPipe), (wcCommand, FromParentHandle, ToStdout)],
     let (fileAbsPath, _, _) = fileTestExample
-      in checkState "cat example | wc | wc" (defaultState { stdOut = "\t1\t4\t8\n" }) defaultState $ Commons [(catCommand, FromFile fileAbsPath, ToNewPipe), (wcCommand, FromParentHandle, ToNewPipe), (wcCommand, FromParentHandle, ToStdout)]
+      in checkState "cat example | wc | wc" (defaultState { stdOut = "1\t3\t7\n" }) defaultState $ Commons [(catCommand, FromFile fileAbsPath, ToNewPipe), (wcCommand, FromParentHandle, ToNewPipe), (wcCommand, FromParentHandle, ToStdout)]
   ]

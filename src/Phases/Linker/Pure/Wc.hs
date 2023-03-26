@@ -16,6 +16,6 @@ wc :: Text -> Text
 wc text =
   let bytes = encodeUtf8
   in  pack $
-        "\t" ++ show (length $  T.lines text) ++
-        "\t" ++ show (length $  T.words text) ++
-        "\t" ++ show (BS.length $ bytes text) ++ "\n"
+        show (length $  T.lines text) ++ "\t" ++
+        show (length $  T.words text) ++ "\t" ++
+        show (BS.length $ bytes text) ++ "\n"
