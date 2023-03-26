@@ -13,12 +13,10 @@ import Environment.MonadIO as EnvIO
 import Environment.MonadVarPwdReader (MonadVarPwdReader (getVarPwd))
 import Environment.MonadVarsReader (MonadVarsReader (getVars))
 
-import Data.Bool (bool)
-import qualified Data.ByteString.Char8 as ByteStr
-import Data.Char (isSpace)
+import qualified Data.ByteString.Lazy as ByteStr
+import qualified Data.Text.Lazy as Txt
+import Data.Text.Lazy.Encoding (encodeUtf8)
 import Data.Maybe (fromMaybe)
-
-type WcOutputArguments = (Int, Int, Int, Bool)
 
 -- | Функция принимает, разбирает и исполняет распарсшенный примитив.
 executor :: (MonadIO m, MonadExit m, MonadVarsReader m) => Primitive -> m ()
@@ -44,21 +42,11 @@ executeInternal = \case
   Echo ls -> do
     EnvIO.putStrLn $ drop 1 $ concatMap (' ' :) ls
   Wc filePath -> do
-    file <- EnvIO.readFileFromBytes filePath
-    let (countLines, countWords, bytes, isPrevSpace) = ByteStr.foldl' wcgo (0, 0, 0, False) file
-    let newCountWords = countWords + bool 1 0 isPrevSpace
-    EnvIO.putStrLn $ show countLines ++ ' ' : show newCountWords ++ ' ' : show bytes
+    file <- EnvIO.readFile filePath
+    EnvIO.putStrLn $ show (length $ lines file) ++ ' ' : show (length $ words file) ++ ' ' : show (ByteStr.length . encodeUtf8 $ Txt.pack file)
   Pwd -> do
     pwd <- getVarPwd
     EnvIO.print pwd
-
-  where
-    wcgo :: WcOutputArguments -> Char -> WcOutputArguments
-    wcgo (countLines, countWords, bytes, isPrevSpace) c =
-      (countLines + checkOnLine, countWords + checkOnWord, bytes + 1, isSpace c)
-      where
-        checkOnLine = bool 0 1 $ c == '\n'
-        checkOnWord = bool 0 1 $ not isPrevSpace && isSpace c
 
 -- | Функция для исполнения внешних команд.
 executeExternal :: (MonadIO m, MonadVarsReader m) => External -> m ()
