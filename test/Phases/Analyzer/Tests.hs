@@ -155,11 +155,11 @@ testsAnalyzer = TestList [
       Just (Command . Common . External $ Arguments (updAbsPath "/bin/vim") ["-O", ".vimrc", "my_game.py"]),
     mkTestOneCommand ["vim", ".vimrc", "my_game.py"] $
       Just (Command . Common . External $ Arguments (updAbsPath "/bin/vim") [".vimrc", "my_game.py"]),
-    mkTestOneCommand ["././.././user/../../bin/./vim", ".vimrc"] $
+    mkTestOneCommand [updPath "././.././user/../../bin/./vim", ".vimrc"] $
       Just (Command . Common . External $ Arguments (updAbsPath "/bin/vim") [".vimrc"]),
     mkTestOneCommand ["my_game.py"]
       Nothing,
-    mkTestOneCommand ["./my_game.py"] $
+    mkTestOneCommand [updPath "./my_game.py"] $
       Just (Command . Common . External $ Arguments (updAbsPath "/home/user/my_game.py") []),
     mkTestOneCommand ["some_doc.djvu"]
       Nothing,
