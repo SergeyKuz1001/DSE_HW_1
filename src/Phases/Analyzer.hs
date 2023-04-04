@@ -50,14 +50,14 @@ commandAnalyzer ("grep" : args) = do
 commandAnalyzer ("exit" : args) = do
   mArg <- checkOptionalArg "exit" args
   mEc <- forM mArg (\arg -> do
-    ec <- readMaybe arg @: error "argument of `exit` command must be integer"
+    ec <- readMaybe arg @: toError "argument of `exit` command must be integer"
     return $ ExitCode ec)
   return . Special $ Exit mEc
 commandAnalyzer ("cd" : args) = do
   filePath <- checkRequiredArg "cd" args
   return . Special $ Cd filePath
 commandAnalyzer (name : args) = do
-  absFilePath <- doesExecutableExist name @>= error ("can't find executable file by path \"" ++ name ++ "\"")
+  absFilePath <- doesExecutableExist name @>= toError ("can't find executable file by path \"" ++ name ++ "\"")
   return . Common . External $ Arguments absFilePath args
 commandAnalyzer [] = do
   return Empty
@@ -77,8 +77,8 @@ analyzer (PP.Commands (command : commands)) =
     where
       asCommon :: MonadError m => Command -> m Common
       asCommon (Common c) = return c
-      asCommon _ = throwError $ error "can't using non-common command with pipes"
+      asCommon _ = throwError $ toError "can't using non-common command with pipes"
 analyzer (PP.Assignment name value) = do
   var <- variable name
-  stVar <- asStable var @: error "can't assign volatile variable"
+  stVar <- asStable var @: toError "can't assign volatile variable"
   return $ AP.Assignment stVar value
