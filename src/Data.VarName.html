@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">{- |
+&#1042; &#1076;&#1072;&#1085;&#1085;&#1086;&#1084; &#1084;&#1086;&#1076;&#1091;&#1083;&#1077; &#1086;&#1073;&#1098;&#1103;&#1074;&#1083;&#1077;&#1085; &#1090;&#1080;&#1087; @'VarName'@ &#1076;&#1083;&#1103; &#1093;&#1088;&#1072;&#1085;&#1077;&#1085;&#1080;&#1103; &#1080;&#1084;&#1077;&#1085;&#1080; &#1087;&#1077;&#1088;&#1077;&#1084;&#1077;&#1085;&#1085;&#1086;&#1081; &#1080;
+&#1074;&#1089;&#1087;&#1086;&#1084;&#1086;&#1075;&#1072;&#1090;&#1077;&#1083;&#1100;&#1085;&#1099;&#1077; &#1092;&#1091;&#1085;&#1082;&#1094;&#1080;&#1080; &#1076;&#1083;&#1103; &#1088;&#1072;&#1073;&#1086;&#1090;&#1099; &#1089; &#1085;&#1080;&#1084;.
+-}</span><span>
+</span><span id="line-5"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.VarName</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-6"></span><span>    </span><span class="annot"><a href="Data.VarName.html#VarName"><span class="hs-identifier">VarName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.VarName.html#getVarName"><span class="hs-identifier">getVarName</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-7"></span><span>    </span><span class="annot"><a href="Data.VarName.html#varName"><span class="hs-identifier">varName</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>    </span><span class="annot"><a href="Data.VarName.html#addChar"><span class="hs-identifier">addChar</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-9"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Environment.MonadError.html"><span class="hs-identifier">Environment.MonadError</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Environment.MonadError.html#Error"><span class="hs-identifier">Error</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Environment.MonadError.html#MonadError"><span class="hs-identifier">MonadError</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Environment.MonadError.html#%3F%3A"><span class="hs-operator">(?:)</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- | &#1048;&#1084;&#1103; &#1087;&#1077;&#1088;&#1077;&#1084;&#1077;&#1085;&#1085;&#1086;&#1081; &#1089;&#1088;&#1077;&#1076;&#1099;.</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- &#1058;&#1080;&#1087; &#1085;&#1077;&#1086;&#1073;&#1093;&#1086;&#1076;&#1080;&#1084; &#1076;&#1083;&#1103; &#1087;&#1086;&#1076;&#1076;&#1077;&#1088;&#1078;&#1072;&#1085;&#1080;&#1103; &#1080;&#1085;&#1074;&#1072;&#1088;&#1080;&#1072;&#1085;&#1090;&#1072; &#1090;&#1086;&#1075;&#1086;, &#1095;&#1090;&#1086; &#1093;&#1088;&#1072;&#1085;&#1103;&#1097;&#1072;&#1103;&#1089;&#1103; &#1089;&#1090;&#1088;&#1086;&#1082;&#1072; &#1103;&#1074;&#1083;&#1103;&#1077;&#1090;&#1089;&#1103;</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- &#1082;&#1086;&#1088;&#1088;&#1077;&#1082;&#1090;&#1085;&#1099;&#1084; &#1080;&#1084;&#1077;&#1085;&#1077;&#1084; &#1087;&#1077;&#1088;&#1077;&#1084;&#1077;&#1085;&#1085;&#1086;&#1081;.</span><span>
+</span><span id="line-16"></span><span class="hs-keyword">newtype</span><span> </span><span id="VarName"><span class="annot"><a href="Data.VarName.html#VarName"><span class="hs-identifier hs-var">VarName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="VarName"><span class="annot"><a href="Data.VarName.html#VarName"><span class="hs-identifier hs-var">VarName</span></a></span></span><span> </span><span class="hs-special">{</span><span> </span><span id="getVarName"><span class="annot"><span class="annottext">VarName -&gt; String
+</span><a href="Data.VarName.html#getVarName"><span class="hs-identifier hs-var hs-var">getVarName</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-special">}</span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679055760"><span id="local-6989586621679055765"><span class="annot"><span class="annottext">VarName -&gt; VarName -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: VarName -&gt; VarName -&gt; Bool
+$c/= :: VarName -&gt; VarName -&gt; Bool
+== :: VarName -&gt; VarName -&gt; Bool
+$c== :: VarName -&gt; VarName -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679055721"><span id="local-6989586621679055726"><span id="local-6989586621679055731"><span id="local-6989586621679055736"><span id="local-6989586621679055741"><span id="local-6989586621679055746"><span id="local-6989586621679055752"><span class="annot"><span class="annottext">Eq VarName
+VarName -&gt; VarName -&gt; Bool
+VarName -&gt; VarName -&gt; Ordering
+VarName -&gt; VarName -&gt; VarName
+forall a.
+Eq a
+-&gt; (a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: VarName -&gt; VarName -&gt; VarName
+$cmin :: VarName -&gt; VarName -&gt; VarName
+max :: VarName -&gt; VarName -&gt; VarName
+$cmax :: VarName -&gt; VarName -&gt; VarName
+&gt;= :: VarName -&gt; VarName -&gt; Bool
+$c&gt;= :: VarName -&gt; VarName -&gt; Bool
+&gt; :: VarName -&gt; VarName -&gt; Bool
+$c&gt; :: VarName -&gt; VarName -&gt; Bool
+&lt;= :: VarName -&gt; VarName -&gt; Bool
+$c&lt;= :: VarName -&gt; VarName -&gt; Bool
+&lt; :: VarName -&gt; VarName -&gt; Bool
+$c&lt; :: VarName -&gt; VarName -&gt; Bool
+compare :: VarName -&gt; VarName -&gt; Ordering
+$ccompare :: VarName -&gt; VarName -&gt; Ordering
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679055710"><span id="local-6989586621679055713"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Data.VarName.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-20"></span><span>  </span><span id="local-6989586621679055708"><span class="annot"><span class="annottext">show :: VarName -&gt; String
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.VarName.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span id="local-6989586621679055706"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679055706"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679055706"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="hs-comment">-- | &#1055;&#1088;&#1077;&#1076;&#1080;&#1082;&#1072;&#1090; &#1087;&#1088;&#1080;&#1085;&#1072;&#1076;&#1083;&#1077;&#1078;&#1085;&#1086;&#1089;&#1090;&#1080; &#1089;&#1080;&#1084;&#1074;&#1086;&#1083;&#1072; &#1082; &#1082;&#1083;&#1072;&#1089;&#1089;&#1091; &#1089;&#1080;&#1084;&#1074;&#1086;&#1083;&#1086;&#1074;, &#1080;&#1079; &#1082;&#1086;&#1090;&#1086;&#1088;&#1099;&#1093; &#1084;&#1086;&#1078;&#1077;&#1090; &#1073;&#1099;&#1090;&#1100;</span><span>
+</span><span id="line-23"></span><span class="hs-comment">-- &#1086;&#1073;&#1088;&#1072;&#1079;&#1086;&#1074;&#1072;&#1085;&#1086; &#1080;&#1084;&#1103; &#1087;&#1077;&#1088;&#1077;&#1084;&#1077;&#1085;&#1085;&#1086;&#1081;.</span><span>
+</span><span id="line-24"></span><span class="annot"><a href="Data.VarName.html#isLCOU"><span class="hs-identifier hs-type">isLCOU</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-25"></span><span id="isLCOU"><span class="annot"><span class="annottext">isLCOU :: Char -&gt; Bool
+</span><a href="Data.VarName.html#isLCOU"><span class="hs-identifier hs-var hs-var">isLCOU</span></a></span></span><span> </span><span id="local-6989586621679055704"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679055704"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679055704"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">forall (t :: * -&gt; *) a. (Foldable t, Eq a) =&gt; a -&gt; t a -&gt; Bool
+</span><span class="hs-operator hs-var">`elem`</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">'A'</span></span><span class="hs-glyph">..</span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">'Z'</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">'a'</span></span><span class="hs-glyph">..</span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">'z'</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">'0'</span></span><span class="hs-glyph">..</span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">'9'</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">'_'</span></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- | &#1060;&#1091;&#1085;&#1082;&#1094;&#1080;&#1103; &#1076;&#1083;&#1103; &#1082;&#1086;&#1085;&#1089;&#1090;&#1088;&#1091;&#1080;&#1088;&#1086;&#1074;&#1072;&#1085;&#1080;&#1103; &#1079;&#1085;&#1072;&#1095;&#1077;&#1085;&#1080;&#1103; &#1090;&#1080;&#1087;&#1072; @'VarName'@. &#1055;&#1088;&#1080; &#1082;&#1086;&#1085;&#1089;&#1090;&#1088;&#1091;&#1080;&#1088;&#1086;&#1074;&#1072;&#1085;&#1080;&#1080;</span><span>
+</span><span id="line-28"></span><span class="hs-comment">-- &#1087;&#1088;&#1086;&#1074;&#1077;&#1088;&#1103;&#1077;&#1090; &#1089;&#1086;&#1073;&#1083;&#1102;&#1076;&#1077;&#1085;&#1080;&#1077; &#1080;&#1085;&#1074;&#1072;&#1088;&#1080;&#1072;&#1085;&#1090;&#1072;, &#1080; &#1074; &#1089;&#1083;&#1091;&#1095;&#1072;&#1077; &#1077;&#1075;&#1086; &#1085;&#1072;&#1088;&#1091;&#1096;&#1077;&#1085;&#1080;&#1103; &#1074;&#1099;&#1079;&#1099;&#1074;&#1072;&#1077;&#1090; &#1086;&#1096;&#1080;&#1073;&#1082;&#1091;.</span><span>
+</span><span id="line-29"></span><span id="local-6989586621679055804"><span class="annot"><a href="Data.VarName.html#varName"><span class="hs-identifier hs-type">varName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Environment.MonadError.html#MonadError"><span class="hs-identifier hs-type">MonadError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679055804"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679055804"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Data.VarName.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span></span><span>
+</span><span id="line-30"></span><span id="varName"><span class="annot"><span class="annottext">varName :: forall (m :: * -&gt; *). MonadError m =&gt; String -&gt; m VarName
+</span><a href="Data.VarName.html#varName"><span class="hs-identifier hs-var hs-var">varName</span></a></span></span><span> </span><span id="local-6989586621679055693"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679055693"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-31"></span><span>  </span><span class="annot"><span class="annottext">forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
+</span><span class="hs-identifier hs-var">all</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Bool
+</span><a href="Data.VarName.html#isLCOU"><span class="hs-identifier hs-var">isLCOU</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679055693"><span class="hs-identifier hs-var">str</span></a></span><span> </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *). MonadError m =&gt; Bool -&gt; Error -&gt; m ()
+</span><a href="Environment.MonadError.html#%3F%3A"><span class="hs-operator hs-var">?:</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; Error
+</span><a href="Environment.MonadError.html#Error"><span class="hs-identifier hs-var">Error</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;ViolationOfInvariantError&quot;</span></span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;\&quot;&quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679055693"><span class="hs-identifier hs-var">str</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;\&quot; is not valid name of variable&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span>  </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; VarName
+</span><a href="Data.VarName.html#VarName"><span class="hs-identifier hs-var">VarName</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679055693"><span class="hs-identifier hs-var">str</span></a></span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span id="local-6989586621679055788"><span class="annot"><a href="Data.VarName.html#addChar"><span class="hs-identifier hs-type">addChar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Environment.MonadError.html#MonadError"><span class="hs-identifier hs-type">MonadError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679055788"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.VarName.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679055788"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Data.VarName.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span></span><span>
+</span><span id="line-36"></span><span id="addChar"><span class="annot"><span class="annottext">addChar :: forall (m :: * -&gt; *). MonadError m =&gt; Char -&gt; VarName -&gt; m VarName
+</span><a href="Data.VarName.html#addChar"><span class="hs-identifier hs-var hs-var">addChar</span></a></span></span><span> </span><span id="local-6989586621679055684"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679055684"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.VarName.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span id="local-6989586621679055683"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679055683"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-37"></span><span>  </span><span class="annot"><span class="annottext">Char -&gt; Bool
+</span><a href="Data.VarName.html#isLCOU"><span class="hs-identifier hs-var">isLCOU</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679055684"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *). MonadError m =&gt; Bool -&gt; Error -&gt; m ()
+</span><a href="Environment.MonadError.html#%3F%3A"><span class="hs-operator hs-var">?:</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; Error
+</span><a href="Environment.MonadError.html#Error"><span class="hs-identifier hs-var">Error</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;ViolationOfInvariantError&quot;</span></span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;\&quot;&quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679055684"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679055683"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;\&quot; is not valid name of variable&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>  </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; VarName
+</span><a href="Data.VarName.html#VarName"><span class="hs-identifier hs-var">VarName</span></a></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679055684"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679055683"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-40"></span></pre></body></html>
