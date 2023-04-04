@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-- |</span><span>
+</span><span id="line-2"></span><span class="hs-comment">-- &#1042; &#1076;&#1072;&#1085;&#1085;&#1086;&#1084; &#1084;&#1086;&#1076;&#1091;&#1083;&#1077; &#1086;&#1073;&#1098;&#1103;&#1074;&#1083;&#1077;&#1085;&#1099; &#1087;&#1088;&#1080;&#1084;&#1080;&#1090;&#1080;&#1074;&#1099;, &#1074; &#1082;&#1086;&#1090;&#1086;&#1088;&#1099;&#1077; &#1090;&#1088;&#1072;&#1085;&#1089;&#1083;&#1080;&#1088;&#1091;&#1077;&#1090;&#1089;&#1103; &#1087;&#1086;&#1083;&#1100;&#1079;&#1086;&#1074;&#1072;&#1090;&#1077;&#1083;&#1100;&#1089;&#1082;&#1080;&#1081;</span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- &#1079;&#1072;&#1087;&#1088;&#1086;&#1089; &#1087;&#1086;&#1089;&#1083;&#1077; &#1101;&#1090;&#1072;&#1087;&#1072; &#1072;&#1085;&#1072;&#1083;&#1080;&#1079;&#1072;.</span><span>
+</span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.AnalyzedPrimitive</span><span>
+</span><span id="line-5"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.AnalyzedPrimitive.html#Primitive"><span class="hs-identifier">Primitive</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-6"></span><span>    </span><span class="annot"><a href="Data.AnalyzedPrimitive.html#Special"><span class="hs-identifier">Special</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-7"></span><span>    </span><span class="annot"><a href="Data.AnalyzedPrimitive.html#Common"><span class="hs-identifier">Common</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>    </span><span class="annot"><a href="Data.AnalyzedPrimitive.html#Internal"><span class="hs-identifier">Internal</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-9"></span><span>    </span><span class="annot"><a href="Data.AnalyzedPrimitive.html#External"><span class="hs-identifier">External</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-10"></span><span>    </span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgs"><span class="hs-identifier">GrepArgs</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.ExitCode.html"><span class="hs-identifier">Data.ExitCode</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.ExitCode.html#ExitCode"><span class="hs-identifier">ExitCode</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.FSObjects.html"><span class="hs-identifier">Data.FSObjects</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.FSObjects.html#AbsFilePath"><span class="hs-identifier">AbsFilePath</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List.NonEmpty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">NonEmpty</span></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Variable.html"><span class="hs-identifier">Data.Variable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Variable.html#Stable"><span class="hs-identifier">Stable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html"><span class="hs-identifier">Phases.Analyzer.Internal.Grep</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgs"><span class="hs-identifier">GrepArgs</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-comment">-- | &#1055;&#1088;&#1080;&#1084;&#1080;&#1090;&#1080;&#1074; &#8212; &#1101;&#1090;&#1086;</span><span>
+</span><span id="line-21"></span><span class="hs-comment">--</span><span>
+</span><span id="line-22"></span><span class="hs-comment">--     * &#1089;&#1087;&#1077;&#1094;&#1080;&#1072;&#1083;&#1100;&#1085;&#1072;&#1103; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;&#1072; (@exit@ &#1080;&#1083;&#1080; @cd@),</span><span>
+</span><span id="line-23"></span><span class="hs-comment">--     * &#1085;&#1077;&#1087;&#1091;&#1089;&#1090;&#1086;&#1081; &#1085;&#1072;&#1073;&#1086;&#1088; &#1086;&#1073;&#1099;&#1095;&#1085;&#1099;&#1093; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;, &#1088;&#1072;&#1079;&#1076;&#1077;&#1083;&#1105;&#1085;&#1085;&#1099;&#1093; pipe&#1072;&#1084;&#1080;,</span><span>
+</span><span id="line-24"></span><span class="hs-comment">--     * &#1087;&#1088;&#1080;&#1089;&#1074;&#1072;&#1080;&#1074;&#1072;&#1085;&#1080;&#1077; &#1089;&#1090;&#1072;&#1073;&#1080;&#1083;&#1100;&#1085;&#1086;&#1081; &#1087;&#1077;&#1088;&#1077;&#1084;&#1077;&#1085;&#1085;&#1086;&#1081; &#1080;&#1083;&#1080;</span><span>
+</span><span id="line-25"></span><span class="hs-comment">--     * &#1087;&#1091;&#1089;&#1090;&#1072;&#1103; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;&#1072;.</span><span>
+</span><span id="line-26"></span><span class="hs-keyword">data</span><span> </span><span id="Primitive"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Primitive"><span class="hs-identifier hs-var">Primitive</span></a></span></span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Special"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Special"><span class="hs-identifier hs-var">Special</span></a></span></span><span> </span><span class="annot"><a href="Data.AnalyzedPrimitive.html#Special"><span class="hs-identifier hs-type">Special</span></a></span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Commons"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Commons"><span class="hs-identifier hs-var">Commons</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="annot"><a href="Data.AnalyzedPrimitive.html#Common"><span class="hs-identifier hs-type">Common</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Assignment"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Assignment"><span class="hs-identifier hs-var">Assignment</span></a></span></span><span> </span><span class="annot"><a href="Data.Variable.html#Stable"><span class="hs-identifier hs-type">Stable</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-30"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Empty"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Empty"><span class="hs-identifier hs-var">Empty</span></a></span></span><span>
+</span><span id="line-31"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067457"><span id="local-6989586621679067468"><span class="annot"><span class="annottext">Primitive -&gt; Primitive -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Primitive -&gt; Primitive -&gt; Bool
+$c/= :: Primitive -&gt; Primitive -&gt; Bool
+== :: Primitive -&gt; Primitive -&gt; Bool
+$c== :: Primitive -&gt; Primitive -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067436"><span id="local-6989586621679067438"><span id="local-6989586621679067453"><span class="annot"><span class="annottext">Int -&gt; Primitive -&gt; ShowS
+[Primitive] -&gt; ShowS
+Primitive -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Primitive] -&gt; ShowS
+$cshowList :: [Primitive] -&gt; ShowS
+show :: Primitive -&gt; String
+$cshow :: Primitive -&gt; String
+showsPrec :: Int -&gt; Primitive -&gt; ShowS
+$cshowsPrec :: Int -&gt; Primitive -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="hs-comment">-- | &#1057;&#1087;&#1077;&#1094;&#1080;&#1072;&#1083;&#1100;&#1085;&#1072;&#1103; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;&#1072; &#1074;&#1083;&#1080;&#1103;&#1077;&#1090; &#1085;&#1072; &#1088;&#1072;&#1073;&#1086;&#1090;&#1091; &#1086;&#1073;&#1086;&#1083;&#1086;&#1095;&#1082;&#1080; &#1080; &#1084;&#1086;&#1078;&#1077;&#1090; &#1073;&#1099;&#1090;&#1100;</span><span>
+</span><span id="line-34"></span><span class="hs-comment">--</span><span>
+</span><span id="line-35"></span><span class="hs-comment">--     * @exit@ &#8212; &#1079;&#1072;&#1074;&#1077;&#1088;&#1096;&#1077;&#1085;&#1080;&#1077; &#1088;&#1072;&#1073;&#1086;&#1090;&#1099; &#1086;&#1073;&#1086;&#1083;&#1086;&#1095;&#1082;&#1080; &#1089; &#1082;&#1086;&#1076;&#1086;&#1084; &#1074;&#1086;&#1079;&#1074;&#1088;&#1072;&#1090;&#1072;, &#1087;&#1088;&#1080;&#1085;&#1080;&#1084;&#1072;&#1077;&#1084;&#1099;&#1084;</span><span>
+</span><span id="line-36"></span><span class="hs-comment">--         &#1086;&#1087;&#1094;&#1080;&#1086;&#1085;&#1072;&#1083;&#1100;&#1085;&#1099;&#1084; &#1087;&#1072;&#1088;&#1072;&#1084;&#1077;&#1090;&#1088;&#1086;&#1084;</span><span>
+</span><span id="line-37"></span><span class="hs-comment">--     * @cd@ &#8212; &#1089;&#1084;&#1077;&#1085;&#1072; &#1090;&#1077;&#1082;&#1091;&#1097;&#1077;&#1081; &#1076;&#1080;&#1088;&#1077;&#1082;&#1090;&#1086;&#1088;&#1080;&#1080;</span><span>
+</span><span id="line-38"></span><span class="hs-keyword">data</span><span> </span><span id="Special"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Special"><span class="hs-identifier hs-var">Special</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Exit"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Exit"><span class="hs-identifier hs-var">Exit</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Data.ExitCode.html#ExitCode"><span class="hs-identifier hs-type">ExitCode</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Cd"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Cd"><span class="hs-identifier hs-var">Cd</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span>
+</span><span id="line-39"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067422"><span id="local-6989586621679067429"><span class="annot"><span class="annottext">Special -&gt; Special -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Special -&gt; Special -&gt; Bool
+$c/= :: Special -&gt; Special -&gt; Bool
+== :: Special -&gt; Special -&gt; Bool
+$c== :: Special -&gt; Special -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067408"><span id="local-6989586621679067410"><span id="local-6989586621679067419"><span class="annot"><span class="annottext">Int -&gt; Special -&gt; ShowS
+[Special] -&gt; ShowS
+Special -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Special] -&gt; ShowS
+$cshowList :: [Special] -&gt; ShowS
+show :: Special -&gt; String
+$cshow :: Special -&gt; String
+showsPrec :: Int -&gt; Special -&gt; ShowS
+$cshowsPrec :: Int -&gt; Special -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-comment">-- | &#1054;&#1073;&#1099;&#1095;&#1085;&#1072;&#1103; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;&#1072; &#1080;&#1084;&#1077;&#1077;&#1090; &#1087;&#1086;&#1090;&#1086;&#1082;&#1080; &#1074;&#1074;&#1086;&#1076;&#1072;, &#1074;&#1099;&#1074;&#1086;&#1076;&#1072; &#1080; &#1087;&#1086;&#1090;&#1086;&#1082; &#1086;&#1096;&#1080;&#1073;&#1086;&#1082;.</span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- &#1052;&#1086;&#1078;&#1077;&#1090; &#1073;&#1099;&#1090;&#1100; &#1083;&#1080;&#1073;&#1086; &#1074;&#1085;&#1091;&#1090;&#1088;&#1077;&#1085;&#1085;&#1077;&#1081; (&#1080;&#1089;&#1087;&#1086;&#1083;&#1085;&#1103;&#1077;&#1090;&#1089;&#1103; &#1089;&#1072;&#1084;&#1086;&#1081; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;&#1085;&#1086;&#1081; &#1086;&#1073;&#1086;&#1083;&#1086;&#1095;&#1082;&#1086;&#1081;), &#1083;&#1080;&#1073;&#1086;</span><span>
+</span><span id="line-43"></span><span class="hs-comment">-- &#1074;&#1085;&#1077;&#1096;&#1085;&#1077;&#1081;.</span><span>
+</span><span id="line-44"></span><span class="hs-keyword">data</span><span> </span><span id="Common"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Common"><span class="hs-identifier hs-var">Common</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Internal"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Internal"><span class="hs-identifier hs-var">Internal</span></a></span></span><span> </span><span class="annot"><a href="Data.AnalyzedPrimitive.html#Internal"><span class="hs-identifier hs-type">Internal</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="External"><span class="annot"><a href="Data.AnalyzedPrimitive.html#External"><span class="hs-identifier hs-var">External</span></a></span></span><span> </span><span class="annot"><a href="Data.AnalyzedPrimitive.html#External"><span class="hs-identifier hs-type">External</span></a></span><span>
+</span><span id="line-45"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067399"><span id="local-6989586621679067403"><span class="annot"><span class="annottext">Common -&gt; Common -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Common -&gt; Common -&gt; Bool
+$c/= :: Common -&gt; Common -&gt; Bool
+== :: Common -&gt; Common -&gt; Bool
+$c== :: Common -&gt; Common -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067389"><span id="local-6989586621679067391"><span id="local-6989586621679067397"><span class="annot"><span class="annottext">Int -&gt; Common -&gt; ShowS
+[Common] -&gt; ShowS
+Common -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Common] -&gt; ShowS
+$cshowList :: [Common] -&gt; ShowS
+show :: Common -&gt; String
+$cshow :: Common -&gt; String
+showsPrec :: Int -&gt; Common -&gt; ShowS
+$cshowsPrec :: Int -&gt; Common -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-comment">-- | &#1042;&#1085;&#1091;&#1090;&#1088;&#1077;&#1085;&#1085;&#1103;&#1103; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;&#1072; &#1080;&#1089;&#1087;&#1086;&#1083;&#1085;&#1103;&#1077;&#1090;&#1089;&#1103; &#1089;&#1072;&#1084;&#1086;&#1081; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;&#1085;&#1086;&#1081; &#1086;&#1073;&#1086;&#1083;&#1086;&#1095;&#1082;&#1086;&#1081; &#1080; &#1084;&#1086;&#1078;&#1077;&#1090; &#1073;&#1099;&#1090;&#1100;</span><span>
+</span><span id="line-48"></span><span class="hs-comment">--</span><span>
+</span><span id="line-49"></span><span class="hs-comment">--     * @cat@ &#8212; &#1074;&#1099;&#1074;&#1086;&#1076; &#1089;&#1086;&#1076;&#1077;&#1088;&#1078;&#1080;&#1084;&#1086;&#1075;&#1086; &#1087;&#1077;&#1088;&#1077;&#1076;&#1072;&#1085;&#1085;&#1086;&#1075;&#1086; &#1092;&#1072;&#1081;&#1083;&#1072;;</span><span>
+</span><span id="line-50"></span><span class="hs-comment">--     * @echo@ &#8212; &#1074;&#1099;&#1074;&#1086;&#1076; &#1072;&#1088;&#1075;&#1091;&#1084;&#1077;&#1085;&#1090;&#1086;&#1074; &#1095;&#1077;&#1088;&#1077;&#1079; &#1087;&#1088;&#1086;&#1073;&#1077;&#1083;;</span><span>
+</span><span id="line-51"></span><span class="hs-comment">--     * @wc@ &#8212; &#1089;&#1090;&#1072;&#1090;&#1080;&#1089;&#1090;&#1080;&#1082;&#1072; &#1076;&#1083;&#1103; &#1092;&#1072;&#1081;&#1083;&#1072;;</span><span>
+</span><span id="line-52"></span><span class="hs-comment">--     * @pwd@ &#8212; &#1080;&#1084;&#1103; &#1090;&#1077;&#1082;&#1091;&#1097;&#1077;&#1081; &#1076;&#1080;&#1088;&#1077;&#1082;&#1090;&#1086;&#1088;&#1080;&#1080;.</span><span>
+</span><span id="line-53"></span><span class="hs-keyword">data</span><span> </span><span id="Internal"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Internal"><span class="hs-identifier hs-var">Internal</span></a></span></span><span>
+</span><span id="line-54"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Cat"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Cat"><span class="hs-identifier hs-var">Cat</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Data.FSObjects.html#AbsFilePath"><span class="hs-identifier hs-type">AbsFilePath</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Echo"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Echo"><span class="hs-identifier hs-var">Echo</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">]</span><span>
+</span><span id="line-56"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Wc"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Wc"><span class="hs-identifier hs-var">Wc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Data.FSObjects.html#AbsFilePath"><span class="hs-identifier hs-type">AbsFilePath</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Pwd"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Pwd"><span class="hs-identifier hs-var">Pwd</span></a></span></span><span>
+</span><span id="line-58"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Grep"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Grep"><span class="hs-identifier hs-var">Grep</span></a></span></span><span> </span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgs"><span class="hs-identifier hs-type">GrepArgs</span></a></span><span>
+</span><span id="line-59"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067373"><span id="local-6989586621679067382"><span class="annot"><span class="annottext">Internal -&gt; Internal -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Internal -&gt; Internal -&gt; Bool
+$c/= :: Internal -&gt; Internal -&gt; Bool
+== :: Internal -&gt; Internal -&gt; Bool
+$c== :: Internal -&gt; Internal -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067354"><span id="local-6989586621679067356"><span id="local-6989586621679067369"><span class="annot"><span class="annottext">Int -&gt; Internal -&gt; ShowS
+[Internal] -&gt; ShowS
+Internal -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Internal] -&gt; ShowS
+$cshowList :: [Internal] -&gt; ShowS
+show :: Internal -&gt; String
+$cshow :: Internal -&gt; String
+showsPrec :: Int -&gt; Internal -&gt; ShowS
+$cshowsPrec :: Int -&gt; Internal -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span class="hs-comment">-- | &#1042;&#1085;&#1077;&#1096;&#1085;&#1103;&#1103; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;&#1072; &#1074;&#1099;&#1079;&#1099;&#1074;&#1072;&#1077;&#1090;&#1089;&#1103; &#1087;&#1086; &#1087;&#1091;&#1090;&#1080; &#1082; &#1080;&#1089;&#1087;&#1086;&#1083;&#1085;&#1103;&#1077;&#1084;&#1086;&#1084;&#1091; &#1092;&#1072;&#1081;&#1083;&#1091; &#1089; &#1091;&#1082;&#1072;&#1079;&#1072;&#1085;&#1085;&#1099;&#1084;&#1080;</span><span>
+</span><span id="line-62"></span><span class="hs-comment">-- &#1072;&#1088;&#1075;&#1091;&#1084;&#1077;&#1085;&#1090;&#1072;&#1084;&#1080;.</span><span>
+</span><span id="line-63"></span><span class="hs-keyword">data</span><span> </span><span id="External"><span class="annot"><a href="Data.AnalyzedPrimitive.html#External"><span class="hs-identifier hs-var">External</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Arguments"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Arguments"><span class="hs-identifier hs-var">Arguments</span></a></span></span><span> </span><span class="annot"><a href="Data.FSObjects.html#AbsFilePath"><span class="hs-identifier hs-type">AbsFilePath</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">]</span><span>
+</span><span id="line-64"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067344"><span id="local-6989586621679067349"><span class="annot"><span class="annottext">External -&gt; External -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: External -&gt; External -&gt; Bool
+$c/= :: External -&gt; External -&gt; Bool
+== :: External -&gt; External -&gt; Bool
+$c== :: External -&gt; External -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067333"><span id="local-6989586621679067335"><span id="local-6989586621679067341"><span class="annot"><span class="annottext">Int -&gt; External -&gt; ShowS
+[External] -&gt; ShowS
+External -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [External] -&gt; ShowS
+$cshowList :: [External] -&gt; ShowS
+show :: External -&gt; String
+$cshow :: External -&gt; String
+showsPrec :: Int -&gt; External -&gt; ShowS
+$cshowsPrec :: Int -&gt; External -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-65"></span></pre></body></html>

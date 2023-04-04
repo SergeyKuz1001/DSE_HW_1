@@ -1,0 +1,55 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">{- |
+&#1052;&#1086;&#1076;&#1091;&#1083;&#1100; &#1076;&#1083;&#1103; &#1088;&#1072;&#1073;&#1086;&#1090;&#1099; &#1089; &#1082;&#1086;&#1076;&#1086;&#1084; &#1074;&#1086;&#1079;&#1074;&#1088;&#1072;&#1090;&#1072;.
+-}</span><span>
+</span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.ExitCode</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-5"></span><span>    </span><span class="annot"><a href="Data.ExitCode.html#ExitCode"><span class="hs-identifier">ExitCode</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.ExitCode.html#ExitCode"><span class="hs-identifier">ExitCode</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-6"></span><span>    </span><span class="annot"><a href="Data.ExitCode.html#toStandardEC"><span class="hs-identifier">toStandardEC</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-7"></span><span>    </span><span class="annot"><a href="Data.ExitCode.html#fromStandardEC"><span class="hs-identifier">fromStandardEC</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">System.Exit</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">SE</span></span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- | &#1050;&#1086;&#1076; &#1074;&#1086;&#1079;&#1074;&#1088;&#1072;&#1090;&#1072;. 0 &#1086;&#1079;&#1085;&#1072;&#1095;&#1072;&#1077;&#1090; &#1096;&#1090;&#1072;&#1090;&#1085;&#1086;&#1077; &#1079;&#1072;&#1074;&#1077;&#1088;&#1096;&#1077;&#1085;&#1080;&#1077;, &#1085;&#1077; 0 - &#1079;&#1072;&#1074;&#1077;&#1088;&#1096;&#1077;&#1085;&#1080;&#1077; &#1089; &#1086;&#1096;&#1080;&#1073;&#1082;&#1086;&#1081;.</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">newtype</span><span> </span><span id="ExitCode"><span class="annot"><a href="Data.ExitCode.html#ExitCode"><span class="hs-identifier hs-var">ExitCode</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ExitCode"><span class="annot"><a href="Data.ExitCode.html#ExitCode"><span class="hs-identifier hs-var">ExitCode</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-14"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679065589"><span id="local-6989586621679065593"><span class="annot"><span class="annottext">ExitCode -&gt; ExitCode -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: ExitCode -&gt; ExitCode -&gt; Bool
+$c/= :: ExitCode -&gt; ExitCode -&gt; Bool
+== :: ExitCode -&gt; ExitCode -&gt; Bool
+$c== :: ExitCode -&gt; ExitCode -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679065575"><span id="local-6989586621679065577"><span id="local-6989586621679065583"><span class="annot"><span class="annottext">Int -&gt; ExitCode -&gt; ShowS
+[ExitCode] -&gt; ShowS
+ExitCode -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [ExitCode] -&gt; ShowS
+$cshowList :: [ExitCode] -&gt; ShowS
+show :: ExitCode -&gt; String
+$cshow :: ExitCode -&gt; String
+showsPrec :: Int -&gt; ExitCode -&gt; ShowS
+$cshowsPrec :: Int -&gt; ExitCode -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- | &#1060;&#1091;&#1085;&#1082;&#1094;&#1080;&#1103; &#1087;&#1088;&#1077;&#1086;&#1073;&#1088;&#1072;&#1079;&#1086;&#1074;&#1072;&#1085;&#1080;&#1103; &#1085;&#1072;&#1096;&#1077;&#1075;&#1086; &#1082;&#1086;&#1076;&#1072; &#1074;&#1086;&#1079;&#1074;&#1088;&#1072;&#1090;&#1072; &#1074; &#1089;&#1090;&#1072;&#1085;&#1076;&#1072;&#1088;&#1090;&#1085;&#1099;&#1081;.</span><span>
+</span><span id="line-17"></span><span class="annot"><a href="Data.ExitCode.html#toStandardEC"><span class="hs-identifier hs-type">toStandardEC</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.ExitCode.html#ExitCode"><span class="hs-identifier hs-type">ExitCode</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">SE.ExitCode</span></span><span>
+</span><span id="line-18"></span><span id="toStandardEC"><span class="annot"><span class="annottext">toStandardEC :: ExitCode -&gt; ExitCode
+</span><a href="Data.ExitCode.html#toStandardEC"><span class="hs-identifier hs-var hs-var">toStandardEC</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.ExitCode.html#ExitCode"><span class="hs-identifier hs-type">ExitCode</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ExitCode
+</span><span class="hs-identifier hs-var">SE.ExitSuccess</span></span><span>
+</span><span id="line-19"></span><span class="annot"><a href="Data.ExitCode.html#toStandardEC"><span class="hs-identifier hs-var">toStandardEC</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.ExitCode.html#ExitCode"><span class="hs-identifier hs-type">ExitCode</span></a></span><span> </span><span id="local-6989586621679065572"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679065572"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ExitCode
+</span><span class="hs-identifier hs-var">SE.ExitFailure</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679065572"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-comment">-- | &#1060;&#1091;&#1085;&#1082;&#1094;&#1080;&#1103; &#1087;&#1088;&#1077;&#1086;&#1073;&#1088;&#1072;&#1079;&#1086;&#1074;&#1072;&#1085;&#1080;&#1103; &#1089;&#1090;&#1072;&#1085;&#1076;&#1072;&#1088;&#1090;&#1085;&#1086;&#1075;&#1086; &#1082;&#1086;&#1076;&#1072; &#1074;&#1086;&#1079;&#1074;&#1088;&#1072;&#1090;&#1072; &#1074; &#1085;&#1072;&#1096;.</span><span>
+</span><span id="line-22"></span><span class="annot"><a href="Data.ExitCode.html#fromStandardEC"><span class="hs-identifier hs-type">fromStandardEC</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">SE.ExitCode</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.ExitCode.html#ExitCode"><span class="hs-identifier hs-type">ExitCode</span></a></span><span>
+</span><span id="line-23"></span><span id="fromStandardEC"><span class="annot"><span class="annottext">fromStandardEC :: ExitCode -&gt; ExitCode
+</span><a href="Data.ExitCode.html#fromStandardEC"><span class="hs-identifier hs-var hs-var">fromStandardEC</span></a></span></span><span> </span><span class="annot"><span class="annottext">ExitCode
+</span><span class="hs-identifier hs-var">SE.ExitSuccess</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ExitCode
+</span><a href="Data.ExitCode.html#ExitCode"><span class="hs-identifier hs-var">ExitCode</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-24"></span><span class="annot"><a href="Data.ExitCode.html#fromStandardEC"><span class="hs-identifier hs-var">fromStandardEC</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">SE.ExitFailure</span></span><span> </span><span id="local-6989586621679065570"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679065570"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; ExitCode
+</span><a href="Data.ExitCode.html#ExitCode"><span class="hs-identifier hs-var">ExitCode</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679065570"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-25"></span></pre></body></html>

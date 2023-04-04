@@ -8,14 +8,50 @@
 @version 0.1.0.0
 
 
--- | В данном модуле объявлена монада <tt><a>MonadError</a></tt> с
---   основными функциями для простой работы с ней.
-module Environment.MonadError
+-- | Модуль для определения типа стандартной ошибки. Этот тип используется
+--   в качестве ошибки на протяжении всего исполнения программы.
+module Data.Error
 
 -- | Тип стандартной (для нашей системы) ошибки. Хранит стадию, на которой
 --   эта ошибка произошла, а также дополнительную информацию.
 data Error
 Error :: String -> String -> Error
+instance GHC.Classes.Eq Data.Error.Error
+instance GHC.Show.Show Data.Error.Error
+
+
+-- | Модуль для работы с кодом возврата.
+module Data.ExitCode
+
+-- | Код возврата. 0 означает штатное завершение, не 0 - завершение с
+--   ошибкой.
+newtype ExitCode
+ExitCode :: Int -> ExitCode
+
+-- | Функция преобразования нашего кода возврата в стандартный.
+toStandardEC :: ExitCode -> ExitCode
+
+-- | Функция преобразования стандартного кода возврата в наш.
+fromStandardEC :: ExitCode -> ExitCode
+instance GHC.Show.Show Data.ExitCode.ExitCode
+instance GHC.Classes.Eq Data.ExitCode.ExitCode
+
+
+-- | В данном модуле объявлены основные примитивы, в которые транслируется
+--   пользовательский запрос после его парсинга.
+module Data.ParsedPrimitive
+
+-- | Примитив, полученный после парсинга пользовательского запроса.
+data Primitive
+Commands :: [[String]] -> Primitive
+Assignment :: String -> String -> Primitive
+instance GHC.Show.Show Data.ParsedPrimitive.Primitive
+instance GHC.Classes.Eq Data.ParsedPrimitive.Primitive
+
+
+-- | В данном модуле объявлена монада <tt><a>MonadError</a></tt> с
+--   основными функциями для простой работы с ней.
+module Monads.Error
 
 -- | Синоним <tt><a>MonadError</a> <a>Error</a></tt>.
 class MonadError Error m => MonadError m
@@ -37,6 +73,13 @@ infix 0 ?>=
 (@>=) :: MonadError m => m (Maybe a) -> Error -> m a
 infix 0 @>=
 
+-- | Операция для вызова исключения если написанное слева выражение не
+--   является значением, а содержит сообщение об ошибке. Предполагается,
+--   что данный оператор будет работать в основном со значениями в
+--   <tt><a>MonadFail</a></tt>.
+(|>=) :: MonadError m => FailWrapper a -> (String -> Error) -> m a
+infix 0 |>=
+
 -- | Is used within a monadic computation to begin exception processing.
 throwError :: MonadError e m => e -> m a
 
@@ -50,13 +93,93 @@ throwError :: MonadError e m => e -> m a
 --   where the <tt>action</tt> functions can call <a>throwError</a>. Note
 --   that <tt>handler</tt> and the do-block must have the same return type.
 catchError :: MonadError e m => m a -> (e -> m a) -> m a
-instance Environment.MonadError.MonadError (Data.Either.Either Environment.MonadError.Error)
-instance GHC.Show.Show Environment.MonadError.Error
+instance GHC.Base.Monad Monads.Error.FailWrapper
+instance GHC.Base.Applicative Monads.Error.FailWrapper
+instance GHC.Base.Functor Monads.Error.FailWrapper
+instance Control.Monad.Fail.MonadFail Monads.Error.FailWrapper
+instance Monads.Error.MonadError (Data.Either.Either Data.Error.Error)
+
+
+-- | В данном модуле объявлен тип <tt><a>Variable</a></tt> для хранения
+--   имени переменной и вспомогательные функции для работы с ним.
+module Data.Variable
+
+-- | Тип переменной. В нашей программе переменные разделяются на
+--   
+--   <ul>
+--   <li>стабильные — после установки их значения оно не меняется, и</li>
+--   <li>нестабильные — постоянно и/или неконтролируемо изменяется.</li>
+--   </ul>
+--   
+--   На практике обычно применяется то их различие, что стабильные можно
+--   хранить в какой-либо структуре данных, а нестабильные — нельзя.
+data Variable
+Stable :: Stable -> Variable
+Volatile :: Volatile -> Variable
+
+-- | Стабильная переменная может быть специфичной или обычной. Различие
+--   между ними заключается в том, что у обычной переменной имя имеет
+--   строго определённый вид, и этот вид гарантируется отсутствием
+--   конструктора <tt><a>Usual</a></tt> вне этого модуля. Множество же
+--   специфичных переменных строго ограничено.
+data Stable
+Specific :: Specific -> Stable
+
+-- | Нестабильная переменная — это переменная, хранящая дату или время.
+data Volatile
+Date :: Volatile
+Time :: Volatile
+
+-- | Специфичная переменная — это переменная, содержащая код возврата
+--   последнего пользовательского запроса.
+data Specific
+LastExitCode :: Specific
+
+-- | Функция для конструирования значения типа <tt><a>Variable</a></tt>.
+--   При конструировании проверяется соблюдение инварианта для обычной
+--   переменной и в случае его нарушения вызывается ошибка.
+variable :: MonadError m => String -> m Variable
+
+-- | Функция безошибочного чтения имени переменной из строки. Возвращает,
+--   помимо прочитанной переменной, остаток от строки. Возвращает
+--   <tt><a>Nothing</a></tt> в случае невозможности прочтения переменной
+--   (например из-за пустой строки на входе).
+readVariable :: String -> Maybe (Variable, String)
+
+-- | Функция преобразования произвольной переменной в стабильную. Если
+--   данная переменная стабильна, она возвращается в <tt><a>Just</a></tt>,
+--   иначе возвращается <tt><a>Nothing</a></tt>.
+asStable :: Variable -> Maybe Stable
+
+-- | Функция получения имени стабильной переменной. У обычной переменной её
+--   имя хранится в самом типе, а спецефичным будут даны другие имена.
+getVarName :: Stable -> String
+
+-- | Стабильная переменная PATH.
+varPath :: Stable
+
+-- | Стабильная переменная PWD.
+varPwd :: Stable
+
+-- | Стабильная переменная PS1.
+varPs1 :: Stable
+instance GHC.Show.Show Data.Variable.Volatile
+instance GHC.Classes.Ord Data.Variable.Volatile
+instance GHC.Classes.Eq Data.Variable.Volatile
+instance GHC.Show.Show Data.Variable.Specific
+instance GHC.Classes.Ord Data.Variable.Specific
+instance GHC.Classes.Eq Data.Variable.Specific
+instance GHC.Show.Show Data.Variable.Stable
+instance GHC.Classes.Ord Data.Variable.Stable
+instance GHC.Classes.Eq Data.Variable.Stable
+instance GHC.Show.Show Data.Variable.Variable
+instance GHC.Classes.Ord Data.Variable.Variable
+instance GHC.Classes.Eq Data.Variable.Variable
 
 
 -- | В данном модуле объявлены основные примитивы для платформонезависимой
 --   работы с файловой системой.
-module Environment.FSPrimitive
+module Data.FSObjects
 
 -- | Абсолютный путь к файлу. Главный инвариант этого типа — абсолютность
 --   пути, однако довольно часто можно утверждать, что это корректный путь
@@ -90,31 +213,349 @@ data File
 File :: AbsFilePath -> Permissions -> File
 [filePath] :: File -> AbsFilePath
 [permissions] :: File -> Permissions
-instance GHC.Classes.Ord Environment.FSPrimitive.AbsFilePath
-instance GHC.Classes.Eq Environment.FSPrimitive.AbsFilePath
-instance GHC.Show.Show Environment.FSPrimitive.AbsFilePath
+instance GHC.Classes.Ord Data.FSObjects.AbsFilePath
+instance GHC.Classes.Eq Data.FSObjects.AbsFilePath
+instance GHC.Show.Show Data.FSObjects.AbsFilePath
+
+
+-- | В этом модуле определены типы потоков ввода и вывода.
+module Data.Handles
+
+-- | Тип типа потока ввода. Ввод бывает
+--   
+--   <ul>
+--   <li>из потока, предоставляемого предыдущей командой;</li>
+--   <li>из файла;</li>
+--   <li>из строки.</li>
+--   </ul>
+--   
+--   Заметим, что ввод из стандартного потока ввода мы считаем частным
+--   случаем ввода из потока, предоставляемого предыдущей командой.
+data InputHandle
+FromParentHandle :: InputHandle
+FromFile :: AbsFilePath -> InputHandle
+FromString :: Text -> InputHandle
+
+-- | Тип типа потока вывода. Вывод бывает
+--   
+--   <ul>
+--   <li>в новый pipe;</li>
+--   <li>в стандартный поток вывода;</li>
+--   <li>вникуда (аналог <tt><i>dev</i>null</tt>).</li>
+--   </ul>
+data OutputHandle
+ToNewPipe :: OutputHandle
+ToStdout :: OutputHandle
+ToNowhere :: OutputHandle
+instance GHC.Show.Show Data.Handles.InputHandle
+instance GHC.Classes.Eq Data.Handles.InputHandle
+instance GHC.Show.Show Data.Handles.OutputHandle
+instance GHC.Classes.Eq Data.Handles.OutputHandle
+
+
+-- | В данном модуле объявлена монада <tt><a>MonadExit</a></tt>,
+--   предоставляющая возможность выхода из данной программы.
+module Monads.Exit
+
+-- | Монада для выхода из программы с указанным кодом возврата.
+class Monad m => MonadExit m
+exit :: MonadExit m => ExitCode -> m ()
+
+
+-- | В данном модуле объявлена монада <tt><a>MonadIO</a></tt> для работы с
+--   потоками ввода/вывода.
+module Monads.IO
+
+-- | Монада для работы с потоками ввода/вывода.
+class Monad m => MonadIO m
+
+-- | Запись строки в поток вывода.
+putStr :: MonadIO m => String -> m ()
+
+-- | Чтение строки из потока ввода. Возвращает Nothing если достигнут конец
+--   ввода (EOF).
+getLine :: MonadIO m => m (Maybe String)
+
+-- | Запись строки в поток вывода и перевод строки.
+putStrLn :: MonadIO m => String -> m ()
+
+-- | Запись объекта в виде строки в поток вывода.
+print :: (MonadIO m, Show a) => a -> m ()
+
+
+-- | В данном модуле объявлена монада <tt><a>MonadPM</a></tt> для
+--   платформонезависимой работы с процессами (запуск и остановка) и
+--   логическими потоками ввода/вывода (определение потока по умолчанию и
+--   преобразование данных в потоке).
+module Monads.PM
+class Monad m => MonadPM m where {
+    
+    -- | Логический поток, хранит вывод команд.
+    type Stream m :: Type;
+    
+    -- | <a>Ссылка</a> на запущенный процесс.
+    type Process m :: Type;
+}
+
+-- | Функция получения потока по умолчанию (предполагается, что это поток с
+--   вводом пользователя).
+getDefaultStream :: MonadPM m => m (Stream m)
+
+-- | Преобразование данных в потоке с помощью функции.
+applyFuncToStream :: MonadPM m => (Text -> m Text) -> InputHandle -> OutputHandle -> Stream m -> m (Stream m)
+
+-- | Запуск процесса по абсолютному пути до исполняемого файла с заданными
+--   аргументами, переменными окружения, типами потоков ввода/вывода, а
+--   также с логическим потоком, хранящим вывод предыдущей команды.
+--   Возвращает "ссылку" на запущенный процесс и логический поток с
+--   выводом.
+createProcess :: MonadPM m => AbsFilePath -> [String] -> InputHandle -> OutputHandle -> [(Stable, String)] -> Stream m -> m (Process m, Stream m)
+
+-- | Ожидание завершения процесса. Возвращает код ошибки.
+waitForProcess :: MonadPM m => Process m -> m ExitCode
+
+-- | Немедленное уничтожение процесса.
+terminateProcess :: MonadPM m => Process m -> m ()
+
+
+-- | В данном модуле объявлена монада <tt><a>MonadPathReader</a></tt> для
+--   получения значения переменной PATH.
+module Monads.PathReader
+
+-- | Монада для получения списка путей к директориям с исполняемыми
+--   файлами, хранящегося в переменной PATH.
+class Monad m => MonadPathReader m
+getVarPath :: MonadPathReader m => m [AbsFilePath]
+
+-- | The character that separates directories. In the case where more than
+--   one character is possible, <a>pathSeparator</a> is the 'ideal' one.
+--   
+--   <pre>
+--   Windows: pathSeparator == '\\'
+--   Posix:   pathSeparator ==  '/'
+--   isPathSeparator pathSeparator
+--   </pre>
+pathSeparator :: Char
+
+-- | Разделитель путей, записанных в переменной PATH.
+--   
+--   <pre>
+--   (on Linux) varPathSeparator == ':'
+--   (on Windows) varPathSeparator == ';'
+--   </pre>
+varPathSeparator :: Char
+
+-- | Парсер исходного значения переменной PATH в список абсолютных путей.
+parseVarPath :: MonadError m => String -> m [AbsFilePath]
+
+
+-- | В данном модуле объявлена монада <tt><a>MonadPathWriter</a></tt> для
+--   записи значения переменной PATH.
+module Monads.PathWriter
+
+-- | Монада для записи списка абсолютных путей в переменную PATH.
+class Monad m => MonadPathWriter m
+setVarPath :: MonadPathWriter m => [AbsFilePath] -> m ()
+
+-- | Функция преобразования списка путей в строку, которая будет являться
+--   корректным значением переменной PATH.
+formatVarPath :: [AbsFilePath] -> String
+
+
+-- | В данном модуле объявлена монада <tt><a>MonadPwdReader</a></tt> для
+--   получения значения переменной PWD.
+module Monads.PwdReader
+
+-- | Монада для получения значения переменной PWD (то есть абсолютного пути
+--   до текущей директории).
+class Monad m => MonadPwdReader m
+getVarPwd :: MonadPwdReader m => m AbsFilePath
+
+
+-- | В данном модуле объявлена монада <tt><a>MonadFS</a></tt> для
+--   платформонезависимой работы с файловой системой.
+module Monads.FS
+
+-- | Монада для поиска файлов в файловой системе.
+class Monad m => MonadFS m
+
+-- | Поиск файла по абсолютному пути.
+findFileByAbsPath :: MonadFS m => AbsFilePath -> m (Maybe File)
+
+-- | Поиск файла в текущей директории (если указан относительный путь) или
+--   в корневой директории (если указан абсолютный).
+findFile :: (MonadFS m, MonadPwdReader m) => FilePath -> m (Maybe File)
+
+-- | Поиск файла, аналогичный <tt><a>findFile</a></tt>, но с использованием
+--   переменной PATH (через монаду <tt><tt>MonadVarPathReader</tt></tt>)
+--   если указано только имя файла.
+findFileAsExecutable :: (MonadFS m, MonadPwdReader m, MonadPathReader m) => FilePath -> m (Maybe File)
+
+-- | Проверка на то, что файл по этому пути (абсолютному или
+--   относительному) существует. Если файл существует, то возвращается
+--   абсолютный путь до него.
+doesFileExist :: (MonadFS m, MonadPwdReader m) => FilePath -> m (Maybe AbsFilePath)
+
+-- | Аналогично <tt><a>doesFileExist</a></tt>, но при этом происходит поиск
+--   с использованием переменной PATH и проверка, что найденный файл может
+--   быть выполнен.
+doesExecutableExist :: (MonadFS m, MonadPwdReader m, MonadPathReader m) => FilePath -> m (Maybe AbsFilePath)
+
+-- | Проверка на то, что файл может быть прочитан. Возвращает
+--   <tt>False</tt> если файл не существует.
+isReadable :: MonadFS m => AbsFilePath -> m Bool
+
+-- | Проверка на то, что файл может быть перезаписан. Возвращает
+--   <tt>False</tt> если файл не существует.
+isWritable :: MonadFS m => AbsFilePath -> m Bool
+
+-- | Проверка на то, что файл может быть выполнен. Возвращает
+--   <tt>False</tt> если файл не существует.
+isExecutable :: MonadFS m => AbsFilePath -> m Bool
+
+
+-- | В данном модуле объявлена монада <tt><tt>MonadPwdReader</tt></tt> для
+--   записи значения переменной PWD.
+module Monads.PwdWriter
+
+-- | Монада для записи абсолютного пути до директории в переменную PWD.
+class Monad m => MonadPwdWriter m
+setVarPwd :: MonadPwdWriter m => AbsFilePath -> m ()
+
+module Monads.SelfReferenced
+class MonadFS m => MonadSelfReferenced m
+getSelfPath :: MonadSelfReferenced m => m AbsFilePath
+
+
+-- | В данном модуле объявлена монада <tt><a>MonadVarReader</a></tt> для
+--   получения значений переменных.
+module Monads.VarReader
+
+-- | Монада для получения значений переменных.
+class (MonadPathReader m, MonadPwdReader m) => MonadVarReader m
+
+-- | Получение значения переменной по имени. Если переменной с таким именем
+--   нет, то необходимо вернуть пустую строку.
+getVar :: MonadVarReader m => Variable -> m String
+
+-- | Получение значений всех стабильных переменных в виде списка пар (имя,
+--   значение).
+getVars :: MonadVarReader m => m [(Stable, String)]
+
+-- | Функция <tt><a>getVarPath</a></tt>, выраженная через функции монады
+--   <tt><a>MonadVarReader</a></tt>.
+getVarPathDefault :: (MonadVarReader m, MonadError m) => m [AbsFilePath]
+
+-- | Функция <tt><a>getVarPwd</a></tt>, выраженная через функции монады
+--   <tt><a>MonadVarReader</a></tt>.
+getVarPwdDefault :: (MonadVarReader m, MonadError m) => m AbsFilePath
+
+
+-- | Модуль для вывода отладочной информации.
+module Data.DebugInfo
+
+-- | Тип стандартного отладочного сообщения. Состоит из стадии (про что это
+--   информация) и само отладочное сообщение.
+data DebugInfo
+DebugInfo :: String -> String -> DebugInfo
+
+-- | Функция печати отладочной информации. Принимает тип (стадию) отладки,
+--   код (об этом чуть ниже) и тот объект, который необходимо вывести в
+--   качестве отладочной информации. Предполагается, что эта функция будет
+--   использоваться внутри конвейера различных преобразований, поэтому она
+--   возвращает последний элемент, упакованный в монаду.
+--   
+--   Определение того, нужно ли выводить отладочную информацию или нет,
+--   происходит через переменную <tt>DEBUG_OPTIONS</tt>. Если эта
+--   переменная содержит код типа отладки в своём значении, то происходит
+--   печать отладочной информации.
+debugIfNecessary :: (MonadVarReader m, MonadError m, MonadIO m, Show a) => String -> Char -> a -> m a
+instance GHC.Classes.Eq Data.DebugInfo.DebugInfo
+instance GHC.Show.Show Data.DebugInfo.DebugInfo
+
+
+-- | В данном модуле объявлена монада <tt><a>MonadVarWriter</a></tt> для
+--   записи значений переменных.
+module Monads.VarWriter
+
+-- | Монада для записи значений переменных.
+class (MonadPathWriter m, MonadPwdWriter m) => MonadVarWriter m
+
+-- | Запись значения стабильной переменной.
+setVar :: MonadVarWriter m => Stable -> String -> m ()
+
+-- | Функция <tt><a>setVarPath</a></tt>, выраженная через функции монады
+--   <tt><a>MonadVarWriter</a></tt>.
+setVarPathDefault :: MonadVarWriter m => [AbsFilePath] -> m ()
+
+-- | Функция <tt><a>setVarPwd</a></tt>, выраженная через функции монады
+--   <tt><a>MonadVarWriter</a></tt>.
+setVarPwdDefault :: MonadVarWriter m => AbsFilePath -> m ()
+
+module Phases.Analyzer.Common
+
+-- | Функция получения объекта-ошибки по информации об ошибке.
+toError :: String -> Error
+
+-- | Поиск файла по пути, а также проверка наличия разрешения на чтение.
+findReadable :: (MonadError m, MonadFS m, MonadPwdReader m) => FilePath -> m AbsFilePath
+
+-- | Функция проверки количества аргументов (0 или 1).
+checkOptionalArg :: MonadError m => String -> [String] -> m (Maybe String)
+
+-- | Функция проверки количества аргументов (1).
+checkRequiredArg :: MonadError m => String -> [String] -> m String
+
+-- | Функция проверки количества аргументов (0).
+checkNoneArg :: MonadError m => String -> [String] -> m ()
+
+module Phases.Analyzer.Internal.Grep
+
+-- | Конфигурация команды <tt>grep</tt>.
+data GrepArgs
+GrepArgs :: Bool -> Int -> (String, Regex) -> Maybe AbsFilePath -> GrepArgs
+[isColorized] :: GrepArgs -> Bool
+[lineCount] :: GrepArgs -> Int
+[regex] :: GrepArgs -> (String, Regex)
+[inputFile] :: GrepArgs -> Maybe AbsFilePath
+grepRegex :: MonadError m => Bool -> Bool -> String -> m (String, Regex)
+
+-- | Функция парсинга аргументов командной строки в конфигурацию.
+grep :: (MonadError m, MonadFS m, MonadPwdReader m) => [String] -> m GrepArgs
+instance GHC.Show.Show Phases.Analyzer.Internal.Grep.GrepArgsRaw
+instance GHC.Classes.Eq Phases.Analyzer.Internal.Grep.GrepArgsRaw
+instance GHC.Classes.Eq Phases.Analyzer.Internal.Grep.GrepArgs
+instance GHC.Show.Show Phases.Analyzer.Internal.Grep.GrepArgs
 
 
 -- | В данном модуле объявлены примитивы, в которые транслируется
 --   пользовательский запрос после этапа анализа.
-module Data.ImprovedPrimitive
+module Data.AnalyzedPrimitive
 
--- | Примитив является командой (пустой или нет).
+-- | Примитив — это
+--   
+--   <ul>
+--   <li>специальная команда (<tt>exit</tt> или <tt>cd</tt>),</li>
+--   <li>непустой набор обычных команд, разделённых pipeами,</li>
+--   <li>присваивание стабильной переменной или</li>
+--   <li>пустая команда.</li>
+--   </ul>
 data Primitive
-Command :: Command -> Primitive
-EmptyCommand :: Primitive
+Special :: Special -> Primitive
+Commons :: NonEmpty Common -> Primitive
+Assignment :: Stable -> String -> Primitive
+Empty :: Primitive
 
--- | Команда — это объект, который может быть выполнен. Команда может быть
---   либо специальной (влиять на работу оболочки), либо обычной.
-data Command
-Special :: Special -> Command
-Common :: Common -> Command
-
--- | Специальная команда влияет на работу оболочки. Таковой командой
---   является только команда <tt>exit</tt>, которая принимает опциональным
---   параметром код возврата из оболочки.
+-- | Специальная команда влияет на работу оболочки и может быть
+--   
+--   <ul>
+--   <li><tt>exit</tt> — завершение работы оболочки с кодом возврата,
+--   принимаемым опциональным параметром</li>
+--   <li><tt>cd</tt> — смена текущей директории</li>
+--   </ul>
 data Special
-Exit :: Maybe Int -> Special
+Exit :: Maybe ExitCode -> Special
+Cd :: FilePath -> Special
 
 -- | Обычная команда имеет потоки ввода, вывода и поток ошибок. Может быть
 --   либо внутренней (исполняется самой командной оболочкой), либо внешней.
@@ -131,262 +572,34 @@ External :: External -> Common
 --   <li><tt>pwd</tt> — имя текущей директории.</li>
 --   </ul>
 data Internal
-Cat :: AbsFilePath -> Internal
+Cat :: Maybe AbsFilePath -> Internal
 Echo :: [String] -> Internal
-Wc :: AbsFilePath -> Internal
+Wc :: Maybe AbsFilePath -> Internal
 Pwd :: Internal
+Grep :: GrepArgs -> Internal
 
 -- | Внешняя команда вызывается по пути к исполняемому файлу с указанными
 --   аргументами.
 data External
 Arguments :: AbsFilePath -> [String] -> External
-instance GHC.Show.Show Data.ImprovedPrimitive.Special
-instance GHC.Classes.Eq Data.ImprovedPrimitive.Special
-instance GHC.Show.Show Data.ImprovedPrimitive.Internal
-instance GHC.Classes.Eq Data.ImprovedPrimitive.Internal
-instance GHC.Show.Show Data.ImprovedPrimitive.External
-instance GHC.Classes.Eq Data.ImprovedPrimitive.External
-instance GHC.Show.Show Data.ImprovedPrimitive.Common
-instance GHC.Classes.Eq Data.ImprovedPrimitive.Common
-instance GHC.Show.Show Data.ImprovedPrimitive.Command
-instance GHC.Classes.Eq Data.ImprovedPrimitive.Command
-instance GHC.Show.Show Data.ImprovedPrimitive.Primitive
-instance GHC.Classes.Eq Data.ImprovedPrimitive.Primitive
 
-
--- | В данном модуле объявлен тип <tt><a>VarName</a></tt> для хранения
---   имени переменной и вспомогательные функции для работы с ним.
-module Data.VarName
-
--- | Имя переменной среды. Тип необходим для поддержания инварианта того,
---   что хранящаяся строка является корректным именем переменной.
-data VarName
-
--- | Функция для конструирования значения типа <tt><a>VarName</a></tt>. При
---   конструировании проверяет соблюдение инварианта, и в случае его
---   нарушения вызывает ошибку.
-varName :: MonadError m => String -> m VarName
-addChar :: MonadError m => Char -> VarName -> m VarName
-instance GHC.Classes.Ord Data.VarName.VarName
-instance GHC.Classes.Eq Data.VarName.VarName
-instance GHC.Show.Show Data.VarName.VarName
-
-
--- | В данном модуле объявлены основные примитивы, в которые транслируется
---   пользовательский запрос после его парсинга.
-module Data.Primitive
-
--- | Примитив, полученный после парсинга пользовательского запроса.
-data Primitive
-Command :: [String] -> Primitive
-Assignment :: VarName -> String -> Primitive
-instance GHC.Show.Show Data.Primitive.Primitive
-instance GHC.Classes.Eq Data.Primitive.Primitive
-
-
--- | В данном модуле объявлена монада <tt><a>MonadExit</a></tt>,
---   предоставляющая возможность выхода из данной программы.
-module Environment.MonadExit
-
--- | Код возврата (как в POSIX).
-type ExitCode = Int
-
--- | Монада для выхода из программы с указанным кодом возврата.
-class Monad m => MonadExit m
-exit :: MonadExit m => ExitCode -> m ()
-
-
--- | В данном модуле объявлена монада <tt><a>MonadIO</a></tt> для работы с
---   потоками ввода/вывода.
-module Environment.MonadIO
-
--- | Монада для работы с потоками ввода/вывода.
-class Monad m => MonadIO m
-
--- | Запись строки в поток вывода.
-putStr :: MonadIO m => String -> m ()
-
--- | Чтение строки из потока ввода. Возвращает Nothing если достигнут конец
---   ввода (EOF).
-getLine :: MonadIO m => m (Maybe String)
-
--- | Чтение файла
-readFile :: MonadIO m => AbsFilePath -> m String
-
--- | Чтение файла бинарно.
-readFileFromBytes :: MonadIO m => AbsFilePath -> m ByteString
-
--- | Создание и исполнение исполняемого файла с данными аргументами и
---   переменными. Возвращает код возврата процесса.
-createProcess :: MonadIO m => AbsFilePath -> [String] -> [(VarName, String)] -> m ExitCode
-
--- | Запись строки в поток вывода и перевод строки.
-putStrLn :: MonadIO m => String -> m ()
-
--- | Запись объекта в виде строки в поток вывода.
-print :: (MonadIO m, Show a) => a -> m ()
-
-
--- | В данном модуле объявлена монада <tt><a>MonadVarPathReader</a></tt>
---   для получения значения переменной PATH.
-module Environment.MonadVarPathReader
-
--- | Монада для получения списка путей к директориям с исполняемыми
---   файлами, хранящегося в переменной PATH.
-class Monad m => MonadVarPathReader m
-getVarPath :: MonadVarPathReader m => m [AbsFilePath]
-
--- | Разделитель путей, записанных в переменной PATH.
---   
---   <pre>
---   (on Linux) varPathSeparator == ':'
---   (on Windows) varPathSeparator == ';'
---   </pre>
-varPathSeparator :: Char
-
--- | Парсер исходного значения переменной PATH в список абсолютных путей.
-parseVarPath :: MonadError m => String -> m [AbsFilePath]
-
-
--- | В данном модуле объявлена монада <tt><a>MonadVarPathWriter</a></tt>
---   для записи значения переменной PATH.
-module Environment.MonadVarPathWriter
-
--- | Монада для записи списка абсолютных путей в переменную PATH.
-class Monad m => MonadVarPathWriter m
-setVarPath :: MonadVarPathWriter m => [AbsFilePath] -> m ()
-
--- | Функция преобразования списка путей в строку, которая будет являться
---   корректным значением переменной PATH.
-formatVarPath :: [AbsFilePath] -> String
-
-
--- | В данном модуле объявлена монада <tt><a>MonadVarPwdReader</a></tt> для
---   получения значения переменной PWD.
-module Environment.MonadVarPwdReader
-
--- | Монада для получения значения переменной PWD (то есть абсолютного пути
---   до текущей директории).
-class Monad m => MonadVarPwdReader m
-getVarPwd :: MonadVarPwdReader m => m AbsFilePath
-
-
--- | В данном модуле объявлена монада <tt><a>MonadFS</a></tt> для
---   платформонезависимой работы с файловой системой.
-module Environment.MonadFS
-
--- | Монада для поиска файлов в файловой системе.
-class Monad m => MonadFS m
-
--- | Поиск файла по абсолютному пути.
-findFileByAbsPath :: MonadFS m => AbsFilePath -> m (Maybe File)
-
--- | Поиск файла в текущей директории (если указан относительный путь) или
---   в корневой директории (если указан абсолютный).
-findFile :: (MonadFS m, MonadVarPwdReader m) => FilePath -> m (Maybe File)
-
--- | Поиск файла, аналогичный <tt><a>findFile</a></tt>, но с использованием
---   переменной PATH (через монаду <tt><a>MonadVarPathReader</a></tt>) если
---   указано только имя файла.
-findFileAsExecutable :: (MonadFS m, MonadVarPwdReader m, MonadVarPathReader m) => FilePath -> m (Maybe File)
-
--- | Проверка на то, что файл по этому пути (абсолютному или
---   относительному) существует. Если файл существует, то возвращается
---   абсолютный путь до него.
-doesFileExist :: (MonadFS m, MonadVarPwdReader m) => FilePath -> m (Maybe AbsFilePath)
-
--- | Аналогично <tt><a>doesFileExist</a></tt>, но при этом происходит поиск
---   с использованием переменной PATH и проверка, что найденный файл может
---   быть выполнен.
-doesExecutableExist :: (MonadFS m, MonadVarPwdReader m, MonadVarPathReader m) => FilePath -> m (Maybe AbsFilePath)
-
--- | Проверка на то, что файл может быть прочитан. Возвращает
---   <tt>False</tt> если файл не существует.
-isReadable :: MonadFS m => AbsFilePath -> m Bool
-
--- | Проверка на то, что файл может быть перезаписан. Возвращает
---   <tt>False</tt> если файл не существует.
-isWritable :: MonadFS m => AbsFilePath -> m Bool
-
--- | Проверка на то, что файл может быть выполнен. Возвращает
---   <tt>False</tt> если файл не существует.
-isExecutable :: MonadFS m => AbsFilePath -> m Bool
-
-
--- | В данном модуле объявлена монада <tt><tt>MonadVarPwdReader</tt></tt>
---   для записи значения переменной PWD.
-module Environment.MonadVarPwdWriter
-
--- | Монада для записи абсолютного пути до директории в переменную PWD.
-class Monad m => MonadVarPwdWriter m
-setVarPwd :: MonadVarPwdWriter m => AbsFilePath -> m ()
-
-
--- | В данном модуле объявлена монада <tt><a>MonadVarsReader</a></tt> для
---   получения значений переменных.
-module Environment.MonadVarsReader
-
--- | Монада для получения значений переменных.
-class (MonadVarPathReader m, MonadVarPwdReader m) => MonadVarsReader m
-
--- | Получение значения переменной по имени. Если переменной с таким именем
---   нет, то необходимо вернуть пустую строку.
-getVar :: MonadVarsReader m => VarName -> m String
-
--- | Получение значений всех объявленных переменных в виде списка пар (имя,
---   значение).
-getVars :: MonadVarsReader m => m [(VarName, String)]
-
--- | Функция <tt><a>getVarPath</a></tt>, выраженная через функции монады
---   <tt><a>MonadVarsReader</a></tt>.
-getVarPathDefault :: (MonadVarsReader m, MonadError m) => m [AbsFilePath]
-
--- | Функция <tt><a>getVarPwd</a></tt>, выраженная через функции монады
---   <tt><a>MonadVarsReader</a></tt>.
-getVarPwdDefault :: (MonadVarsReader m, MonadError m) => m AbsFilePath
-
-
--- | В данном модуле объявлен тип <tt><a>Environment</a></tt> как главный
---   контекст, в котором будут происходить все основные действия данной
---   программы.
-module Environment
-
--- | Главный контекст для вычислений в программе.
-data Environment a
-
--- | Функция для запуска вычислений.
-runEnvironment :: Environment a -> IO a
-instance Control.Monad.IO.Class.MonadIO Environment.Environment
-instance Environment.MonadError.MonadError Environment.Environment
-instance Control.Monad.Error.Class.MonadError Environment.MonadError.Error Environment.Environment
-instance GHC.Base.Monad Environment.Environment
-instance GHC.Base.Applicative Environment.Environment
-instance GHC.Base.Functor Environment.Environment
-instance Environment.MonadIO.MonadIO Environment.Environment
-instance Environment.MonadVarPathReader.MonadVarPathReader Environment.Environment
-instance Environment.MonadVarPwdReader.MonadVarPwdReader Environment.Environment
-instance Environment.MonadVarsReader.MonadVarsReader Environment.Environment
-instance Environment.MonadFS.MonadFS Environment.Environment
-instance Environment.MonadExit.MonadExit Environment.Environment
-
-
--- | В данном модуле объявлена монада <tt><a>MonadVarsWriter</a></tt> для
---   записи значений переменных.
-module Environment.MonadVarsWriter
-
--- | Монада для записи значений переменных.
-class (MonadVarPathWriter m, MonadVarPwdWriter m) => MonadVarsWriter m
-
--- | Запись значения переменной по её имени.
-setVar :: MonadVarsWriter m => VarName -> String -> m ()
-
--- | Функция <tt><a>setVarPath</a></tt>, выраженная через функции монады
---   <tt><a>MonadVarsWriter</a></tt>.
-setVarPathDefault :: (MonadVarsWriter m, MonadError m) => [AbsFilePath] -> m ()
-
--- | Функция <tt><a>setVarPwd</a></tt>, выраженная через функции монады
---   <tt><a>MonadVarsWriter</a></tt>.
-setVarPwdDefault :: (MonadVarsWriter m, MonadError m) => AbsFilePath -> m ()
+-- | Конфигурация команды <tt>grep</tt>.
+data GrepArgs
+GrepArgs :: Bool -> Int -> (String, Regex) -> Maybe AbsFilePath -> GrepArgs
+[isColorized] :: GrepArgs -> Bool
+[lineCount] :: GrepArgs -> Int
+[regex] :: GrepArgs -> (String, Regex)
+[inputFile] :: GrepArgs -> Maybe AbsFilePath
+instance GHC.Show.Show Data.AnalyzedPrimitive.Special
+instance GHC.Classes.Eq Data.AnalyzedPrimitive.Special
+instance GHC.Show.Show Data.AnalyzedPrimitive.Internal
+instance GHC.Classes.Eq Data.AnalyzedPrimitive.Internal
+instance GHC.Show.Show Data.AnalyzedPrimitive.External
+instance GHC.Classes.Eq Data.AnalyzedPrimitive.External
+instance GHC.Show.Show Data.AnalyzedPrimitive.Common
+instance GHC.Classes.Eq Data.AnalyzedPrimitive.Common
+instance GHC.Show.Show Data.AnalyzedPrimitive.Primitive
+instance GHC.Classes.Eq Data.AnalyzedPrimitive.Primitive
 
 
 -- | Модуль предназначен для анализа корректности пользовательского запроса
@@ -394,47 +607,193 @@ setVarPwdDefault :: (MonadVarsWriter m, MonadError m) => AbsFilePath -> m ()
 module Phases.Analyzer
 
 -- | Анализ корректности и преобразование пользовательского запроса.
-analyzer :: (MonadError m, MonadFS m, MonadVarPwdReader m, MonadVarPathReader m) => Primitive -> m Primitive
+analyzer :: (MonadError m, MonadFS m, MonadPwdReader m, MonadPathReader m) => Primitive -> m Primitive
+
+
+-- | В данном модуле объявлены примитивы, в которые транслируется
+--   пользовательский запрос после линковки.
+module Data.LinkedPrimitive
+
+-- | Примитив — это
+--   
+--   <ul>
+--   <li>специальная команда,</li>
+--   <li>присваивание стабильной переменной или</li>
+--   <li>набор обычных команд с заданными типами потоков ввода и
+--   вывода.</li>
+--   </ul>
+data Primitive
+Special :: Special -> Primitive
+Assignment :: Stable -> String -> Primitive
+Commons :: [CommonWithHandles] -> Primitive
+
+-- | Специальная команда влияет на работу оболочки и может быть
+--   
+--   <ul>
+--   <li><tt>exit</tt> — завершение работы оболочки с кодом возврата,
+--   принимаемым опциональным параметром</li>
+--   <li><tt>cd</tt> — смена текущей директории</li>
+--   </ul>
+data Special
+Exit :: Maybe ExitCode -> Special
+Cd :: FilePath -> Special
+
+-- | Обычная команда с заданными типами потоков ввода и вывода.
+type CommonWithHandles = (Common, InputHandle, OutputHandle)
+
+-- | Обычная команда, может быть внутренней или внешней.
+data Common
+External :: External -> Common
+Internal :: Internal -> Common
+
+-- | Внутренняя команда, представляется либо в виде чистой функции над
+--   текстом с её названием, либо в виде нечистой команды.
+--   
+--   Название в чистой функции необходимо для сравнения двух функций.
+--   Обычно выполняется инвариант, что две команды с одинковым названием
+--   имеют эквивалентные функции, но этот инвариант никак не гарантируется.
+data Internal
+Pure :: String -> (Text -> Text) -> Internal
+Impure :: Impure -> Internal
+
+-- | Внешняя команда вызывается по пути к исполняемому файлу с указанными
+--   аргументами.
+data External
+Arguments :: AbsFilePath -> [String] -> External
+
+-- | Внутренняя нечистая команда, пока ею является только <tt>pwd</tt>
+--   (требует доступ к классу <tt><tt>MonadPwdReader</tt></tt>).
+--   
+--   Важно: пока предполагается, что любая нечистая команда не модифицирует
+--   реальное окружение (не изменяет файлы, не делает что-либо на удалённом
+--   сервере и т. д.), это используется как один из неявных инвариантов в
+--   работе <tt><tt>linker</tt></tt>.
+data Impure
+Pwd :: Impure
+instance GHC.Show.Show Data.LinkedPrimitive.Impure
+instance GHC.Classes.Eq Data.LinkedPrimitive.Impure
+instance GHC.Show.Show Data.LinkedPrimitive.Common
+instance GHC.Classes.Eq Data.LinkedPrimitive.Common
+instance GHC.Show.Show Data.LinkedPrimitive.Primitive
+instance GHC.Classes.Eq Data.LinkedPrimitive.Primitive
+instance GHC.Classes.Eq Data.LinkedPrimitive.Internal
+instance GHC.Show.Show Data.LinkedPrimitive.Internal
+
+
+-- | Модуль с внутренней нечистой командой <tt>pwd</tt>.
+module Phases.Executor.Impure.Pwd
+
+-- | Команда <tt>pwd</tt> принимает текст, игнорирует его и возвращает путь
+--   до текущей директории в виде текста.
+pwd :: MonadPwdReader m => Text -> m Text
+
+module Phases.Executor.Impure
 
 
 -- | Модуль для выполнения команд.
 module Phases.Executor
 
--- | Функция принимает, разбирает и исполняет распарсшенный примитив.
-executor :: (MonadIO m, MonadExit m, MonadVarsReader m) => Primitive -> m ()
+-- | Функция для исполнения примитива. Исполняет список команд "почти"
+--   параллельно, а именно подряд идущие внешние команды выполняются
+--   параллельно, а внутренние - последовательно. Такое поведение вызвано
+--   ограничениями реальной реализации.
+executor :: (MonadPM m, MonadExit m, MonadVarWriter m, MonadVarReader m) => Primitive -> m ()
+
+
+-- | Модуль с внутренней чистой командой <tt>cat</tt>.
+module Phases.Linker.Pure.Cat
+
+-- | Команда <tt>cat</tt> принимает текст на вход и возвращает его.
+cat :: Text -> Text
+
+
+-- | Модуль с внутренней чистой командой <tt>echo</tt>.
+module Phases.Linker.Pure.Echo
+
+-- | Команда <tt>echo</tt> принимает набор строк-аргументов и возвращает их
+--   запись через пробел.
+echo :: [String] -> Text
+
+
+-- | Модуль с внутренней чистой командой <tt>grep</tt>.
+module Phases.Linker.Pure.Grep
+
+-- | Команда <tt>grep</tt> принимает текст и регулярное выражение по
+--   которому возвращает отфильтрованный текст.
+grep :: GrepArgs -> Text -> Text
+
+
+-- | Модуль с внутренней чистой командой <tt>wc</tt>.
+module Phases.Linker.Pure.Wc
+
+-- | Команда <tt>wc</tt> принимает текст и возвращает его статистику (тоже
+--   в виде текста).
+wc :: Text -> Text
+
+module Phases.Linker.Pure
+
+
+-- | Модуль для связывания команд, написанных через pipes.
+module Phases.Linker
+
+-- | Функция для связывания команд, написанных через pipes. Работает только
+--   с последовательностями команд, остальные типы пользовательских
+--   запросов возвращаются без изменений.
+--   
+--   Под "связыванием" команд здесь понимается определение типов потоков
+--   ввода и вывода для каждой команды, а также некоторая оптимизация плана
+--   исполнения пользовательского запроса.
+linker :: MonadSelfReferenced m => Primitive -> m Primitive
 
 
 -- | Модуль для парсинга пользовательского запроса.
+--   
+--   Весь этот модуль выглядел бы куда красивее на парсер-комбинаторах, но
+--   их использовать явно запрещено в задании.
 module Phases.Parser
 
 -- | Функция для разбора строки после подстановки переменных. Выделяет либо
---   команду с аргументами, либо пустую команду (пустая строка или строка
---   только из пробелов), либо присваивание переменной. Кидает исключение,
---   если строка имеет некорректный синтаксис.
+--   конвейер команд, либо пустую команду (пустая строка или строка только
+--   из пробелов), либо присваивание переменной. Кидает исключение, если
+--   строка имеет некорректный синтаксис.
 parser :: MonadError m => String -> m Primitive
+instance GHC.Show.Show Phases.Parser.Primitive
+instance GHC.Classes.Eq Phases.Parser.Primitive
 
 
--- | Модуль предназначен для чтения пользовательского ввода (запроса).
-module Phases.StringReader
+-- | Модуль для чтения пользовательского запроса.
+module Phases.Reader
 
--- | Чтение пользовательского запроса.
-stringReader :: MonadIO m => m String
+-- | Чтение пользовательского запроса. При конце потока ввода передаёт
+--   дальше команду <tt>exit</tt>.
+reader :: (MonadIO m, MonadVarReader m) => m String
 
 
--- | В данном модуле объявлены все фазы работы данной программы.
-module Phases
+-- | Модуль для подстановки значений переменных в пользовательский запрос.
+module Phases.Substitutor
 
--- | Анализ корректности и преобразование пользовательского запроса.
-analyzer :: (MonadError m, MonadFS m, MonadVarPwdReader m, MonadVarPathReader m) => Primitive -> m Primitive
+-- | Функция для подстановки переменных. Преобразовывает строку с $varname
+--   и ${varname} в строку без них. Учитываются кавычки, разбор строки не
+--   производится.
+substitutor :: (MonadError m, MonadVarReader m) => String -> m String
 
--- | Функция принимает, разбирает и исполняет распарсшенный примитив.
-executor :: (MonadIO m, MonadExit m, MonadVarsReader m) => Primitive -> m ()
 
--- | Функция для разбора строки после подстановки переменных. Выделяет либо
---   команду с аргументами, либо пустую команду (пустая строка или строка
---   только из пробелов), либо присваивание переменной. Кидает исключение,
---   если строка имеет некорректный синтаксис.
-parser :: MonadError m => String -> m Primitive
+-- | В данном модуле определена абстрактная точка входа в программу
+--   <tt><a>abstractMain</a></tt>. Абстрактной она называется потому, что
+--   она описывает работу программы в терминах абстрактной монады,
+--   являющейся также представителем различных классов, добавляющих
+--   различные функции (функции для работы с переменными окружения, функции
+--   для работы с файловой системой и прочие).
+module AbstractMain
 
--- | Чтение пользовательского запроса.
-stringReader :: MonadIO m => m String
+-- | Абстрактная точка входа в программу, главный цикл программы.
+--   
+--   Каждая итерация цикла представляет собой последовательность
+--   обработчиков <tt><a>reader</a></tt> → <tt><a>substitutor</a></tt> →
+--   <tt><a>parser</a></tt> → <tt><a>analyzer</a></tt> →
+--   <tt><a>linker</a></tt> → <tt><a>executor</a></tt>. При возникновении
+--   ошибки на любом из этапов происходит печать ошибки и начало новой
+--   итерации. Цикл бесконечен, выход из него (и из программы в целом)
+--   происходит посредством вызова функции <tt><tt>exit</tt></tt> класса
+--   <tt><a>MonadExit</a></tt> в <tt><a>executor</a></tt>.
+abstractMain :: (MonadError m, MonadExit m, MonadIO m, MonadPM m, MonadSelfReferenced m, MonadVarReader m, MonadVarWriter m) => m ()
