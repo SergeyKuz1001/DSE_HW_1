@@ -100,7 +100,7 @@ testsAnalyzer = TestList [
       Nothing,
     mkTestOneCommand ["cat", ".vimrc"] $
       Just (Commons $ fromList [Internal . Cat . Just $ updAbsPath "/home/user/.vimrc"]),
-    mkTestOneCommand ["cat", "./.vimrc"] $
+    mkTestOneCommand ["cat", updPath "./.vimrc"] $
       Just (Commons $ fromList [Internal . Cat . Just $ updAbsPath "/home/user/.vimrc"]),
     mkTestOneCommand ["cat", "vim"]
       Nothing,
@@ -136,7 +136,7 @@ testsAnalyzer = TestList [
       Nothing,
     mkTestOneCommand ["wc", ".vimrc"] $
       Just (Commons $ fromList [Internal . Wc . Just $ updAbsPath "/home/user/.vimrc"]),
-    mkTestOneCommand ["wc", "./.vimrc"] $
+    mkTestOneCommand ["wc", updPath "./.vimrc"] $
       Just (Commons $ fromList [Internal . Wc . Just $ updAbsPath "/home/user/.vimrc"]),
     mkTestOneCommand ["wc", "vim"]
       Nothing,
@@ -192,11 +192,11 @@ testsAnalyzer = TestList [
       Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/vim") ["-O", ".vimrc", "my_game.py"]]),
     mkTestOneCommand ["vim", ".vimrc", "my_game.py"] $
       Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/vim") [".vimrc", "my_game.py"]]),
-    mkTestOneCommand ["././.././user/../../bin/./vim", ".vimrc"] $
+    mkTestOneCommand [updPath "../user/../../bin/vim", ".vimrc"] $
       Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/vim") [".vimrc"]]),
     mkTestOneCommand ["my_game.py"]
       Nothing,
-    mkTestOneCommand ["./my_game.py"] $
+    mkTestOneCommand [updPath "./my_game.py"] $
       Just (Commons $ fromList [External $ Arguments (updAbsPath "/home/user/my_game.py") []]),
     mkTestOneCommand ["some_doc.djvu"]
       Nothing,
@@ -240,7 +240,7 @@ testsAnalyzer = TestList [
       Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/vim") [], External $ Arguments (updAbsPath "/usr/bin/emacs-28.1") []]),
     mkTestManyCommands [["sh"], ["pwd"], ["vim"]] $
       Just (Commons $ fromList [External $ Arguments (updAbsPath "/bin/sh") [], Internal Pwd, External $ Arguments (updAbsPath "/bin/vim") []]),
-    mkTestManyCommands [["./my_game.py", "123", "61"], ["echo"], ["cat", "my_game.py"]] $
+    mkTestManyCommands [[updPath "./my_game.py", "123", "61"], ["echo"], ["cat", "my_game.py"]] $
       Just (Commons $ fromList [External $ Arguments (updAbsPath "/home/user/my_game.py") ["123", "61"], Internal $ Echo [], Internal . Cat . Just $ updAbsPath "/home/user/my_game.py"]),
     mkTestManyCommands [["echo", "1"], ["echo"], ["echo"]] $
       Just (Commons $ fromList [Internal $ Echo ["1"], Internal $ Echo [], Internal $ Echo []]),
