@@ -7,12 +7,12 @@
 -}
 module Phases.Parser (parser) where
 
-import qualified Data.ParsedPrimitive   as PP
-import           Data.Error             (Error (..))
-import           Monads.Error           (MonadError, throwError)
+import           Data.Error           (Error (..))
+import qualified Data.ParsedPrimitive as PP
+import           Monads.Error         (MonadError, throwError)
 
 import           Control.Monad
-import           Data.Bifunctor         (first)
+import           Data.Bifunctor       (first)
 import           Data.Char
 
 -- | Сконструировать специфичную для модуля ошибку.
@@ -82,10 +82,10 @@ parseValue :: MonadError m => String -> m String
 parseValue s =
   splitBySpaces s
     >>= \case
-      ([ ], []) -> pure ""
-      ([x], []) -> pure x
+      ([ ], Nothing) -> pure ""
+      ([x], Nothing) -> pure x
       (_ : _, _) -> throwModError "Command calls with variable overriding are not supported"
-      (_, _ : _) -> throwModError "Unexpected pipe"
+      (_, Just _) -> throwModError "Unexpected pipe"
       . first (filter (not . null))
 
 -- | Разбиение конвейера команд с учётом пайпов.
@@ -96,16 +96,22 @@ parseCommands :: MonadError m => String -> m [[String]]
 parseCommands "" = pure []
 parseCommands s = do
   (args, rest) <- splitBySpaces $ dropWhile isSpace s
-  cmds <- parseCommands rest
-  pure $ args : cmds
+  case rest of
+    Nothing -> pure [args]
+    Just cs -> do
+      -- Если есть какой-то пайп, то после него парсим хотя бы пустую команду
+      cmds <- parseCommands cs
+      if null cmds
+        then pure [args, []]
+        else pure $ args : cmds
 
 -- | Разбиение строки по пробелам
 -- с учётом кавычек (возможны пустые строки,
 -- используется в связке с @filter (not . null)@.
 -- Останавливается на символе конвейера @|@.
-splitBySpaces :: MonadError m => String -> m ([String], String)
-splitBySpaces "" = pure ([], "")
-splitBySpaces ('|' : cs) = pure ([], cs)
+splitBySpaces :: MonadError m => String -> m ([String], Maybe String)
+splitBySpaces "" = pure ([], Nothing)
+splitBySpaces ('|' : cs) = pure ([], Just cs)
 splitBySpaces "\\" = throwModError "Unexpected end of line after \\"
 splitBySpaces ('\\' : c : cs) = first (headMappend [c]) <$> splitBySpaces cs
 splitBySpaces ('\'' : cs) = singleQuotes cs >>= \(s, r) -> first (headMappend s) <$> splitBySpaces r
