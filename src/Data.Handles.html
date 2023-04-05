@@ -22,13 +22,13 @@
 </span><span id="line-22"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="FromParentHandle"><span class="annot"><a href="Data.Handles.html#FromParentHandle"><span class="hs-identifier hs-var">FromParentHandle</span></a></span></span><span>
 </span><span id="line-23"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="FromFile"><span class="annot"><a href="Data.Handles.html#FromFile"><span class="hs-identifier hs-var">FromFile</span></a></span></span><span> </span><span class="annot"><a href="Data.FSObjects.html#AbsFilePath"><span class="hs-identifier hs-type">AbsFilePath</span></a></span><span>
 </span><span id="line-24"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="FromString"><span class="annot"><a href="Data.Handles.html#FromString"><span class="hs-identifier hs-var">FromString</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
-</span><span id="line-25"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679066322"><span id="local-6989586621679066328"><span class="annot"><span class="annottext">InputHandle -&gt; InputHandle -&gt; Bool
+</span><span id="line-25"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679059409"><span id="local-6989586621679059415"><span class="annot"><span class="annottext">InputHandle -&gt; InputHandle -&gt; Bool
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: InputHandle -&gt; InputHandle -&gt; Bool
 $c/= :: InputHandle -&gt; InputHandle -&gt; Bool
 == :: InputHandle -&gt; InputHandle -&gt; Bool
 $c== :: InputHandle -&gt; InputHandle -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679066308"><span id="local-6989586621679066310"><span id="local-6989586621679066319"><span class="annot"><span class="annottext">Int -&gt; InputHandle -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679059395"><span id="local-6989586621679059397"><span id="local-6989586621679059406"><span class="annot"><span class="annottext">Int -&gt; InputHandle -&gt; ShowS
 [InputHandle] -&gt; ShowS
 InputHandle -&gt; String
 forall a.
@@ -50,13 +50,13 @@ $cshowsPrec :: Int -&gt; InputHandle -&gt; ShowS
 </span><span id="line-33"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="ToNewPipe"><span class="annot"><a href="Data.Handles.html#ToNewPipe"><span class="hs-identifier hs-var">ToNewPipe</span></a></span></span><span>
 </span><span id="line-34"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ToStdout"><span class="annot"><a href="Data.Handles.html#ToStdout"><span class="hs-identifier hs-var">ToStdout</span></a></span></span><span>
 </span><span id="line-35"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ToNowhere"><span class="annot"><a href="Data.Handles.html#ToNowhere"><span class="hs-identifier hs-var">ToNowhere</span></a></span></span><span>
-</span><span id="line-36"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679066300"><span id="local-6989586621679066302"><span class="annot"><span class="annottext">OutputHandle -&gt; OutputHandle -&gt; Bool
+</span><span id="line-36"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679059387"><span id="local-6989586621679059389"><span class="annot"><span class="annottext">OutputHandle -&gt; OutputHandle -&gt; Bool
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: OutputHandle -&gt; OutputHandle -&gt; Bool
 $c/= :: OutputHandle -&gt; OutputHandle -&gt; Bool
 == :: OutputHandle -&gt; OutputHandle -&gt; Bool
 $c== :: OutputHandle -&gt; OutputHandle -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679066294"><span id="local-6989586621679066296"><span id="local-6989586621679066298"><span class="annot"><span class="annottext">Int -&gt; OutputHandle -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679059381"><span id="local-6989586621679059383"><span id="local-6989586621679059385"><span class="annot"><span class="annottext">Int -&gt; OutputHandle -&gt; ShowS
 [OutputHandle] -&gt; ShowS
 OutputHandle -&gt; String
 forall a.
