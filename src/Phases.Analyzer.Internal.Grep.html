@@ -1,0 +1,349 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE TupleSections #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Phases.Analyzer.Internal.Grep</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-4"></span><span>    </span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgs"><span class="hs-identifier">GrepArgs</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-5"></span><span>    </span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#grepRegex"><span class="hs-identifier">grepRegex</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-6"></span><span>    </span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#grep"><span class="hs-identifier">grep</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-7"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.FSObjects.html"><span class="hs-identifier">Data.FSObjects</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.FSObjects.html#AbsFilePath"><span class="hs-identifier">AbsFilePath</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Phases.Analyzer.Common.html"><span class="hs-identifier">Phases.Analyzer.Common</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Phases.Analyzer.Common.html#toError"><span class="hs-identifier">toError</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Phases.Analyzer.Common.html#findReadable"><span class="hs-identifier">findReadable</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Monads.Error.html"><span class="hs-identifier">Monads.Error</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Monads.Error.html#MonadError"><span class="hs-identifier">MonadError</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">throwError</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Monads.Error.html#%3F%3A"><span class="hs-operator">(?:)</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Monads.Error.html#%7C%3E%3D"><span class="hs-operator">(|&gt;=)</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Monads.FS.html"><span class="hs-identifier">Monads.FS</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Monads.FS.html#MonadFS"><span class="hs-identifier">MonadFS</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Monads.PwdReader.html"><span class="hs-identifier">Monads.PwdReader</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Monads.PwdReader.html#MonadPwdReader"><span class="hs-identifier">MonadPwdReader</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Options.Applicative</span></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Text.Regex.TDFA</span></span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- | &#1050;&#1086;&#1085;&#1092;&#1080;&#1075;&#1091;&#1088;&#1072;&#1094;&#1080;&#1103; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;&#1099; @grep@.</span><span>
+</span><span id="line-20"></span><span class="hs-keyword">data</span><span> </span><span id="GrepArgs"><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgs"><span class="hs-identifier hs-var">GrepArgs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="GrepArgs"><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgs"><span class="hs-identifier hs-var">GrepArgs</span></a></span></span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="isColorized"><span class="annot"><span class="annottext">GrepArgs -&gt; Bool
+</span><a href="Phases.Analyzer.Internal.Grep.html#isColorized"><span class="hs-identifier hs-var hs-var">isColorized</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="lineCount"><span class="annot"><span class="annottext">GrepArgs -&gt; Int
+</span><a href="Phases.Analyzer.Internal.Grep.html#lineCount"><span class="hs-identifier hs-var hs-var">lineCount</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-23"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="regex"><span class="annot"><span class="annottext">GrepArgs -&gt; (String, Regex)
+</span><a href="Phases.Analyzer.Internal.Grep.html#regex"><span class="hs-identifier hs-var hs-var">regex</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Regex</span></span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="inputFile"><span class="annot"><span class="annottext">GrepArgs -&gt; Maybe AbsFilePath
+</span><a href="Phases.Analyzer.Internal.Grep.html#inputFile"><span class="hs-identifier hs-var hs-var">inputFile</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Data.FSObjects.html#AbsFilePath"><span class="hs-identifier hs-type">AbsFilePath</span></a></span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679067208"><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgs"><span class="hs-identifier hs-type">GrepArgs</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-28"></span><span>  </span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgs"><span class="hs-identifier hs-type">GrepArgs</span></a></span><span> </span><span id="local-6989586621679067194"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067194"><span class="hs-identifier hs-var">ic1</span></a></span></span><span> </span><span id="local-6989586621679067193"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679067193"><span class="hs-identifier hs-var">lc1</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067192"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067192"><span class="hs-identifier hs-var">re1</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Regex
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679067191"><span class="annot"><span class="annottext">Maybe AbsFilePath
+</span><a href="#local-6989586621679067191"><span class="hs-identifier hs-var">if1</span></a></span></span><span> </span><span id="local-6989586621679067190"><span class="annot"><span class="annottext">== :: GrepArgs -&gt; GrepArgs -&gt; Bool
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">==</span></span></span><span> </span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgs"><span class="hs-identifier hs-type">GrepArgs</span></a></span><span> </span><span id="local-6989586621679067189"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067189"><span class="hs-identifier hs-var">ic2</span></a></span></span><span> </span><span id="local-6989586621679067188"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679067188"><span class="hs-identifier hs-var">lc2</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067187"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067187"><span class="hs-identifier hs-var">re2</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Regex
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679067186"><span class="annot"><span class="annottext">Maybe AbsFilePath
+</span><a href="#local-6989586621679067186"><span class="hs-identifier hs-var">if2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067194"><span class="hs-identifier hs-var">ic1</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067189"><span class="hs-identifier hs-var">ic2</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679067193"><span class="hs-identifier hs-var">lc1</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679067188"><span class="hs-identifier hs-var">lc2</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067192"><span class="hs-identifier hs-var">re1</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067187"><span class="hs-identifier hs-var">re2</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Maybe AbsFilePath
+</span><a href="#local-6989586621679067191"><span class="hs-identifier hs-var">if1</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Maybe AbsFilePath
+</span><a href="#local-6989586621679067186"><span class="hs-identifier hs-var">if2</span></a></span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679067180"><span id="local-6989586621679067183"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgs"><span class="hs-identifier hs-type">GrepArgs</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-32"></span><span>  </span><span id="local-6989586621679067166"><span class="annot"><span class="annottext">show :: GrepArgs -&gt; String
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgs"><span class="hs-identifier hs-type">GrepArgs</span></a></span><span> </span><span id="local-6989586621679067164"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067164"><span class="hs-identifier hs-var">ic</span></a></span></span><span> </span><span id="local-6989586621679067163"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679067163"><span class="hs-identifier hs-var">lc</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067162"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067162"><span class="hs-identifier hs-var">re</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Regex
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679067161"><span class="annot"><span class="annottext">Maybe AbsFilePath
+</span><a href="#local-6989586621679067161"><span class="hs-identifier hs-var">if_</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;GrepArgs { &quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;isColorized = &quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067164"><span class="hs-identifier hs-var">ic</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;, &quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;lineCount = &quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679067163"><span class="hs-identifier hs-var">lc</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;, &quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;regex = &quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067162"><span class="hs-identifier hs-var">re</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;, &quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;inputFile = &quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Maybe AbsFilePath
+</span><a href="#local-6989586621679067161"><span class="hs-identifier hs-var">if_</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot; }&quot;</span></span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- | &#1055;&#1088;&#1086;&#1084;&#1077;&#1078;&#1091;&#1090;&#1086;&#1095;&#1085;&#1086;&#1077; &#1087;&#1088;&#1077;&#1076;&#1089;&#1090;&#1072;&#1074;&#1083;&#1077;&#1085;&#1080;&#1077; &#1082;&#1086;&#1085;&#1092;&#1080;&#1075;&#1091;&#1088;&#1072;&#1094;&#1080;&#1080; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;&#1099; @grep@.</span><span>
+</span><span id="line-41"></span><span class="hs-keyword">data</span><span> </span><span id="GrepArgsRaw"><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgsRaw"><span class="hs-identifier hs-var">GrepArgsRaw</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="GrepArgsRaw"><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgsRaw"><span class="hs-identifier hs-var">GrepArgsRaw</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067149"><span id="local-6989586621679067157"><span class="annot"><span class="annottext">GrepArgsRaw -&gt; GrepArgsRaw -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: GrepArgsRaw -&gt; GrepArgsRaw -&gt; Bool
+$c/= :: GrepArgsRaw -&gt; GrepArgsRaw -&gt; Bool
+== :: GrepArgsRaw -&gt; GrepArgsRaw -&gt; Bool
+$c== :: GrepArgsRaw -&gt; GrepArgsRaw -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067135"><span id="local-6989586621679067137"><span id="local-6989586621679067147"><span class="annot"><span class="annottext">Int -&gt; GrepArgsRaw -&gt; ShowS
+[GrepArgsRaw] -&gt; ShowS
+GrepArgsRaw -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [GrepArgsRaw] -&gt; ShowS
+$cshowList :: [GrepArgsRaw] -&gt; ShowS
+show :: GrepArgsRaw -&gt; String
+$cshow :: GrepArgsRaw -&gt; String
+showsPrec :: Int -&gt; GrepArgsRaw -&gt; ShowS
+$cshowsPrec :: Int -&gt; GrepArgsRaw -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span id="local-6989586621679067329"><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#grepRegex"><span class="hs-identifier hs-type">grepRegex</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Monads.Error.html#MonadError"><span class="hs-identifier hs-type">MonadError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679067329"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679067329"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Regex</span></span><span class="hs-special">)</span></span><span>
+</span><span id="line-45"></span><span id="grepRegex"><span class="annot"><span class="annottext">grepRegex :: forall (m :: * -&gt; *).
+MonadError m =&gt;
+Bool -&gt; Bool -&gt; String -&gt; m (String, Regex)
+</span><a href="Phases.Analyzer.Internal.Grep.html#grepRegex"><span class="hs-identifier hs-var hs-var">grepRegex</span></a></span></span><span> </span><span id="local-6989586621679067119"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067119"><span class="hs-identifier hs-var">isFullWords</span></a></span></span><span> </span><span id="local-6989586621679067118"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067118"><span class="hs-identifier hs-var">caseIsIgnored</span></a></span></span><span> </span><span id="local-6989586621679067117"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067117"><span class="hs-identifier hs-var">regexStr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679067116"><span class="annot"><span class="annottext">regexStr' :: String
+</span><a href="#local-6989586621679067116"><span class="hs-identifier hs-var hs-var">regexStr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-47"></span><span>        </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067119"><span class="hs-identifier hs-var">isFullWords</span></a></span><span>
+</span><span id="line-48"></span><span>          </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;\\&lt;&quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067117"><span class="hs-identifier hs-var">regexStr</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;\\&gt;&quot;</span></span><span>
+</span><span id="line-49"></span><span>          </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067117"><span class="hs-identifier hs-var">regexStr</span></a></span><span>
+</span><span id="line-50"></span><span>      </span><span id="local-6989586621679067113"><span class="annot"><span class="annottext">compOut :: CompOption
+</span><a href="#local-6989586621679067113"><span class="hs-identifier hs-var hs-var">compOut</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall regex compOpt execOpt.
+RegexOptions regex compOpt execOpt =&gt;
+compOpt
+</span><span class="hs-identifier hs-var">defaultCompOpt</span></span><span> </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">multiline :: Bool
+</span><span class="hs-identifier hs-var">multiline</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">caseSensitive :: Bool
+</span><span class="hs-identifier hs-var">caseSensitive</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067118"><span class="hs-identifier hs-var">caseIsIgnored</span></a></span><span> </span><span class="hs-special">}</span><span>
+</span><span id="line-51"></span><span>      </span><span id="local-6989586621679067107"><span class="annot"><span class="annottext">execOptions :: ExecOption
+</span><a href="#local-6989586621679067107"><span class="hs-identifier hs-var hs-var">execOptions</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall regex compOpt execOpt.
+RegexOptions regex compOpt execOpt =&gt;
+execOpt
+</span><span class="hs-identifier hs-var">defaultExecOpt</span></span><span>
+</span><span id="line-52"></span><span>      </span><span id="local-6989586621679067105"><span class="annot"><span class="annottext">regexStr'' :: String
+</span><a href="#local-6989586621679067105"><span class="hs-identifier hs-var hs-var">regexStr''</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-53"></span><span>        </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067119"><span class="hs-identifier hs-var">isFullWords</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067118"><span class="hs-identifier hs-var">caseIsIgnored</span></a></span><span>
+</span><span id="line-54"></span><span>          </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067117"><span class="hs-identifier hs-var">regexStr</span></a></span><span>
+</span><span id="line-55"></span><span>          </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;[:&quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067119"><span class="hs-identifier hs-var">isFullWords</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;w&quot;</span></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;&quot;</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067118"><span class="hs-identifier hs-var">caseIsIgnored</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;i&quot;</span></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;&quot;</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;]&quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067117"><span class="hs-identifier hs-var">regexStr</span></a></span><span>
+</span><span id="line-56"></span><span>  </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067105"><span class="hs-identifier hs-var">regexStr''</span></a></span><span class="hs-special">,</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall regex compOpt execOpt source (m :: * -&gt; *).
+(RegexMaker regex compOpt execOpt source, MonadFail m) =&gt;
+compOpt -&gt; execOpt -&gt; source -&gt; m regex
+</span><span class="hs-identifier hs-var">makeRegexOptsM</span></span><span> </span><span class="annot"><span class="annottext">CompOption
+</span><a href="#local-6989586621679067113"><span class="hs-identifier hs-var">compOut</span></a></span><span> </span><span class="annot"><span class="annottext">ExecOption
+</span><a href="#local-6989586621679067107"><span class="hs-identifier hs-var">execOptions</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067116"><span class="hs-identifier hs-var">regexStr'</span></a></span><span> </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *) a.
+MonadError m =&gt;
+FailWrapper a -&gt; (String -&gt; Error) -&gt; m a
+</span><a href="Monads.Error.html#%7C%3E%3D"><span class="hs-operator hs-var">|&gt;=</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; Error
+</span><a href="Phases.Analyzer.Common.html#toError"><span class="hs-identifier hs-var">toError</span></a></span><span> </span><span class="annot"><span class="annottext">forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;incorrect regular expression: &quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="hs-comment">-- | &#1060;&#1091;&#1085;&#1082;&#1094;&#1080;&#1103; &#1087;&#1072;&#1088;&#1089;&#1080;&#1085;&#1075;&#1072; &#1072;&#1088;&#1075;&#1091;&#1084;&#1077;&#1085;&#1090;&#1086;&#1074; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;&#1085;&#1086;&#1081; &#1089;&#1090;&#1088;&#1086;&#1082;&#1080; &#1074; &#1082;&#1086;&#1085;&#1092;&#1080;&#1075;&#1091;&#1088;&#1072;&#1094;&#1080;&#1102;.</span><span>
+</span><span id="line-59"></span><span id="local-6989586621679067298"><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#grep"><span class="hs-identifier hs-type">grep</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Monads.Error.html#MonadError"><span class="hs-identifier hs-type">MonadError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679067298"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Monads.FS.html#MonadFS"><span class="hs-identifier hs-type">MonadFS</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679067298"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Monads.PwdReader.html#MonadPwdReader"><span class="hs-identifier hs-type">MonadPwdReader</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679067298"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679067298"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgs"><span class="hs-identifier hs-type">GrepArgs</span></a></span></span><span>
+</span><span id="line-60"></span><span id="grep"><span class="annot"><span class="annottext">grep :: forall (m :: * -&gt; *).
+(MonadError m, MonadFS m, MonadPwdReader m) =&gt;
+[String] -&gt; m GrepArgs
+</span><a href="Phases.Analyzer.Internal.Grep.html#grep"><span class="hs-identifier hs-var hs-var">grep</span></a></span></span><span> </span><span id="local-6989586621679067030"><span class="annot"><span class="annottext">[String]
+</span><a href="#local-6989586621679067030"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-61"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">forall a. ParserPrefs -&gt; ParserInfo a -&gt; [String] -&gt; ParserResult a
+</span><span class="hs-identifier hs-var">execParserPure</span></span><span> </span><span class="annot"><span class="annottext">ParserPrefs
+</span><span class="hs-identifier hs-var">defaultPrefs</span></span><span> </span><span class="annot"><span class="annottext">ParserInfo GrepArgsRaw
+</span><a href="#local-6989586621679067027"><span class="hs-identifier hs-var">argparseInfo</span></a></span><span> </span><span class="annot"><span class="annottext">[String]
+</span><a href="#local-6989586621679067030"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Success</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgsRaw"><span class="hs-identifier hs-type">GrepArgsRaw</span></a></span><span> </span><span id="local-6989586621679067025"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067025"><span class="hs-identifier hs-var">isFullWords</span></a></span></span><span> </span><span id="local-6989586621679067024"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067024"><span class="hs-identifier hs-var">caseIsIgnored</span></a></span></span><span> </span><span id="local-6989586621679067023"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679067023"><span class="hs-identifier hs-var">lineCount</span></a></span></span><span> </span><span id="local-6989586621679067022"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067022"><span class="hs-identifier hs-var">regexStr</span></a></span></span><span> </span><span id="local-6989586621679067021"><span class="annot"><span class="annottext">Maybe String
+</span><a href="#local-6989586621679067021"><span class="hs-identifier hs-var">mPath</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-63"></span><span>      </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679067023"><span class="hs-identifier hs-var">lineCount</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *). MonadError m =&gt; Bool -&gt; Error -&gt; m ()
+</span><a href="Monads.Error.html#%3F%3A"><span class="hs-operator hs-var">?:</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; Error
+</span><a href="Phases.Analyzer.Common.html#toError"><span class="hs-identifier hs-var">toError</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Negative count of lines after matched one is not allowed&quot;</span></span><span>
+</span><span id="line-64"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621679067020"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067020"><span class="hs-identifier hs-var">regexStr''</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067019"><span class="annot"><span class="annottext">Regex
+</span><a href="#local-6989586621679067019"><span class="hs-identifier hs-var">regex</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *).
+MonadError m =&gt;
+Bool -&gt; Bool -&gt; String -&gt; m (String, Regex)
+</span><a href="Phases.Analyzer.Internal.Grep.html#grepRegex"><span class="hs-identifier hs-var">grepRegex</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067025"><span class="hs-identifier hs-var">isFullWords</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679067024"><span class="hs-identifier hs-var">caseIsIgnored</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067022"><span class="hs-identifier hs-var">regexStr</span></a></span><span>
+</span><span id="line-65"></span><span>      </span><span id="local-6989586621679067018"><span class="annot"><span class="annottext">Maybe AbsFilePath
+</span><a href="#local-6989586621679067018"><span class="hs-identifier hs-var">mAbsPath</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
+(Traversable t, Applicative f) =&gt;
+(a -&gt; f b) -&gt; t a -&gt; f (t b)
+</span><span class="hs-identifier hs-var">traverse</span></span><span> </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *).
+(MonadError m, MonadFS m, MonadPwdReader m) =&gt;
+String -&gt; m AbsFilePath
+</span><a href="Phases.Analyzer.Common.html#findReadable"><span class="hs-identifier hs-var">findReadable</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
+</span><a href="#local-6989586621679067021"><span class="hs-identifier hs-var">mPath</span></a></span><span>
+</span><span id="line-66"></span><span>      </span><span class="annot"><span class="annottext">forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Int -&gt; (String, Regex) -&gt; Maybe AbsFilePath -&gt; GrepArgs
+</span><a href="Phases.Analyzer.Internal.Grep.html#GrepArgs"><span class="hs-identifier hs-var">GrepArgs</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679067023"><span class="hs-identifier hs-var">lineCount</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679067020"><span class="hs-identifier hs-var">regexStr''</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Regex
+</span><a href="#local-6989586621679067019"><span class="hs-identifier hs-var">regex</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe AbsFilePath
+</span><a href="#local-6989586621679067018"><span class="hs-identifier hs-var">mAbsPath</span></a></span><span>
+</span><span id="line-67"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Failure</span></span><span> </span><span id="local-6989586621679067015"><span class="annot"><span class="annottext">ParserFailure ParserHelp
+</span><a href="#local-6989586621679067015"><span class="hs-identifier hs-var">pf</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067014"><span class="annot"><span class="annottext">ParserHelp
+</span><a href="#local-6989586621679067014"><span class="hs-identifier hs-var">h</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ExitCode
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall h. ParserFailure h -&gt; String -&gt; (h, ExitCode, Int)
+</span><span class="hs-identifier hs-var">execFailure</span></span><span> </span><span class="annot"><span class="annottext">ParserFailure ParserHelp
+</span><a href="#local-6989586621679067015"><span class="hs-identifier hs-var">pf</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;grep&quot;</span></span><span> </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">forall e (m :: * -&gt; *) a. MonadError e m =&gt; e -&gt; m a
+</span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="annot"><span class="annottext">forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Error
+</span><a href="Phases.Analyzer.Common.html#toError"><span class="hs-identifier hs-var">toError</span></a></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">ParserHelp
+</span><a href="#local-6989586621679067014"><span class="hs-identifier hs-var">h</span></a></span><span>
+</span><span id="line-68"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">CompletionInvoked</span></span><span> </span><span class="annot"><span class="annottext">CompletionResult
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">forall e (m :: * -&gt; *) a. MonadError e m =&gt; e -&gt; m a
+</span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="annot"><span class="annottext">forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Error
+</span><a href="Phases.Analyzer.Common.html#toError"><span class="hs-identifier hs-var">toError</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Impossible situation occured&quot;</span></span><span>
+</span><span id="line-69"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-70"></span><span>    </span><span class="annot"><a href="#local-6989586621679067011"><span class="hs-identifier hs-type">argparse</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Parser</span></span><span> </span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgsRaw"><span class="hs-identifier hs-type">GrepArgsRaw</span></a></span><span>
+</span><span id="line-71"></span><span>    </span><span id="local-6989586621679067011"><span class="annot"><span class="annottext">argparse :: Parser GrepArgsRaw
+</span><a href="#local-6989586621679067011"><span class="hs-identifier hs-var hs-var">argparse</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Int -&gt; String -&gt; Maybe String -&gt; GrepArgsRaw
+</span><a href="Phases.Analyzer.Internal.Grep.html#GrepArgsRaw"><span class="hs-identifier hs-var">GrepArgsRaw</span></a></span><span>
+</span><span id="line-72"></span><span>      </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Mod FlagFields Bool -&gt; Parser Bool
+</span><span class="hs-identifier hs-var">switch</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. HasName f =&gt; Char -&gt; Mod f a
+</span><span class="hs-identifier hs-var">short</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">'w'</span></span><span> </span><span class="annot"><span class="annottext">forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. HasName f =&gt; String -&gt; Mod f a
+</span><span class="hs-identifier hs-var">long</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;words&quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. String -&gt; Mod f a
+</span><span class="hs-identifier hs-var">help</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Match only whole words&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-73"></span><span>      </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Mod FlagFields Bool -&gt; Parser Bool
+</span><span class="hs-identifier hs-var">switch</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. HasName f =&gt; Char -&gt; Mod f a
+</span><span class="hs-identifier hs-var">short</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">'i'</span></span><span> </span><span class="annot"><span class="annottext">forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. HasName f =&gt; String -&gt; Mod f a
+</span><span class="hs-identifier hs-var">long</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;ignorecase&quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. String -&gt; Mod f a
+</span><span class="hs-identifier hs-var">help</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Ignore case&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>      </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall a. ReadM a -&gt; Mod OptionFields a -&gt; Parser a
+</span><span class="hs-identifier hs-var">option</span></span><span> </span><span class="annot"><span class="annottext">forall a. Read a =&gt; ReadM a
+</span><span class="hs-identifier hs-var">auto</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. HasName f =&gt; Char -&gt; Mod f a
+</span><span class="hs-identifier hs-var">short</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><span class="hs-char">'A'</span></span><span> </span><span class="annot"><span class="annottext">forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. HasName f =&gt; String -&gt; Mod f a
+</span><span class="hs-identifier hs-var">long</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;lines&quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. HasValue f =&gt; a -&gt; Mod f a
+</span><span class="hs-identifier hs-var">value</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. HasMetavar f =&gt; String -&gt; Mod f a
+</span><span class="hs-identifier hs-var">metavar</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;COUNT&quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. String -&gt; Mod f a
+</span><span class="hs-identifier hs-var">help</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;How many lines to show around the matched ones&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span>      </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall s. IsString s =&gt; Mod ArgumentFields s -&gt; Parser s
+</span><span class="hs-identifier hs-var">strArgument</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. HasMetavar f =&gt; String -&gt; Mod f a
+</span><span class="hs-identifier hs-var">metavar</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;REGEX&quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. String -&gt; Mod f a
+</span><span class="hs-identifier hs-var">help</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Regular expression&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-76"></span><span>      </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f a -&gt; f a
+</span><span class="hs-operator hs-var">&lt;|&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall s. IsString s =&gt; Mod ArgumentFields s -&gt; Parser s
+</span><span class="hs-identifier hs-var">strArgument</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. HasMetavar f =&gt; String -&gt; Mod f a
+</span><span class="hs-identifier hs-var">metavar</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;FILE&quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a. String -&gt; Mod f a
+</span><span class="hs-identifier hs-var">help</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;File to use as source (if not present, standard input is used)&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>      </span><span class="annot"><span class="annottext">forall (f :: * -&gt; *) a b. Applicative f =&gt; f a -&gt; f (a -&gt; b) -&gt; f b
+</span><span class="hs-operator hs-var">&lt;**&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall a. Parser (a -&gt; a)
+</span><span class="hs-identifier hs-var">helper</span></span><span>
+</span><span id="line-78"></span><span>    </span><span class="annot"><a href="#local-6989586621679067027"><span class="hs-identifier hs-type">argparseInfo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ParserInfo</span></span><span> </span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgsRaw"><span class="hs-identifier hs-type">GrepArgsRaw</span></a></span><span>
+</span><span id="line-79"></span><span>    </span><span id="local-6989586621679067027"><span class="annot"><span class="annottext">argparseInfo :: ParserInfo GrepArgsRaw
+</span><a href="#local-6989586621679067027"><span class="hs-identifier hs-var hs-var">argparseInfo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">forall a. Parser a -&gt; InfoMod a -&gt; ParserInfo a
+</span><span class="hs-identifier hs-var">info</span></span><span> </span><span class="annot"><span class="annottext">Parser GrepArgsRaw
+</span><a href="#local-6989586621679067011"><span class="hs-identifier hs-var">argparse</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. InfoMod a
+</span><span class="hs-identifier hs-var">fullDesc</span></span><span>
+</span><span id="line-80"></span></pre></body></html>

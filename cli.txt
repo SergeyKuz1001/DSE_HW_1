@@ -73,6 +73,13 @@ infix 0 ?>=
 (@>=) :: MonadError m => m (Maybe a) -> Error -> m a
 infix 0 @>=
 
+-- | Операция для вызова исключения если написанное слева выражение не
+--   является значением, а содержит сообщение об ошибке. Предполагается,
+--   что данный оператор будет работать в основном со значениями в
+--   <tt><a>MonadFail</a></tt>.
+(|>=) :: MonadError m => FailWrapper a -> (String -> Error) -> m a
+infix 0 |>=
+
 -- | Is used within a monadic computation to begin exception processing.
 throwError :: MonadError e m => e -> m a
 
@@ -86,6 +93,10 @@ throwError :: MonadError e m => e -> m a
 --   where the <tt>action</tt> functions can call <a>throwError</a>. Note
 --   that <tt>handler</tt> and the do-block must have the same return type.
 catchError :: MonadError e m => m a -> (e -> m a) -> m a
+instance GHC.Base.Monad Monads.Error.FailWrapper
+instance GHC.Base.Applicative Monads.Error.FailWrapper
+instance GHC.Base.Functor Monads.Error.FailWrapper
+instance Control.Monad.Fail.MonadFail Monads.Error.FailWrapper
 instance Monads.Error.MonadError (Data.Either.Either Data.Error.Error)
 
 
@@ -242,141 +253,6 @@ instance GHC.Show.Show Data.Handles.OutputHandle
 instance GHC.Classes.Eq Data.Handles.OutputHandle
 
 
--- | В данном модуле объявлены примитивы, в которые транслируется
---   пользовательский запрос после этапа анализа.
-module Data.AnalyzedPrimitive
-
--- | Примитив — это
---   
---   <ul>
---   <li>специальная команда (<tt>exit</tt> или <tt>cd</tt>),</li>
---   <li>непустой набор обычных команд, разделённых pipeами,</li>
---   <li>присваивание стабильной переменной или</li>
---   <li>пустая команда.</li>
---   </ul>
-data Primitive
-Special :: Special -> Primitive
-Commons :: NonEmpty Common -> Primitive
-Assignment :: Stable -> String -> Primitive
-Empty :: Primitive
-
--- | Специальная команда влияет на работу оболочки и может быть
---   
---   <ul>
---   <li><tt>exit</tt> — завершение работы оболочки с кодом возврата,
---   принимаемым опциональным параметром</li>
---   <li><tt>cd</tt> — смена текущей директории</li>
---   </ul>
-data Special
-Exit :: Maybe ExitCode -> Special
-Cd :: FilePath -> Special
-
--- | Обычная команда имеет потоки ввода, вывода и поток ошибок. Может быть
---   либо внутренней (исполняется самой командной оболочкой), либо внешней.
-data Common
-Internal :: Internal -> Common
-External :: External -> Common
-
--- | Внутренняя команда исполняется самой командной оболочкой и может быть
---   
---   <ul>
---   <li><tt>cat</tt> — вывод содержимого переданного файла;</li>
---   <li><tt>echo</tt> — вывод аргументов через пробел;</li>
---   <li><tt>wc</tt> — статистика для файла;</li>
---   <li><tt>pwd</tt> — имя текущей директории.</li>
---   </ul>
-data Internal
-Cat :: Maybe AbsFilePath -> Internal
-Echo :: [String] -> Internal
-Wc :: Maybe AbsFilePath -> Internal
-Pwd :: Internal
-
--- | Внешняя команда вызывается по пути к исполняемому файлу с указанными
---   аргументами.
-data External
-Arguments :: AbsFilePath -> [String] -> External
-instance GHC.Show.Show Data.AnalyzedPrimitive.Special
-instance GHC.Classes.Eq Data.AnalyzedPrimitive.Special
-instance GHC.Show.Show Data.AnalyzedPrimitive.Internal
-instance GHC.Classes.Eq Data.AnalyzedPrimitive.Internal
-instance GHC.Show.Show Data.AnalyzedPrimitive.External
-instance GHC.Classes.Eq Data.AnalyzedPrimitive.External
-instance GHC.Show.Show Data.AnalyzedPrimitive.Common
-instance GHC.Classes.Eq Data.AnalyzedPrimitive.Common
-instance GHC.Show.Show Data.AnalyzedPrimitive.Primitive
-instance GHC.Classes.Eq Data.AnalyzedPrimitive.Primitive
-
-
--- | В данном модуле объявлены примитивы, в которые транслируется
---   пользовательский запрос после линковки.
-module Data.LinkedPrimitive
-
--- | Примитив — это
---   
---   <ul>
---   <li>специальная команда,</li>
---   <li>присваивание стабильной переменной или</li>
---   <li>набор обычных команд с заданными типами потоков ввода и
---   вывода.</li>
---   </ul>
-data Primitive
-Special :: Special -> Primitive
-Assignment :: Stable -> String -> Primitive
-Commons :: [CommonWithHandles] -> Primitive
-
--- | Специальная команда влияет на работу оболочки и может быть
---   
---   <ul>
---   <li><tt>exit</tt> — завершение работы оболочки с кодом возврата,
---   принимаемым опциональным параметром</li>
---   <li><tt>cd</tt> — смена текущей директории</li>
---   </ul>
-data Special
-Exit :: Maybe ExitCode -> Special
-Cd :: FilePath -> Special
-
--- | Обычная команда с заданными типами потоков ввода и вывода.
-type CommonWithHandles = (Common, InputHandle, OutputHandle)
-
--- | Обычная команда, может быть внутренней или внешней.
-data Common
-External :: External -> Common
-Internal :: Internal -> Common
-
--- | Внутренняя команда, представляется либо в виде чистой функции над
---   текстом с её названием, либо в виде нечистой команды.
---   
---   Название в чистой функции необходимо для сравнения двух функций.
---   Обычно выполняется инвариант, что две команды с одинковым названием
---   имеют эквивалентные функции, но этот инвариант никак не гарантируется.
-data Internal
-Pure :: String -> (Text -> Text) -> Internal
-Impure :: Impure -> Internal
-
--- | Внешняя команда вызывается по пути к исполняемому файлу с указанными
---   аргументами.
-data External
-Arguments :: AbsFilePath -> [String] -> External
-
--- | Внутренняя нечистая команда, пока ею является только <tt>pwd</tt>
---   (требует доступ к классу <tt><tt>MonadPwdReader</tt></tt>).
---   
---   Важно: пока предполагается, что любая нечистая команда не модифицирует
---   реальное окружение (не изменяет файлы, не делает что-либо на удалённом
---   сервере и т. д.), это используется как один из неявных инвариантов в
---   работе <tt><tt>linker</tt></tt>.
-data Impure
-Pwd :: Impure
-instance GHC.Show.Show Data.LinkedPrimitive.Impure
-instance GHC.Classes.Eq Data.LinkedPrimitive.Impure
-instance GHC.Show.Show Data.LinkedPrimitive.Common
-instance GHC.Classes.Eq Data.LinkedPrimitive.Common
-instance GHC.Show.Show Data.LinkedPrimitive.Primitive
-instance GHC.Classes.Eq Data.LinkedPrimitive.Primitive
-instance GHC.Classes.Eq Data.LinkedPrimitive.Internal
-instance GHC.Show.Show Data.LinkedPrimitive.Internal
-
-
 -- | В данном модуле объявлена монада <tt><a>MonadExit</a></tt>,
 --   предоставляющая возможность выхода из данной программы.
 module Monads.Exit
@@ -406,15 +282,39 @@ putStrLn :: MonadIO m => String -> m ()
 -- | Запись объекта в виде строки в поток вывода.
 print :: (MonadIO m, Show a) => a -> m ()
 
+
+-- | В данном модуле объявлена монада <tt><a>MonadPM</a></tt> для
+--   платформонезависимой работы с процессами (запуск и остановка) и
+--   логическими потоками ввода/вывода (определение потока по умолчанию и
+--   преобразование данных в потоке).
 module Monads.PM
 class Monad m => MonadPM m where {
+    
+    -- | Логический поток, хранит вывод команд.
     type Stream m :: Type;
+    
+    -- | <a>Ссылка</a> на запущенный процесс.
     type Process m :: Type;
 }
+
+-- | Функция получения потока по умолчанию (предполагается, что это поток с
+--   вводом пользователя).
 getDefaultStream :: MonadPM m => m (Stream m)
+
+-- | Преобразование данных в потоке с помощью функции.
 applyFuncToStream :: MonadPM m => (Text -> m Text) -> InputHandle -> OutputHandle -> Stream m -> m (Stream m)
+
+-- | Запуск процесса по абсолютному пути до исполняемого файла с заданными
+--   аргументами, переменными окружения, типами потоков ввода/вывода, а
+--   также с логическим потоком, хранящим вывод предыдущей команды.
+--   Возвращает "ссылку" на запущенный процесс и логический поток с
+--   выводом.
 createProcess :: MonadPM m => AbsFilePath -> [String] -> InputHandle -> OutputHandle -> [(Stable, String)] -> Stream m -> m (Process m, Stream m)
+
+-- | Ожидание завершения процесса. Возвращает код ошибки.
 waitForProcess :: MonadPM m => Process m -> m ExitCode
+
+-- | Немедленное уничтожение процесса.
 terminateProcess :: MonadPM m => Process m -> m ()
 
 
@@ -592,6 +492,115 @@ setVarPathDefault :: MonadVarWriter m => [AbsFilePath] -> m ()
 --   <tt><a>MonadVarWriter</a></tt>.
 setVarPwdDefault :: MonadVarWriter m => AbsFilePath -> m ()
 
+module Phases.Analyzer.Common
+
+-- | Функция получения объекта-ошибки по информации об ошибке.
+toError :: String -> Error
+
+-- | Поиск файла по пути, а также проверка наличия разрешения на чтение.
+findReadable :: (MonadError m, MonadFS m, MonadPwdReader m) => FilePath -> m AbsFilePath
+
+-- | Функция проверки количества аргументов (0 или 1).
+checkOptionalArg :: MonadError m => String -> [String] -> m (Maybe String)
+
+-- | Функция проверки количества аргументов (1).
+checkRequiredArg :: MonadError m => String -> [String] -> m String
+
+-- | Функция проверки количества аргументов (0).
+checkNoneArg :: MonadError m => String -> [String] -> m ()
+
+module Phases.Analyzer.Internal.Grep
+
+-- | Конфигурация команды <tt>grep</tt>.
+data GrepArgs
+GrepArgs :: Bool -> Int -> (String, Regex) -> Maybe AbsFilePath -> GrepArgs
+[isColorized] :: GrepArgs -> Bool
+[lineCount] :: GrepArgs -> Int
+[regex] :: GrepArgs -> (String, Regex)
+[inputFile] :: GrepArgs -> Maybe AbsFilePath
+grepRegex :: MonadError m => Bool -> Bool -> String -> m (String, Regex)
+
+-- | Функция парсинга аргументов командной строки в конфигурацию.
+grep :: (MonadError m, MonadFS m, MonadPwdReader m) => [String] -> m GrepArgs
+instance GHC.Show.Show Phases.Analyzer.Internal.Grep.GrepArgsRaw
+instance GHC.Classes.Eq Phases.Analyzer.Internal.Grep.GrepArgsRaw
+instance GHC.Classes.Eq Phases.Analyzer.Internal.Grep.GrepArgs
+instance GHC.Show.Show Phases.Analyzer.Internal.Grep.GrepArgs
+
+
+-- | В данном модуле объявлены примитивы, в которые транслируется
+--   пользовательский запрос после этапа анализа.
+module Data.AnalyzedPrimitive
+
+-- | Примитив — это
+--   
+--   <ul>
+--   <li>специальная команда (<tt>exit</tt> или <tt>cd</tt>),</li>
+--   <li>непустой набор обычных команд, разделённых pipeами,</li>
+--   <li>присваивание стабильной переменной или</li>
+--   <li>пустая команда.</li>
+--   </ul>
+data Primitive
+Special :: Special -> Primitive
+Commons :: NonEmpty Common -> Primitive
+Assignment :: Stable -> String -> Primitive
+Empty :: Primitive
+
+-- | Специальная команда влияет на работу оболочки и может быть
+--   
+--   <ul>
+--   <li><tt>exit</tt> — завершение работы оболочки с кодом возврата,
+--   принимаемым опциональным параметром</li>
+--   <li><tt>cd</tt> — смена текущей директории</li>
+--   </ul>
+data Special
+Exit :: Maybe ExitCode -> Special
+Cd :: FilePath -> Special
+
+-- | Обычная команда имеет потоки ввода, вывода и поток ошибок. Может быть
+--   либо внутренней (исполняется самой командной оболочкой), либо внешней.
+data Common
+Internal :: Internal -> Common
+External :: External -> Common
+
+-- | Внутренняя команда исполняется самой командной оболочкой и может быть
+--   
+--   <ul>
+--   <li><tt>cat</tt> — вывод содержимого переданного файла;</li>
+--   <li><tt>echo</tt> — вывод аргументов через пробел;</li>
+--   <li><tt>wc</tt> — статистика для файла;</li>
+--   <li><tt>pwd</tt> — имя текущей директории.</li>
+--   </ul>
+data Internal
+Cat :: Maybe AbsFilePath -> Internal
+Echo :: [String] -> Internal
+Wc :: Maybe AbsFilePath -> Internal
+Pwd :: Internal
+Grep :: GrepArgs -> Internal
+
+-- | Внешняя команда вызывается по пути к исполняемому файлу с указанными
+--   аргументами.
+data External
+Arguments :: AbsFilePath -> [String] -> External
+
+-- | Конфигурация команды <tt>grep</tt>.
+data GrepArgs
+GrepArgs :: Bool -> Int -> (String, Regex) -> Maybe AbsFilePath -> GrepArgs
+[isColorized] :: GrepArgs -> Bool
+[lineCount] :: GrepArgs -> Int
+[regex] :: GrepArgs -> (String, Regex)
+[inputFile] :: GrepArgs -> Maybe AbsFilePath
+instance GHC.Show.Show Data.AnalyzedPrimitive.Special
+instance GHC.Classes.Eq Data.AnalyzedPrimitive.Special
+instance GHC.Show.Show Data.AnalyzedPrimitive.Internal
+instance GHC.Classes.Eq Data.AnalyzedPrimitive.Internal
+instance GHC.Show.Show Data.AnalyzedPrimitive.External
+instance GHC.Classes.Eq Data.AnalyzedPrimitive.External
+instance GHC.Show.Show Data.AnalyzedPrimitive.Common
+instance GHC.Classes.Eq Data.AnalyzedPrimitive.Common
+instance GHC.Show.Show Data.AnalyzedPrimitive.Primitive
+instance GHC.Classes.Eq Data.AnalyzedPrimitive.Primitive
+
 
 -- | Модуль предназначен для анализа корректности пользовательского запроса
 --   и преобразования его в более выразительный формат.
@@ -599,6 +608,76 @@ module Phases.Analyzer
 
 -- | Анализ корректности и преобразование пользовательского запроса.
 analyzer :: (MonadError m, MonadFS m, MonadPwdReader m, MonadPathReader m) => Primitive -> m Primitive
+
+
+-- | В данном модуле объявлены примитивы, в которые транслируется
+--   пользовательский запрос после линковки.
+module Data.LinkedPrimitive
+
+-- | Примитив — это
+--   
+--   <ul>
+--   <li>специальная команда,</li>
+--   <li>присваивание стабильной переменной или</li>
+--   <li>набор обычных команд с заданными типами потоков ввода и
+--   вывода.</li>
+--   </ul>
+data Primitive
+Special :: Special -> Primitive
+Assignment :: Stable -> String -> Primitive
+Commons :: [CommonWithHandles] -> Primitive
+
+-- | Специальная команда влияет на работу оболочки и может быть
+--   
+--   <ul>
+--   <li><tt>exit</tt> — завершение работы оболочки с кодом возврата,
+--   принимаемым опциональным параметром</li>
+--   <li><tt>cd</tt> — смена текущей директории</li>
+--   </ul>
+data Special
+Exit :: Maybe ExitCode -> Special
+Cd :: FilePath -> Special
+
+-- | Обычная команда с заданными типами потоков ввода и вывода.
+type CommonWithHandles = (Common, InputHandle, OutputHandle)
+
+-- | Обычная команда, может быть внутренней или внешней.
+data Common
+External :: External -> Common
+Internal :: Internal -> Common
+
+-- | Внутренняя команда, представляется либо в виде чистой функции над
+--   текстом с её названием, либо в виде нечистой команды.
+--   
+--   Название в чистой функции необходимо для сравнения двух функций.
+--   Обычно выполняется инвариант, что две команды с одинковым названием
+--   имеют эквивалентные функции, но этот инвариант никак не гарантируется.
+data Internal
+Pure :: String -> (Text -> Text) -> Internal
+Impure :: Impure -> Internal
+
+-- | Внешняя команда вызывается по пути к исполняемому файлу с указанными
+--   аргументами.
+data External
+Arguments :: AbsFilePath -> [String] -> External
+
+-- | Внутренняя нечистая команда, пока ею является только <tt>pwd</tt>
+--   (требует доступ к классу <tt><tt>MonadPwdReader</tt></tt>).
+--   
+--   Важно: пока предполагается, что любая нечистая команда не модифицирует
+--   реальное окружение (не изменяет файлы, не делает что-либо на удалённом
+--   сервере и т. д.), это используется как один из неявных инвариантов в
+--   работе <tt><tt>linker</tt></tt>.
+data Impure
+Pwd :: Impure
+instance GHC.Show.Show Data.LinkedPrimitive.Impure
+instance GHC.Classes.Eq Data.LinkedPrimitive.Impure
+instance GHC.Show.Show Data.LinkedPrimitive.Common
+instance GHC.Classes.Eq Data.LinkedPrimitive.Common
+instance GHC.Show.Show Data.LinkedPrimitive.Primitive
+instance GHC.Classes.Eq Data.LinkedPrimitive.Primitive
+instance GHC.Classes.Eq Data.LinkedPrimitive.Internal
+instance GHC.Show.Show Data.LinkedPrimitive.Internal
 
 
 -- | Модуль с внутренней нечистой командой <tt>pwd</tt>.
@@ -634,6 +713,14 @@ module Phases.Linker.Pure.Echo
 -- | Команда <tt>echo</tt> принимает набор строк-аргументов и возвращает их
 --   запись через пробел.
 echo :: [String] -> Text
+
+
+-- | Модуль с внутренней чистой командой <tt>grep</tt>.
+module Phases.Linker.Pure.Grep
+
+-- | Команда <tt>grep</tt> принимает текст и регулярное выражение по
+--   которому возвращает отфильтрованный текст.
+grep :: GrepArgs -> Text -> Text
 
 
 -- | Модуль с внутренней чистой командой <tt>wc</tt>.

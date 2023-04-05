@@ -11,7 +11,7 @@
 </span><span id="line-11"></span><span class="hs-comment">-- | &#1058;&#1080;&#1087; &#1089;&#1090;&#1072;&#1085;&#1076;&#1072;&#1088;&#1090;&#1085;&#1086;&#1081; (&#1076;&#1083;&#1103; &#1085;&#1072;&#1096;&#1077;&#1081; &#1089;&#1080;&#1089;&#1090;&#1077;&#1084;&#1099;) &#1086;&#1096;&#1080;&#1073;&#1082;&#1080;. &#1061;&#1088;&#1072;&#1085;&#1080;&#1090; &#1089;&#1090;&#1072;&#1076;&#1080;&#1102;, &#1085;&#1072; &#1082;&#1086;&#1090;&#1086;&#1088;&#1086;&#1081; &#1101;&#1090;&#1072;</span><span>
 </span><span id="line-12"></span><span class="hs-comment">-- &#1086;&#1096;&#1080;&#1073;&#1082;&#1072; &#1087;&#1088;&#1086;&#1080;&#1079;&#1086;&#1096;&#1083;&#1072;, &#1072; &#1090;&#1072;&#1082;&#1078;&#1077; &#1076;&#1086;&#1087;&#1086;&#1083;&#1085;&#1080;&#1090;&#1077;&#1083;&#1100;&#1085;&#1091;&#1102; &#1080;&#1085;&#1092;&#1086;&#1088;&#1084;&#1072;&#1094;&#1080;&#1102;.</span><span>
 </span><span id="line-13"></span><span class="hs-keyword">data</span><span> </span><span id="Error"><span class="annot"><a href="Data.Error.html#Error"><span class="hs-identifier hs-var">Error</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Error"><span class="annot"><a href="Data.Error.html#Error"><span class="hs-identifier hs-var">Error</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-14"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679058756"><span id="local-6989586621679058762"><span class="annot"><span class="annottext">Error -&gt; Error -&gt; Bool
+</span><span id="line-14"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679065560"><span id="local-6989586621679065566"><span class="annot"><span class="annottext">Error -&gt; Error -&gt; Bool
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Error -&gt; Error -&gt; Bool
 $c/= :: Error -&gt; Error -&gt; Bool
@@ -19,11 +19,11 @@ $c/= :: Error -&gt; Error -&gt; Bool
 $c== :: Error -&gt; Error -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-15"></span><span>
-</span><span id="line-16"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679058749"><span id="local-6989586621679058752"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Data.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-17"></span><span>  </span><span id="local-6989586621679058747"><span class="annot"><span class="annottext">show :: Error -&gt; String
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span id="local-6989586621679058745"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679058745"><span class="hs-identifier hs-var">type_</span></a></span></span><span> </span><span id="local-6989586621679058744"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679058744"><span class="hs-identifier hs-var">msg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-16"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679065553"><span id="local-6989586621679065556"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Data.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-17"></span><span>  </span><span id="local-6989586621679065551"><span class="annot"><span class="annottext">show :: Error -&gt; String
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">show</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span id="local-6989586621679065549"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679065549"><span class="hs-identifier hs-var">type_</span></a></span></span><span> </span><span id="local-6989586621679065548"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679065548"><span class="hs-identifier hs-var">msg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-18"></span><span>    </span><span class="annot"><span class="annottext">[SGR] -&gt; String
 </span><span class="hs-identifier hs-var">setSGRCode</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">ConsoleLayer -&gt; ColorIntensity -&gt; Color -&gt; SGR
 </span><span class="hs-identifier hs-var">SetColor</span></span><span> </span><span class="annot"><span class="annottext">ConsoleLayer
@@ -34,7 +34,7 @@ $c== :: Error -&gt; Error -&gt; Bool
 </span><span class="hs-identifier hs-var">BoldIntensity</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span>
 </span><span id="line-19"></span><span>    </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679058745"><span class="hs-identifier hs-var">type_</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
+</span><a href="#local-6989586621679065549"><span class="hs-identifier hs-var">type_</span></a></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span>
 </span><span id="line-20"></span><span>    </span><span class="annot"><span class="annottext">[SGR] -&gt; String
 </span><span class="hs-identifier hs-var">setSGRCode</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">SGR
@@ -42,5 +42,5 @@ $c== :: Error -&gt; Error -&gt; Bool
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;: &quot;</span></span><span> </span><span class="annot"><span class="annottext">forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679058744"><span class="hs-identifier hs-var">msg</span></a></span><span>
+</span><a href="#local-6989586621679065548"><span class="hs-identifier hs-var">msg</span></a></span><span>
 </span><span id="line-21"></span></pre></body></html>
