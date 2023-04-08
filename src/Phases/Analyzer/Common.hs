@@ -22,8 +22,8 @@ toError = Error "AnalyzingError"
 -- | Поиск файла по пути, а также проверка наличия разрешения на чтение.
 findReadable :: (MonadError m, MonadFS m, MonadPwdReader m) => FilePath -> m AbsFilePath
 findReadable filePath = do
-  absFilePath <- doesFileExist filePath @>= error ("can't find file by path \"" ++ filePath ++ "\"")
-  isReadable absFilePath ?>= error ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
+  absFilePath <- doesFileExist filePath @>= toError ("can't find file by path \"" ++ filePath ++ "\"")
+  isReadable absFilePath ?>= toError ("file \"" ++ show absFilePath ++ "\" hasn't readable permission")
   return absFilePath
 
 -- | Функция проверки количества аргументов (0 или 1).
