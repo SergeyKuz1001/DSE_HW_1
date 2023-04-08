@@ -1,0 +1,147 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           cli
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/SergeyKuz1001/SD_HW_1#README.md>
+homepage:       https://github.com/SergeyKuz1001/SD_HW_1#readme
+bug-reports:    https://github.com/SergeyKuz1001/SD_HW_1/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2023 Kuzivanov Sergey, Samsonov Pavel, Surkis Anton
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/SergeyKuz1001/SD_HW_1
+
+library
+  exposed-modules:
+      AbstractMain
+      Data.AnalyzedPrimitive
+      Data.DebugInfo
+      Data.Error
+      Data.ExitCode
+      Data.FSObjects
+      Data.Handles
+      Data.LinkedPrimitive
+      Data.ParsedPrimitive
+      Data.Variable
+      Monads.Error
+      Monads.Exit
+      Monads.FS
+      Monads.IO
+      Monads.PathReader
+      Monads.PathWriter
+      Monads.PM
+      Monads.PwdReader
+      Monads.PwdWriter
+      Monads.SelfReferenced
+      Monads.VarReader
+      Monads.VarWriter
+      Phases.Analyzer
+      Phases.Analyzer.Common
+      Phases.Analyzer.Internal.Grep
+      Phases.Executor
+      Phases.Executor.Impure
+      Phases.Executor.Impure.Pwd
+      Phases.Linker
+      Phases.Linker.Pure
+      Phases.Linker.Pure.Cat
+      Phases.Linker.Pure.Echo
+      Phases.Linker.Pure.Grep
+      Phases.Linker.Pure.Wc
+      Phases.Parser
+      Phases.Reader
+      Phases.Substitutor
+  other-modules:
+      Paths_cli
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      HUnit
+    , ansi-terminal
+    , array
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , directory
+    , filepath
+    , mtl
+    , optparse-applicative
+    , pretty-simple
+    , process
+    , regex-tdfa
+    , text
+    , time
+  default-language: Haskell2010
+
+executable cli-exe
+  main-is: Main.hs
+  other-modules:
+      Environment
+      Paths_cli
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HUnit
+    , ansi-terminal
+    , array
+    , base >=4.7 && <5
+    , bytestring
+    , cli
+    , containers
+    , directory
+    , filepath
+    , mtl
+    , optparse-applicative
+    , pretty-simple
+    , process
+    , regex-tdfa
+    , text
+    , time
+  default-language: Haskell2010
+
+test-suite cli-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Phases.Analyzer.TestEnvironment
+      Phases.Analyzer.Tests
+      Phases.Executor.Tests
+      Phases.Linker.TestEnvironment
+      Phases.Linker.Tests
+      Phases.Parser.Tests
+      Phases.Substitutor.TestEnvironment
+      Phases.Substitutor.Tests
+      Paths_cli
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HUnit
+    , ansi-terminal
+    , array
+    , base >=4.7 && <5
+    , bytestring
+    , cli
+    , containers
+    , directory
+    , filepath
+    , mtl
+    , optparse-applicative
+    , pretty-simple
+    , process
+    , regex-tdfa
+    , text
+    , time
+  default-language: Haskell2010
