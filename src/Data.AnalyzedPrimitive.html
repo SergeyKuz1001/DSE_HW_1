@@ -28,13 +28,13 @@
 </span><span id="line-28"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Commons"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Commons"><span class="hs-identifier hs-var">Commons</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">NonEmpty</span></span><span> </span><span class="annot"><a href="Data.AnalyzedPrimitive.html#Common"><span class="hs-identifier hs-type">Common</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-29"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Assignment"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Assignment"><span class="hs-identifier hs-var">Assignment</span></a></span></span><span> </span><span class="annot"><a href="Data.Variable.html#Stable"><span class="hs-identifier hs-type">Stable</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
 </span><span id="line-30"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Empty"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Empty"><span class="hs-identifier hs-var">Empty</span></a></span></span><span>
-</span><span id="line-31"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067472"><span id="local-6989586621679067483"><span class="annot"><span class="annottext">Primitive -&gt; Primitive -&gt; Bool
+</span><span id="line-31"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067454"><span id="local-6989586621679067465"><span class="annot"><span class="annottext">Primitive -&gt; Primitive -&gt; Bool
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Primitive -&gt; Primitive -&gt; Bool
 $c/= :: Primitive -&gt; Primitive -&gt; Bool
 == :: Primitive -&gt; Primitive -&gt; Bool
 $c== :: Primitive -&gt; Primitive -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067451"><span id="local-6989586621679067453"><span id="local-6989586621679067468"><span class="annot"><span class="annottext">Int -&gt; Primitive -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067433"><span id="local-6989586621679067435"><span id="local-6989586621679067450"><span class="annot"><span class="annottext">Int -&gt; Primitive -&gt; ShowS
 [Primitive] -&gt; ShowS
 Primitive -&gt; String
 forall a.
@@ -53,13 +53,13 @@ $cshowsPrec :: Int -&gt; Primitive -&gt; ShowS
 </span><span id="line-36"></span><span class="hs-comment">--         &#1086;&#1087;&#1094;&#1080;&#1086;&#1085;&#1072;&#1083;&#1100;&#1085;&#1099;&#1084; &#1087;&#1072;&#1088;&#1072;&#1084;&#1077;&#1090;&#1088;&#1086;&#1084;</span><span>
 </span><span id="line-37"></span><span class="hs-comment">--     * @cd@ &#8212; &#1089;&#1084;&#1077;&#1085;&#1072; &#1090;&#1077;&#1082;&#1091;&#1097;&#1077;&#1081; &#1076;&#1080;&#1088;&#1077;&#1082;&#1090;&#1086;&#1088;&#1080;&#1080;</span><span>
 </span><span id="line-38"></span><span class="hs-keyword">data</span><span> </span><span id="Special"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Special"><span class="hs-identifier hs-var">Special</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Exit"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Exit"><span class="hs-identifier hs-var">Exit</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Data.ExitCode.html#ExitCode"><span class="hs-identifier hs-type">ExitCode</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Cd"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Cd"><span class="hs-identifier hs-var">Cd</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span>
-</span><span id="line-39"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067437"><span id="local-6989586621679067444"><span class="annot"><span class="annottext">Special -&gt; Special -&gt; Bool
+</span><span id="line-39"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067419"><span id="local-6989586621679067426"><span class="annot"><span class="annottext">Special -&gt; Special -&gt; Bool
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Special -&gt; Special -&gt; Bool
 $c/= :: Special -&gt; Special -&gt; Bool
 == :: Special -&gt; Special -&gt; Bool
 $c== :: Special -&gt; Special -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067423"><span id="local-6989586621679067425"><span id="local-6989586621679067434"><span class="annot"><span class="annottext">Int -&gt; Special -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067405"><span id="local-6989586621679067407"><span id="local-6989586621679067416"><span class="annot"><span class="annottext">Int -&gt; Special -&gt; ShowS
 [Special] -&gt; ShowS
 Special -&gt; String
 forall a.
@@ -76,13 +76,13 @@ $cshowsPrec :: Int -&gt; Special -&gt; ShowS
 </span><span id="line-42"></span><span class="hs-comment">-- &#1052;&#1086;&#1078;&#1077;&#1090; &#1073;&#1099;&#1090;&#1100; &#1083;&#1080;&#1073;&#1086; &#1074;&#1085;&#1091;&#1090;&#1088;&#1077;&#1085;&#1085;&#1077;&#1081; (&#1080;&#1089;&#1087;&#1086;&#1083;&#1085;&#1103;&#1077;&#1090;&#1089;&#1103; &#1089;&#1072;&#1084;&#1086;&#1081; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;&#1085;&#1086;&#1081; &#1086;&#1073;&#1086;&#1083;&#1086;&#1095;&#1082;&#1086;&#1081;), &#1083;&#1080;&#1073;&#1086;</span><span>
 </span><span id="line-43"></span><span class="hs-comment">-- &#1074;&#1085;&#1077;&#1096;&#1085;&#1077;&#1081;.</span><span>
 </span><span id="line-44"></span><span class="hs-keyword">data</span><span> </span><span id="Common"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Common"><span class="hs-identifier hs-var">Common</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Internal"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Internal"><span class="hs-identifier hs-var">Internal</span></a></span></span><span> </span><span class="annot"><a href="Data.AnalyzedPrimitive.html#Internal"><span class="hs-identifier hs-type">Internal</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="External"><span class="annot"><a href="Data.AnalyzedPrimitive.html#External"><span class="hs-identifier hs-var">External</span></a></span></span><span> </span><span class="annot"><a href="Data.AnalyzedPrimitive.html#External"><span class="hs-identifier hs-type">External</span></a></span><span>
-</span><span id="line-45"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067414"><span id="local-6989586621679067418"><span class="annot"><span class="annottext">Common -&gt; Common -&gt; Bool
+</span><span id="line-45"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067396"><span id="local-6989586621679067400"><span class="annot"><span class="annottext">Common -&gt; Common -&gt; Bool
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Common -&gt; Common -&gt; Bool
 $c/= :: Common -&gt; Common -&gt; Bool
 == :: Common -&gt; Common -&gt; Bool
 $c== :: Common -&gt; Common -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067404"><span id="local-6989586621679067406"><span id="local-6989586621679067412"><span class="annot"><span class="annottext">Int -&gt; Common -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067386"><span id="local-6989586621679067388"><span id="local-6989586621679067394"><span class="annot"><span class="annottext">Int -&gt; Common -&gt; ShowS
 [Common] -&gt; ShowS
 Common -&gt; String
 forall a.
@@ -107,13 +107,13 @@ $cshowsPrec :: Int -&gt; Common -&gt; ShowS
 </span><span id="line-56"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Wc"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Wc"><span class="hs-identifier hs-var">Wc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Data.FSObjects.html#AbsFilePath"><span class="hs-identifier hs-type">AbsFilePath</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-57"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Pwd"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Pwd"><span class="hs-identifier hs-var">Pwd</span></a></span></span><span>
 </span><span id="line-58"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Grep"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Grep"><span class="hs-identifier hs-var">Grep</span></a></span></span><span> </span><span class="annot"><a href="Phases.Analyzer.Internal.Grep.html#GrepArgs"><span class="hs-identifier hs-type">GrepArgs</span></a></span><span>
-</span><span id="line-59"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067388"><span id="local-6989586621679067397"><span class="annot"><span class="annottext">Internal -&gt; Internal -&gt; Bool
+</span><span id="line-59"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067370"><span id="local-6989586621679067379"><span class="annot"><span class="annottext">Internal -&gt; Internal -&gt; Bool
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Internal -&gt; Internal -&gt; Bool
 $c/= :: Internal -&gt; Internal -&gt; Bool
 == :: Internal -&gt; Internal -&gt; Bool
 $c== :: Internal -&gt; Internal -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067369"><span id="local-6989586621679067371"><span id="local-6989586621679067384"><span class="annot"><span class="annottext">Int -&gt; Internal -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067351"><span id="local-6989586621679067353"><span id="local-6989586621679067366"><span class="annot"><span class="annottext">Int -&gt; Internal -&gt; ShowS
 [Internal] -&gt; ShowS
 Internal -&gt; String
 forall a.
@@ -129,13 +129,13 @@ $cshowsPrec :: Int -&gt; Internal -&gt; ShowS
 </span><span id="line-61"></span><span class="hs-comment">-- | &#1042;&#1085;&#1077;&#1096;&#1085;&#1103;&#1103; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;&#1072; &#1074;&#1099;&#1079;&#1099;&#1074;&#1072;&#1077;&#1090;&#1089;&#1103; &#1087;&#1086; &#1087;&#1091;&#1090;&#1080; &#1082; &#1080;&#1089;&#1087;&#1086;&#1083;&#1085;&#1103;&#1077;&#1084;&#1086;&#1084;&#1091; &#1092;&#1072;&#1081;&#1083;&#1091; &#1089; &#1091;&#1082;&#1072;&#1079;&#1072;&#1085;&#1085;&#1099;&#1084;&#1080;</span><span>
 </span><span id="line-62"></span><span class="hs-comment">-- &#1072;&#1088;&#1075;&#1091;&#1084;&#1077;&#1085;&#1090;&#1072;&#1084;&#1080;.</span><span>
 </span><span id="line-63"></span><span class="hs-keyword">data</span><span> </span><span id="External"><span class="annot"><a href="Data.AnalyzedPrimitive.html#External"><span class="hs-identifier hs-var">External</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Arguments"><span class="annot"><a href="Data.AnalyzedPrimitive.html#Arguments"><span class="hs-identifier hs-var">Arguments</span></a></span></span><span> </span><span class="annot"><a href="Data.FSObjects.html#AbsFilePath"><span class="hs-identifier hs-type">AbsFilePath</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">]</span><span>
-</span><span id="line-64"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067359"><span id="local-6989586621679067364"><span class="annot"><span class="annottext">External -&gt; External -&gt; Bool
+</span><span id="line-64"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679067341"><span id="local-6989586621679067346"><span class="annot"><span class="annottext">External -&gt; External -&gt; Bool
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: External -&gt; External -&gt; Bool
 $c/= :: External -&gt; External -&gt; Bool
 == :: External -&gt; External -&gt; Bool
 $c== :: External -&gt; External -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067348"><span id="local-6989586621679067350"><span id="local-6989586621679067356"><span class="annot"><span class="annottext">Int -&gt; External -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679067330"><span id="local-6989586621679067332"><span id="local-6989586621679067338"><span class="annot"><span class="annottext">Int -&gt; External -&gt; ShowS
 [External] -&gt; ShowS
 External -&gt; String
 forall a.
