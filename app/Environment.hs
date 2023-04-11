@@ -23,6 +23,7 @@ import Monads.FS
 import Monads.IO
 import Monads.PM
 import Monads.PathReader
+import Monads.DirScanner
 import Monads.PathWriter
 import Monads.PwdReader
 import Monads.PwdWriter
@@ -75,6 +76,9 @@ instance MonadIO Environment where
     if eof
       then return Nothing
       else Just <$> P.getLine
+
+instance MonadDirScanner Environment where
+  scanDir = toEnv . D.getDirectoryContents . asFilePath
 
 instance MonadPM Environment where
   type Stream  Environment = Maybe Handle
@@ -149,7 +153,11 @@ instance MonadPathReader Environment where
   getVarPath = getVarPathDefault
 
 instance MonadPwdReader Environment where
-  getVarPwd = getVarPwdDefault
+  getVarPwd = getVarPwdDefault 
+    -- do
+    -- path <- toEnv D.getCurrentDirectory
+    -- absFilePath path
+ 
 
 -- | Функция для получения локального времени.
 getLocalTime :: IO LocalTime
@@ -169,7 +177,10 @@ instance MonadPathWriter Environment where
   setVarPath = setVarPathDefault
 
 instance MonadPwdWriter Environment where
-  setVarPwd = setVarPwdDefault
+  setVarPwd newPath = do 
+    let path = asFilePath newPath 
+    setVar varPwd path
+    toEnv $ D.setCurrentDirectory path
 
 instance MonadVarWriter Environment where
   setVar var value = ST.modify $ M.insert var value
@@ -184,6 +195,9 @@ instance MonadFS Environment where
         perms <- D.getPermissions path
         let perms' = (Permissions <$> D.readable <*> D.writable <*> D.executable) perms
         return . Just $ File absPath perms'
+  checkIfDirExistByAbsPath absPath = toEnv $ do
+    let path = asFilePath absPath
+    D.doesDirectoryExist path
 
 instance MonadSelfReferenced Environment where
   getSelfPath = do

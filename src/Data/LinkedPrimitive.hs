@@ -15,6 +15,7 @@ module Data.LinkedPrimitive (
 import Data.AnalyzedPrimitive (Special(..), External(..))
 import Data.Handles
 import Data.Variable (Stable(..))
+import Data.FSObjects (AbsFilePath)
 
 import Data.Text.Lazy (Text)
 
@@ -63,4 +64,5 @@ instance Show Internal where
 -- сервере и т. д.), это используется как один из неявных инвариантов в работе
 -- @'linker'@.
 data Impure = Pwd
+  | Ls AbsFilePath
   deriving (Eq, Show)

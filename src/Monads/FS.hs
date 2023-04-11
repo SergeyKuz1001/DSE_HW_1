@@ -5,6 +5,7 @@
 module Monads.FS (
     MonadFS (..),
     findFile,
+    checkIfDirExist,
     findFileAsExecutable,
     doesFileExist,
     doesExecutableExist,
@@ -23,6 +24,8 @@ import Control.Applicative (asum)
 class Monad m => MonadFS m where
   -- | Поиск файла по абсолютному пути.
   findFileByAbsPath :: AbsFilePath -> m (Maybe File)
+  -- | Проверка существует ли переданная директория 
+  checkIfDirExistByAbsPath :: AbsFilePath -> m Bool
 
 -- | Поиск файла в текущей директории (если указан относительный путь) или в
 -- корневой директории (если указан абсолютный).
@@ -33,6 +36,14 @@ findFile path = case absFilePath path of
     findFileByAbsPath $ pwd </> path
   Right absPath ->
     findFileByAbsPath absPath
+
+checkIfDirExist :: (MonadFS m, MonadPwdReader m) => FilePath -> m Bool
+checkIfDirExist path = case absFilePath path of
+  Left _ -> do
+    pwd <- getVarPwd
+    checkIfDirExistByAbsPath $ pwd </> path
+  Right absPath ->
+    checkIfDirExistByAbsPath absPath
 
 -- | Поиск файла, аналогичный @'findFile'@, но с использованием переменной PATH
 -- (через монаду @'MonadVarPathReader'@) если указано только имя файла.
@@ -46,6 +57,8 @@ findFileAsExecutable path = case absFilePath path of
     fmap asum . traverse (findFileByAbsPath . (</> path)) $ binLocations
   Right absPath ->
     findFileByAbsPath absPath
+
+  
 
 -- | Проверка на то, что файл по этому пути (абсолютному или относительному)
 -- существует. Если файл существует, то возвращается абсолютный путь до него.
@@ -83,3 +96,4 @@ isWritable = hasPerm writePerm
 -- не существует.
 isExecutable :: MonadFS m => AbsFilePath -> m Bool
 isExecutable = hasPerm execPerm
+

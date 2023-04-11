@@ -16,6 +16,7 @@ import Monads.Error (MonadError, catchError)
 import Monads.Exit (MonadExit)
 import Monads.IO (MonadIO, print)
 import Monads.PM (MonadPM)
+import Monads.DirScanner (MonadDirScanner)
 import Monads.SelfReferenced (MonadSelfReferenced)
 import Monads.VarReader (MonadVarReader)
 import Monads.VarWriter (MonadVarWriter)
@@ -41,6 +42,7 @@ abstractMain ::
   ( MonadError m
   , MonadExit m
   , MonadIO m
+  , MonadDirScanner m
   , MonadPM m
   , MonadSelfReferenced m
   , MonadVarReader m

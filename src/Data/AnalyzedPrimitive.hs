@@ -56,6 +56,7 @@ data Internal
   | Wc (Maybe AbsFilePath)
   | Pwd
   | Grep GrepArgs
+  | Ls AbsFilePath
   deriving (Eq, Show)
 
 -- | Внешняя команда вызывается по пути к исполняемому файлу с указанными

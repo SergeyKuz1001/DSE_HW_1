@@ -14,13 +14,14 @@ import qualified Data.AnalyzedPrimitive as AP
 import           Data.ExitCode          (ExitCode (..))
 import qualified Data.ParsedPrimitive   as PP
 import           Data.Variable          (asStable, variable)
-import           Monads.Error           (MonadError, throwError, (@:), (@>=))
+import           Monads.Error           (MonadError, throwError, (@:), (?>=), (@>=))
 import           Monads.FS
-import           Monads.PathReader
-import           Monads.PwdReader
+import           Monads.VarReader
+import           Data.FSObjects         (absFilePath, (</>))
 
 import           Control.Monad          (forM, (>=>))
 import           Data.List.NonEmpty     (NonEmpty (..))
+import           Data.Maybe             (fromMaybe)
 import           Text.Read              (readMaybe)
 
 -- | Вспомогательный тип для одной команды.
@@ -30,7 +31,7 @@ data Command
   | Empty
 
 -- | Анализ корректности и преобразование одной команды с аргументами.
-commandAnalyzer :: (MonadError m, MonadFS m, MonadPwdReader m, MonadPathReader m) => [String] -> m Command
+commandAnalyzer :: (MonadError m, MonadFS m, MonadVarReader m) => [String] -> m Command
 commandAnalyzer ("cat" : args) = do
   mFilePath <- checkOptionalArg "cat" args
   mAbsFilePath <- traverse findReadable mFilePath
@@ -54,8 +55,14 @@ commandAnalyzer ("exit" : args) = do
     return $ ExitCode ec)
   return . Special $ Exit mEc
 commandAnalyzer ("cd" : args) = do
-  filePath <- checkRequiredArg "cd" args
+  homeVar <- variable "HOME" >>= getVar
+  filePath <- fromMaybe homeVar <$> checkOptionalArg "cd" args
   return . Special $ Cd filePath
+commandAnalyzer ("ls" : args) = do
+  curDir <- getVarPwd
+  dirPath <- maybe curDir (curDir </>) <$> checkOptionalArg "ls" args
+  checkIfDirExistByAbsPath dirPath ?>= toError "Path not found"  
+  return . Common . Internal $ Ls dirPath
 commandAnalyzer (name : args) = do
   absFilePath <- doesExecutableExist name @>= toError ("can't find executable file by path \"" ++ name ++ "\"")
   return . Common . External $ Arguments absFilePath args
@@ -63,7 +70,7 @@ commandAnalyzer [] = do
   return Empty
 
 -- | Анализ корректности и преобразование пользовательского запроса.
-analyzer :: (MonadError m, MonadFS m, MonadPwdReader m, MonadPathReader m) => PP.Primitive -> m AP.Primitive
+analyzer :: (MonadError m, MonadFS m, MonadVarReader m) => PP.Primitive -> m AP.Primitive
 analyzer (PP.Commands []) =
   return AP.Empty
 analyzer (PP.Commands [command]) = do

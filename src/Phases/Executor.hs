@@ -15,6 +15,7 @@ import Data.FSObjects ((</>))
 import Data.Variable
 import Monads.Exit (MonadExit (exit))
 import Monads.PM (MonadPM(..))
+import Monads.DirScanner (MonadDirScanner(..))
 import Monads.VarReader (MonadVarReader(..), MonadPwdReader(..))
 import Monads.VarWriter (MonadVarWriter(..), MonadPwdWriter(..))
 
@@ -24,7 +25,7 @@ import Data.Maybe (fromMaybe)
 -- параллельно, а именно подряд идущие внешние команды выполняются
 -- параллельно, а внутренние - последовательно. Такое поведение вызвано
 -- ограничениями реальной реализации.
-executor :: (MonadPM m, MonadExit m, MonadVarWriter m, MonadVarReader m) => Primitive -> m ()
+executor :: (MonadPM m, MonadExit m, MonadDirScanner m,  MonadVarWriter m, MonadVarReader m) => Primitive -> m ()
 executor = \case
   Special special      -> executeSpecial special
   Assignment var value -> setVar var value
@@ -36,11 +37,12 @@ executeSpecial = \case
   Cd path -> do
     cd <- getVarPwd
     setVarPwd (cd </> path)
+    
   Exit mec -> exit $ fromMaybe (ExitCode 0) mec
 
 -- | Функция для исполнения обычных команд с указанными типами потоков ввода и
 -- вывода.
-executeCommons :: (MonadPM m, MonadVarReader m, MonadVarWriter m) => [CommonWithHandles] -> m ()
+executeCommons :: (MonadPM m, MonadVarReader m, MonadDirScanner m, MonadVarWriter m) => [CommonWithHandles] -> m ()
 executeCommons cmns = do
   stream <- getDefaultStream
   ExitCode ec <- execProc stream [] cmns
@@ -56,7 +58,7 @@ executeCommons cmns = do
 -- команды (или конца списка команд) все запущенные процессы останавливаются (не
 -- убиваются). При возникновении ошибки (ненулевой код возврата) все запущенные
 -- процессы убиваются, а все незапущенные - не запускаются.
-execProc :: (MonadPM m, MonadVarReader m) => Stream m -> [Process m] -> [CommonWithHandles] -> m ExitCode
+execProc :: (MonadPM m, MonadDirScanner m,  MonadVarReader m) => Stream m -> [Process m] -> [CommonWithHandles] -> m ExitCode
 execProc _ runned [] =
   waitProc $ reverse runned
 execProc stream runned ((External (Arguments path args), hIn, hOut) : cmns) = do
@@ -71,6 +73,7 @@ execProc stream runned ((Internal int, hIn, hOut) : cmns) = do
       let func = case int of
             Pure _ f   -> pure . f
             Impure Pwd -> pwd
+            Impure (Ls path) -> ls path  
       stream' <- applyFuncToStream func hIn hOut stream
       execProc stream' [] cmns
 

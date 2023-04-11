@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.1.
+-- This file has been generated from package.yaml by hpack version 0.35.2.
 --
 -- see: https://github.com/sol/hpack
 
@@ -34,6 +34,7 @@ library
       Data.LinkedPrimitive
       Data.ParsedPrimitive
       Data.Variable
+      Monads.DirScanner
       Monads.Error
       Monads.Exit
       Monads.FS
@@ -51,6 +52,7 @@ library
       Phases.Analyzer.Internal.Grep
       Phases.Executor
       Phases.Executor.Impure
+      Phases.Executor.Impure.Ls
       Phases.Executor.Impure.Pwd
       Phases.Linker
       Phases.Linker.Pure
